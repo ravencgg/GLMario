@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\mathops.cpp" />
+    <ClCompile Include="source\window.cpp" />
+    <ClCompile Include="source\input.cpp" />
+    <ClCompile Include="source\renderer.cpp" />
+    <ClCompile Include="source\scene_manager.cpp" />
+    <ClCompile Include="source\player.cpp" />
+    <ClCompile Include="source\helper.cpp" />
+    <ClCompile Include="source\camera.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\mathops.h" />
+    <ClInclude Include="source\types.h" />
+    <ClInclude Include="source\window.h" />
+    <ClInclude Include="source\input.h" />
+    <ClInclude Include="source\dynamic_array.h" />
+    <ClInclude Include="source\renderer.h" />
+    <ClInclude Include="source\game_object.h" />
+    <ClInclude Include="source\player.h" />
+    <ClInclude Include="source\scene_manager.h" />
+    <ClInclude Include="source\IDrawer.h" />
+    <ClInclude Include="source\camera.h" />
+    <ClInclude Include="source\helper.h" />
+  </ItemGroup>
+</Project>

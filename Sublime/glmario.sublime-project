@@ -1,0 +1,20 @@
+{
+	"folders":
+	[
+		{
+			"path": "..\\glmario\\source"
+		},
+		{
+			"path": "..\\res"
+		}
+	],
+
+	"build_systems":
+    [
+        {
+            "name": "MSVC",
+            "working_dir": "$project_path",
+            "cmd": ["build.bat"]
+        }
+    ]
+}

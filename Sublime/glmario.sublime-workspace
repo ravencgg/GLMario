@@ -1,0 +1,1348 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"cached",
+				"cached_projection_mat"
+			],
+			[
+				"draw",
+				"draw_sprite"
+			],
+			[
+				"GameObejc",
+				"GameObjectNode"
+			],
+			[
+				"render",
+				"render_draw_buffer"
+			],
+			[
+				"image",
+				"image_file"
+			],
+			[
+				"COUNT",
+				"SHADER_COUNT"
+			],
+			[
+				"SDLK",
+				"SDLK_z"
+			],
+			[
+				"D",
+				"DOWN_UP"
+			],
+			[
+				"F",
+				"FRAME_UP"
+			],
+			[
+				"mouse_lo",
+				"mouse_loc_updated_this_frame"
+			],
+			[
+				"FRAME_",
+				"FRAME_UP"
+			],
+			[
+				"OPEN",
+				"OPENGL_ENABLED"
+			],
+			[
+				"mem",
+				"memory_size"
+			],
+			[
+				"test_memory",
+				"test_memory_power"
+			],
+			[
+				"page",
+				"page_table_entry"
+			],
+			[
+				"al",
+				"AlgorithmType"
+			],
+			[
+				"get",
+				"get_page_id"
+			],
+			[
+				"Page",
+				"PageTable"
+			],
+			[
+				"is",
+				"is_dirty"
+			],
+			[
+				"lur",
+				"lru_queue"
+			],
+			[
+				"accesse",
+				"accessed_memory_counter"
+			],
+			[
+				"is_",
+				"is_power_of_two"
+			],
+			[
+				"Paget",
+				"PageTableEntry"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "/C/Projects/GLMario/glmario/source/renderer.cpp",
+			"settings":
+			{
+				"buffer_size": 9232,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
+			"settings":
+			{
+				"buffer_size": 506,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/res/default_vert.glsl",
+			"settings":
+			{
+				"buffer_size": 417,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/res/default_frag.glsl",
+			"settings":
+			{
+				"buffer_size": 1524,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/main.cpp",
+			"settings":
+			{
+				"buffer_size": 1826,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/renderer.h",
+			"settings":
+			{
+				"buffer_size": 2313,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/mathops.h",
+			"settings":
+			{
+				"buffer_size": 2940,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/camera.h",
+			"settings":
+			{
+				"buffer_size": 396,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/mathops.cpp",
+			"settings":
+			{
+				"buffer_size": 12083,
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"MSVC",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				]
+			],
+			[
+				"MSVC",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 357.0,
+		"last_filter": ":w",
+		"selected_items":
+		[
+			[
+				":w",
+				":w - Save"
+			],
+			[
+				":W",
+				":w - Save"
+			],
+			[
+				"package control enable",
+				"Package Control: Enable Package"
+			],
+			[
+				"set syntax c++",
+				"Set Syntax: C++"
+			],
+			[
+				"syntac c++",
+				"Set Syntax: Objective-C++"
+			],
+			[
+				"snippet",
+				"Snippet: #!/usr/bin/env"
+			],
+			[
+				"package control list",
+				"Package Control: List Packages"
+			],
+			[
+				"install ",
+				"Package Control: Install Package"
+			],
+			[
+				"snippet ",
+				"Snippet: Lorem ipsum"
+			],
+			[
+				"msbuild",
+				"Set Syntax: MSBuild"
+			],
+			[
+				"Package Control: ",
+				"Package Control: Install Package"
+			],
+			[
+				"package control install",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: List pa",
+				"Package Control: List Packages"
+			],
+			[
+				"snippe",
+				"Snippet: main()"
+			],
+			[
+				"",
+				"Snippet: std::vector"
+			],
+			[
+				"convert",
+				"Convert Case: Lower Case"
+			]
+		],
+		"width": 400.0
+	},
+	"console":
+	{
+		"height": 245.0,
+		"history":
+		[
+			"pwd",
+			"dir",
+			"w:",
+			"pyver",
+			"version",
+			"2**9",
+			"2 ** 18",
+			"2 ** 13",
+			"2 ** 18",
+			"2 ^ 18",
+			"0.1 + 0.2",
+			"2 + 2",
+			"import urllib.request,os,hashlib; h = '7183a2d3e96f11eeadd761d777e62404' + 'e330c659d4bb41d3bdf022e94cab3cd0'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)",
+			"print \"Hi, i am \" name",
+			"name ",
+			"print name",
+			"print \"Hi, I am \"",
+			"print \"Hi, I am \", name",
+			"print \"Hi, I am \" + name",
+			"name = \"Chris\"",
+			"a + 5",
+			"a = 2",
+			"0.1+0.2",
+			"2+2"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+	],
+	"file_history":
+	[
+		"/C/Projects/GLMario/glmario/source/mathops.h",
+		"/C/Projects/GLMario/glmario/source/scene_manager.h",
+		"/C/Projects/GLMario/glmario/source/mathops.cpp",
+		"/C/Projects/GLMario/glmario/source/scene_manager.cpp",
+		"/C/Projects/GLMario/glmario/source/camera.h",
+		"/C/Projects/GLMario/glmario/source/camera.cpp",
+		"/C/Projects/GLMario/glmario/source/renderer.cpp",
+		"/C/Projects/GLMario/glmario/source/main.cpp",
+		"/C/Projects/GLMario/glmario/source/window.cpp",
+		"/C/Projects/GLMario/glmario/source/renderer.h",
+		"/C/Projects/GLMario/glmario/source/types.h",
+		"/C/Projects/GLMario/GLMario/source/camera.cpp",
+		"/C/Projects/GLMario/glmario/source/window.h",
+		"/C/Projects/GLMario/glmario/source/player.cpp",
+		"/C/Projects/GLMario/Sublime/glmario.sublime-project",
+		"/C/Projects/GLMario/glmario/source/player.h",
+		"/C/Projects/GLMario/glmario/source/game_object.h",
+		"/C/Projects/GLMario/glmario/source/dynamic_array.h",
+		"/C/Projects/GLMario/res/default_frag.glsl",
+		"/C/Projects/GLMario/glmario/source/IDrawer.h",
+		"/C/Projects/GLMario/glmario/source/helper.cpp",
+		"/C/Projects/GLMario/res/default_vert.glsl",
+		"/C/Projects/GLMario/GLMario/source/IDrawer.h",
+		"/C/Projects/GLMario/GLMario/source/helper.cpp",
+		"/C/Projects/GLMario/GLMario/source/helper.h",
+		"/C/Projects/GLMario/GLMario/source/camera.h",
+		"/C/Projects/GLMario/GLMario/source/helper.cp",
+		"/C/Projects/GLMario/GLMario/source/IDrawer",
+		"/C/Projects/GLMario/GLMario/source/player.h",
+		"/C/Projects/GLMario/GLMario/source/scene_manager.h",
+		"/C/Projects/GLMario/glmario/source/input.h",
+		"/C/Projects/GLMario/GLMario/source/main.cpp",
+		"/C/Projects/GLMario/GLMario/source/renderer.cpp",
+		"/C/Projects/GLMario/GLMario/source/scene_manager.cpp",
+		"/C/Projects/GLMario/glmario/source/input.cpp",
+		"/C/Projects/GLMario/GLMario/source/dynamic_array.h",
+		"/C/Projects/GLMario/GLMario/source/renderer.h",
+		"/C/Projects/GLMario/GLMario/source/game_object.h",
+		"/C/Projects/GLMario/GLMario/source/dyn_array.h",
+		"/C/Projects/GLMario/GLMario/source/input.h",
+		"/C/Projects/GLMario/GLMario/source/window.cpp",
+		"/C/Projects/GLMario/GLMario/source/input.cpp",
+		"/C/Projects/GLMario/GLMario/source/window.h",
+		"/C/Projects/GLMario/GLMario/source/message_pump.h",
+		"/C/Projects/GLMario/GLMario/source/message_pump.cpp",
+		"/C/Projects/GLMario/Sublime/build.bat",
+		"/C/Projects/enGen/res/Shaders/standard_frag.glsl",
+		"/C/Projects/enGen/enGen/src/shader_manager.cpp",
+		"/C/Projects/enGen/enGen/src/main.cpp",
+		"/C/Projects/enGen/enGen/src/renderer.cpp",
+		"/C/Projects/enGen/Sublime/build.bat",
+		"/C/Projects/enGen/enGen/src/camera.cpp",
+		"/C/Projects/enGen/enGen/src/shader_manager.h",
+		"/C/Projects/enGen/enGen/src/player.h",
+		"/C/Projects/enGen/enGen/src/renderer.h",
+		"/C/Projects/enGen/enGen/src/camera.h",
+		"/C/Projects/enGen/enGen/src/user_interface.h",
+		"/C/Projects/enGen/enGen/src/game.h",
+		"/C/Projects/enGen/enGen/src/core.h",
+		"/C/Projects/enGen/enGen/src/input.h",
+		"/C/Projects/enGen/enGen/src/core.cpp",
+		"/C/Projects/enGen/Sublime/sproj.sublime-project",
+		"/C/Projects/enGen/res/vs1.glsl",
+		"/C/Projects/enGen/res/Shaders/vs1.glsl",
+		"/C/Projects/enGen/enGen/src/enemy.h",
+		"/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/Default/Default (Windows).sublime-keymap",
+		"/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/User/Default (Windows).sublime-keymap",
+		"/C/Projects/enGen/res/Shaders/standard_vert.glsl",
+		"/C/Projects/enGen/res/fs1.glsl",
+		"/C/Projects/RavenEngine/RavenEngine/RavenEngine/Shaders/Vertex_Shader.glsl",
+		"/C/Projects/enGen/OpenGL_Base/src/helper.h",
+		"/C/Projects/enGen/OpenGL_Base/src/helper.cpp",
+		"/C/Projects/enGen/OpenGL_Base/src/renderer.cpp",
+		"/C/Projects/enGen/OpenGL_Base/src/main.cpp",
+		"/C/Projects/enGen/OpenGL_Base/src/renderer.h",
+		"/C/Projects/enGen/OpenGL_Base/renderer.cpp",
+		"/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/C/Projects/enGen/OpenGL_Base/src/camera.cpp",
+		"/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/Default/Preferences.sublime-settings",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/src/main.cpp",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/hdrs/player.h",
+		"/C/Projects/OpenGL_Base/Sublime/sproj.sublime-project",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base/hdrs/resource_loader.h",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base/src/resource_loader.cpp",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/hdrs/game.h",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/src/user_interface.cpp",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/hdrs/core.h",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/src/core.cpp",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/hdrs/user_interface.h",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/src/game.cpp",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/src/player.cpp",
+		"/C/Projects/OpenGL_Base/Sublime/build.bat",
+		"/C/Projects/OpenGL_Base/OpenGL_Base/src/UserInterface.cpp",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base/src/main.cpp",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/Sublime/build.bat",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/Sublime/sproj.sublime-project",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base/game_object.cpp",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base/test.cpp",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base/OpenGL_Base.vcxproj",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base.opensdf",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base.sln",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/Debug/OpenGL_Base.ilk",
+		"/C/Users/Genova/Documents/Visual Studio 2013/Projects/OpenGL_Base/OpenGL_Base/OpenGL_Base.vcxproj.filters",
+		"/C/Users/Genova/Documents/Python/Test/Builder.py",
+		"/C/Users/Genova/Documents/Python/Test/main.py",
+		"/C/Users/Genova/Documents/Code Blocks Projects/CS436Proj2/Network Simulator/simulation_functions.cpp",
+		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/page_table_entry.cpp",
+		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/page_table.cpp",
+		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/page_table_entry.h",
+		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/page_table.h",
+		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/Makefile",
+		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/main.cpp",
+		"/C/Users/Genova/Documents/Code Blocks Projects/CS 433 HW/Homework 1/src/main.cpp",
+		"/C/Users/Genova/Documents/Code Blocks Projects/SFMLEngine/SFMLEngine/main.cpp"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 90.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": true,
+		"find_history":
+		[
+			"f",
+			"n",
+			"default_camera",
+			"default",
+			"view_matrix",
+			"camera",
+			"_rec",
+			"destroy",
+			"add(",
+			"result",
+			"shader",
+			"end",
+			"ShaderFiles",
+			"texture_locations",
+			"result",
+			"draw_window",
+			"glClearColor",
+			"Renderer",
+			");",
+			"int",
+			"for",
+			" ==",
+			"mouse",
+			"MouseButton::",
+			"button",
+			"mouse",
+			"button",
+			"mouse",
+			"update_mouse",
+			".right",
+			"i",
+			"KeyState.",
+			"FRAME_UP",
+			"left",
+			"right",
+			"left",
+			"->",
+			"(->",
+			" ->",
+			"game_state",
+			"win",
+			"enGen",
+			"GL_CLEAR",
+			"Result",
+			"zNear",
+			"zFar",
+			"Camera",
+			"struct GameState",
+			"class GameState",
+			"Camera",
+			"Camera3",
+			"renderer::",
+			"ShaderManager",
+			"input.h",
+			"keystate",
+			"\"core.h\"",
+			"DrawCommand",
+			"core.h",
+			"mouse_moved",
+			"down",
+			"flipped_normals",
+			"vNormal",
+			"ren",
+			"createshader",
+			"buffer",
+			"buildshader",
+			"createShader",
+			"buildshaderprogram",
+			"shader",
+			"main",
+			"theme",
+			"__LINE__",
+			"	\n",
+			"logSDLEr",
+			"{\n",
+			"tab",
+			"window",
+			"side_bar",
+			"ignored",
+			"#",
+			"true",
+			"quit",
+			"x",
+			"texture",
+			"a",
+			"return",
+			"shell_cmd",
+			"make",
+			"shell_cmd",
+			"build",
+			"			\n",
+			"LRU",
+			"page_size",
+			"todo",
+			"simluaton",
+			"todo",
+			"Algorithm",
+			"algorithm",
+			"Algorithm",
+			"preTime",
+			"postTime",
+			"preTime",
+			"postTime",
+			"elapsedTime",
+			"information",
+			"line",
+			"Size:",
+			"lru_queue.push",
+			"lru_queue",
+			"full_pages.erase",
+			"unsigned",
+			"unsign",
+			"unsigne",
+			"unsigned",
+			"PageTable",
+			"to_return",
+			"run_simul",
+			"run_simulation",
+			"something is the best",
+			"something",
+			"run_simulation",
+			"write_counter;\n            }\n",
+			";\n            }\n",
+			"\n            }\n",
+			"            }\n",
+			"}\n",
+			"accessed_memory_counter",
+			"    "
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"_rect",
+			"mouse.buttons",
+			"(int32)MouseButton::",
+			"buttons",
+			"mouse.button",
+			"[MouseButton::RIGHT]",
+			"KeyState::",
+			"",
+			"::",
+			"free_victim",
+			"input"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "/C/Projects/GLMario/glmario/source/renderer.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9232,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6052,
+								6052
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2625.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 506,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								131,
+								131
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/C/Projects/GLMario/res/default_vert.glsl",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 417,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								303,
+								303
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/OpenGL Shading Language (GLSL)/GLSL.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/C/Projects/GLMario/res/default_frag.glsl",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1524,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								121,
+								121
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/OpenGL Shading Language (GLSL)/GLSL.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/C/Projects/GLMario/glmario/source/main.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1826,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								716,
+								716
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 5,
+					"file": "/C/Projects/GLMario/glmario/source/renderer.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2313,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								804,
+								804
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 600.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/C/Projects/GLMario/glmario/source/mathops.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2940,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2711,
+								2711
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1771.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "/C/Projects/GLMario/glmario/source/camera.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 396,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								202,
+								202
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 506,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								353,
+								353
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "/C/Projects/GLMario/glmario/source/mathops.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12083,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								9643,
+								9643
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 6585.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/C/Projects/GLMario/res/default_frag.glsl",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1524,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								185,
+								185
+							]
+						],
+						"settings":
+						{
+							"history_list_is_closing": true,
+							"syntax": "Packages/OpenGL Shading Language (GLSL)/GLSL.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 34.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.5,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 334.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "MSVC",
+	"project": "glmario.sublime-project",
+	"replace":
+	{
+		"height": 62.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"camera.cpp",
+				"source\\camera.cpp"
+			],
+			[
+				"mathops.h",
+				"source\\mathops.h"
+			],
+			[
+				"mathops.cpp",
+				"source\\mathops.cpp"
+			],
+			[
+				"rendere",
+				"source\\renderer.cpp"
+			],
+			[
+				"frag",
+				"res\\default_frag.glsl"
+			],
+			[
+				"camera.h",
+				"source\\camera.h"
+			],
+			[
+				"glsl",
+				"res\\default_vert.glsl"
+			],
+			[
+				"main.cpp",
+				"source\\main.cpp"
+			],
+			[
+				"renderer.h",
+				"source\\renderer.h"
+			],
+			[
+				"renderer.cpp",
+				"source\\renderer.cpp"
+			],
+			[
+				"scene",
+				"source\\scene_manager.h"
+			],
+			[
+				"scene_manager.cpp",
+				"source\\scene_manager.cpp"
+			],
+			[
+				"scene_manager.h",
+				"source\\scene_manager.h"
+			],
+			[
+				"window.cpp",
+				"source\\window.cpp"
+			],
+			[
+				"window.h",
+				"source\\window.h"
+			],
+			[
+				"player.h",
+				"source\\player.h"
+			],
+			[
+				"player.cpp",
+				"source\\player.cpp"
+			],
+			[
+				"render",
+				"source\\renderer.h"
+			],
+			[
+				"types.h",
+				"source\\types.h"
+			],
+			[
+				"renderer",
+				"C:\\Projects\\GLMario\\glmario\\source\\renderer.cpp"
+			],
+			[
+				"plyaer.cpp",
+				"C:\\Projects\\GLMario\\glmario\\source\\player.cpp"
+			],
+			[
+				"scenem",
+				"scene_manager.cpp"
+			],
+			[
+				"",
+				"scene_manager.cpp"
+			],
+			[
+				"playercp",
+				"player.cpp"
+			],
+			[
+				"game",
+				"game_object.h"
+			],
+			[
+				"s",
+				"scene_manager.h"
+			],
+			[
+				"idra",
+				"IDrawer.h"
+			],
+			[
+				"dynami",
+				"dynamic_array.h"
+			],
+			[
+				"scene_manager",
+				"scene_manager.cpp"
+			],
+			[
+				"idrawer",
+				"IDrawer.h"
+			],
+			[
+				"helper.cpp",
+				"helper.cpp"
+			],
+			[
+				"sc",
+				"scene_manager.h"
+			],
+			[
+				"sce",
+				"scene_manager.cpp"
+			],
+			[
+				"plyaer.h",
+				"player.h"
+			],
+			[
+				"helper.h",
+				"helper.h"
+			],
+			[
+				"rend",
+				"renderer.cpp"
+			],
+			[
+				"ren",
+				"renderer.cpp"
+			],
+			[
+				"ply",
+				"player.cpp"
+			],
+			[
+				"idraw",
+				"IDrawer.h"
+			],
+			[
+				"ame",
+				"game_object.h"
+			],
+			[
+				"renh",
+				"renderer.h"
+			],
+			[
+				"playh",
+				"player.h"
+			],
+			[
+				"plyaer.",
+				"player.cpp"
+			],
+			[
+				"play",
+				"player.cpp"
+			],
+			[
+				"main",
+				"main.cpp"
+			],
+			[
+				"plya",
+				"player.cpp"
+			],
+			[
+				"input.cpp",
+				"input.cpp"
+			],
+			[
+				"input.h",
+				"input.h"
+			],
+			[
+				"dyn",
+				"dynamic_array.h"
+			],
+			[
+				"game_object.h",
+				"game_object.h"
+			],
+			[
+				"main.",
+				"main.cpp"
+			],
+			[
+				"window",
+				"window.cpp"
+			],
+			[
+				"inptu.h",
+				"input.h"
+			],
+			[
+				"user_interface.h",
+				"res\\enGen\\src\\user_interface.h"
+			],
+			[
+				"game.h",
+				"enGen\\src\\game.h"
+			],
+			[
+				"user_in",
+				"enGen\\src\\user_interface.h"
+			],
+			[
+				"build.bat",
+				"res\\Sublime\\build.bat"
+			],
+			[
+				"shader",
+				"res\\res\\Shaders\\standard_frag.glsl"
+			],
+			[
+				"core.h",
+				"res\\enGen\\src\\core.h"
+			],
+			[
+				"enemy.h",
+				"enGen\\src\\enemy.h"
+			],
+			[
+				"core.cpp",
+				"enGen\\src\\core.cpp"
+			],
+			[
+				"buil",
+				"res\\Sublime\\build.bat"
+			],
+			[
+				"build",
+				"res\\Sublime\\build.bat"
+			],
+			[
+				"vs1",
+				"res\\res\\Shaders\\vs1.glsl"
+			],
+			[
+				"core",
+				"enGen\\src\\core.h"
+			],
+			[
+				"stand",
+				"res\\res\\Shaders\\standard_frag.glsl"
+			],
+			[
+				"standard",
+				"res\\res\\Shaders\\standard_vert.glsl"
+			],
+			[
+				"standar",
+				"res\\res\\Shaders\\standard_frag.glsl"
+			],
+			[
+				"fs1",
+				"res\\res\\fs1.glsl"
+			],
+			[
+				"sublime",
+				"Sublime Settings\\sproj.sublime-project"
+			],
+			[
+				"prefer",
+				"C:\\Users\\Genova\\AppData\\Roaming\\Sublime Text 3\\Packages\\User\\Preferences.sublime-settings"
+			],
+			[
+				"palyer",
+				"OpenGL_Base\\hdrs\\player.h"
+			],
+			[
+				"game.cpp",
+				"OpenGL_Base\\src\\game.cpp"
+			],
+			[
+				"reso",
+				"OpenGL_Base\\src\\resource_loader.cpp"
+			],
+			[
+				"resource_lo",
+				"OpenGL_Base\\hdrs\\resource_loader.h"
+			],
+			[
+				"kd",
+				"kdflkajsdfkjjdkfjasidfa;lkjeid;lkajsiclkvjaie;okja"
+			],
+			[
+				"page",
+				"C:\\Users\\Genova\\Documents\\Code Blocks Projects\\Homework5\\page_table.cpp"
+			],
+			[
+				"make",
+				"C:\\Users\\Genova\\Documents\\Code Blocks Projects\\Homework5\\Makefile"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 1,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": false,
+	"side_bar_width": 226.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
