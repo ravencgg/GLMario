@@ -19,6 +19,7 @@ struct Sprite
 	ShaderTypes shader_type;
 	DrawLayer layer;
 	Vector2 world_size;
+	float angle;
 	Rect tex_rect;
 };
 
@@ -81,6 +82,7 @@ private:
 		Rect tex_rect;
 		Vector2 world_size;
 		Vector3 world_position;
+		float draw_angle;
 	};
 
 	struct DrawObject

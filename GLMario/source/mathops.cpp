@@ -109,7 +109,7 @@ Vector3::Vector3(float x, float y, float z)
 	  y(y),
 	  z(z){}
 
-Vector3::Vector3(Vector2 xy, float z = 0)
+Vector3::Vector3(Vector2 xy, float z)
 	: x(xy.x),
 	  y(xy.y),
 	  z(z){}
@@ -450,13 +450,6 @@ Mat4 z_rotation_matrix(float angle)
 // NOTE(chris): Unity style lerp between these two matrices? Is that what they do?
 Mat4 orthographic_matrix(float w, float h, float n, float f, Vector2 center)
 {
-	// Mat4 result;
-
-	// result.e[0] = Vector4(1 / w, 0, 0, 0);
-	// result.e[1] = Vector4(0, 1 / h, 0, 0);
-	// result.e[2] = Vector4(0, 0, -(2 / (f - n)), -(f + n) / (f - n));
-	// result.e[3] = Vector4(0, 0, 0, 1.f);
-
 	float r = center.x + (w / 2);
 	float l = center.x - (w / 2);
 

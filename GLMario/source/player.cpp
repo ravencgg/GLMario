@@ -3,11 +3,11 @@
 Player::Player(Input* input)
 	: input(input)
 {
-
 	sprite.image_file = MAIN_IMAGE; 
 	sprite.shader_type = DEFAULT_SHADER;
 	sprite.layer = FOREGROUND;
 	sprite.world_size = Vector2(1.0f, 1.0f);
+	sprite.angle = 0;
 	sprite.tex_rect.top = 903;
 	sprite.tex_rect.left = 17;
 	sprite.tex_rect.width = 34;
@@ -26,6 +26,28 @@ void Player::update_and_draw(IDrawer* drawer)
 			delete_this_frame = true;
 		}
 	}
+
+	if(input->is_down(SDLK_d))
+	{
+		velocity.x += 0.1f;
+	}	
+
+	if(input->is_down(SDLK_a))
+	{
+		velocity.x -= 0.1f;
+	}
+
+	if(input->is_down(SDLK_SPACE))
+	{
+		velocity.y = 1.0f;	
+	}
+	else
+	{
+		velocity.y = 0;
+	}
+
+	sprite.angle += 0.1f;
+	transform.position += Vector3(velocity);
 
 	drawer->draw_sprite(&sprite, &transform);
 }

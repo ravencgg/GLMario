@@ -148,10 +148,11 @@ void Renderer::draw_sprite(Sprite* sprite, Transform* t)
 	draw_call.shader = sprite->shader_type;
 	draw_call.layer = sprite->layer;
 	draw_call.tex_rect = sprite->tex_rect;
+	draw_call.world_size = sprite->world_size;
 	draw_call.world_position = t->position;
+	draw_call.draw_angle = sprite->angle;
 	// draw_call.camera_position = draw_position;
 	// draw_call.camera_size = screen_dim;
-	draw_call.world_size = sprite->world_size;
 
 	draw_buffer.add(draw_call); 
 }
@@ -173,7 +174,6 @@ void Renderer::render_draw_buffer()
 
 void Renderer::draw_call(DrawBufferObject data)
 {
-
 	glUseProgram(shaders[data.shader].shader_handle);
 	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	glBindVertexArray(draw_object.vao);
@@ -189,22 +189,12 @@ void Renderer::draw_call(DrawBufferObject data)
  	float bot   = (float)(th - (data.tex_rect.top + data.tex_rect.height)) / th; 
  	float top   = (float)(th - data.tex_rect.top) / th;
 
- 	//Vector3 scale_vec(data.world_size.x / main_camera->viewport_size.x, data.world_size.y / main_camera->viewport_size.y, 1.0f);
-	Vector3 scale_vec(20.0f, 20.0f, 1.0f);
-
-// 	Mat4 translation = translation_matrix(Vector3(1.0f, 1.0f, 0));
- 	Mat4 translation = translation_matrix(data.world_position);
-
-
 	//TODO(chris): still need some conversion from pixels to world space
-	static Vector2 center;
-	static float counter = 0;
-	counter += 0.01f;
-	center.x = 10.f * cos(counter);
-	center.y = 10.f * sin(counter);
 
- 	float angle = 45.f;
-	Mat4 mvp = ortho_mvp_matrix(scale_vec, Vector3(center, -1.f), angle,
+ 	Vector3 scale_vec(data.world_size.x, data.world_size.y, 1.0f);
+
+ 	// NOTE(cgenova): position is baked into the projection matrix, view matrix is just the identity here.
+	Mat4 mvp = ortho_mvp_matrix(scale_vec, data.world_position, data.draw_angle,
  							main_camera->cached_projection_matrix, main_camera->cached_view_matrix); 
 
 	draw_object.tex_coords[0] = Vector2(left, top);
@@ -215,16 +205,7 @@ void Renderer::draw_call(DrawBufferObject data)
 	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
 
-
-	// TODO(chris): mvp is being loaded and used by the shader, but the value is wrong, so nothing is showing up
-//	Mat4 projection = main_camera->cached_projection_matrix;5
-
-
-
-	// TODO(chris): put this back into the full matrices;
-	Mat4 projection = orthographic_matrix(10.f, 10.f, 0, 10.f, center);
-	//mvp = projection; // *translation * scale_matrix(Vector3(1, 1, 1)) * z_rotation_matrix(45.f);
-
+	// NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call	
 	float time = 1.f;
 	GLint time_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "time");
 	glUniform1f(time_loc, time);

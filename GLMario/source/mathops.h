@@ -65,7 +65,7 @@ public:
 	float x, y, z;
 
 	Vector3(float = 0, float = 0, float = 0);
-	Vector3(Vector2, float x);
+	Vector3(Vector2, float z = 0);
 	
 	Vector2 xy();
 
