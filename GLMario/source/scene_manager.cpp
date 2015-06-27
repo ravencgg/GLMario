@@ -1,16 +1,16 @@
 #include "scene_manager.h"
 
 
-SceneManager::SceneManager(Input* input, IDrawer* ren, Window* win, Camera* cam)
-	:input(input),
+SceneManager::SceneManager(IDrawer* ren, Window* win, Camera* cam)
+	:input(Input::get_instance()),
 	 renderer(ren),
 	 window(win),
 	 main_camera(cam)
 {
 #ifdef USE_LINKED_LIST
-	add_object(new Player(input));
+	add_object(new Player());
 #else
-	game_objects.add(new Player(input));
+	game_objects.add(new Player());
 #endif
 
 }
@@ -44,7 +44,7 @@ void SceneManager::update_scene()
 
 	if(input->on_down(SDLK_g))
 	{
-		add_object(new Player(input));
+		add_object(new Player());
 	}
 	else if(input->on_down(SDLK_h))
 	{

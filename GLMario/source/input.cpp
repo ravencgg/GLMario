@@ -1,10 +1,21 @@
 #include "input.h"
 
 
+Input* Input::s_input = nullptr;
+
 Input::Input()
 {
 	memset(&key_states[0], 0, NUM_KEYS * sizeof(key_states[0]));
 	mouse = {};
+}
+
+Input* Input::get_instance()
+{
+	if(!s_input)
+	{
+		s_input = new Input();
+	}
+	return s_input;
 }
 
 void Input::begin_frame()

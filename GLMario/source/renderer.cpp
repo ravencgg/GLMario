@@ -8,6 +8,8 @@ char* Renderer::default_frag_shader = "..\\res\\default_frag.glsl";
 char* Renderer::main_image = "..\\res\\supermariobros.png";
 uint32 Renderer::pixels_to_meters = 30;
 
+Renderer* Renderer::s_instance = nullptr;
+
 Renderer::Renderer(Window* w, Vector4 clear_color)
 : draw_window(w)
 {
@@ -29,6 +31,18 @@ Renderer::Renderer(Window* w, Vector4 clear_color)
 	load_image(Renderer::main_image, MAIN_IMAGE);
 	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, DEFAULT_SHADER);
 	build_buffer_object();
+}
+
+void Renderer::create_instance(Window* w)
+{
+	if(s_instance) return;
+	s_instance = new Renderer(w);
+}
+
+Renderer* Renderer::get_instance()
+{
+	assert(s_instance);
+	return s_instance;
 }
 
 void Renderer::set_camera(Camera* camera)

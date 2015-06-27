@@ -25,15 +25,15 @@ int main(int argc, char* argv[])
 	Renderer renderer(&window, Vector4(0, 0, 0, 1.0f));
 	renderer.set_camera(&main_camera);
 
-	Input input;
+	Input* input = Input::get_instance();
 
-	SceneManager scene(&input, &renderer, &window, &main_camera);
+	SceneManager scene(&renderer, &window, &main_camera);
 
 	SDL_Event e;
 	bool running = true;
 	while(running)
 	{
-		input.begin_frame();
+		input->begin_frame();
 #if 1
 		while (SDL_PollEvent(&e))
 		{
@@ -45,36 +45,35 @@ int main(int argc, char* argv[])
 			//If user presses any key
 			if (e.type == SDL_KEYDOWN)
 			{
-				input.process_key_press(e.key.keysym.sym);
+				input->process_key_press(e.key.keysym.sym);
 			}
 			if (e.type == SDL_KEYUP)
 			{
-				input.process_key_release(e.key.keysym.sym);
+				input->process_key_release(e.key.keysym.sym);
 			}
 
 			if(e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP)
 			{
-				input.mouse_button_event();
+				input->mouse_button_event();
 			}
 			if(e.type == SDL_MOUSEMOTION)
 			{
-				input.update_mouse_position();
+				input->update_mouse_position();
 			}
 		}
 #endif
-		if(input.on_down(SDLK_ESCAPE))
+		if(input->on_down(SDLK_ESCAPE))
 		{
 			running = false;
 		}
 
-
 		// Rendering stuff
 
-		if(input.on_down(SDLK_z))
+		if(input->on_down(SDLK_z))
 		{
 			window.set_window_mode(ScreenMode::WINDOWED);
 		}
-		else if(input.on_down(SDLK_c))
+		else if(input->on_down(SDLK_c))
 		{
 			window.set_window_mode(ScreenMode::BORDERLESS);
 		}

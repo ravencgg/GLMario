@@ -20,7 +20,9 @@ class Input
 public:
 
 	Input();
-	// ~Input();
+	~Input() {};
+	static Input* get_instance();
+
 	void begin_frame();
 
 // Keyboard handling
@@ -45,6 +47,8 @@ public:
 	bool mouse_is_up(MouseButton); 
 
 private:
+
+	static Input* s_input;
 
 	void update_keys();
 	void update_mouse();

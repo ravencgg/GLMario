@@ -1,7 +1,7 @@
 #include "player.h"
 
-Player::Player(Input* input)
-	: input(input)
+Player::Player()
+: input(Input::get_instance())
 {
 	sprite.image_file = MAIN_IMAGE; 
 	sprite.shader_type = DEFAULT_SHADER;

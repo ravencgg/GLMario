@@ -11,7 +11,7 @@ public:
 	Input* input;
 	Sprite sprite;
 
-	Player(Input* input);
+	Player();
 
 	virtual void update_and_draw(IDrawer*);
 	virtual void paused_update_and_draw(IDrawer*); // Allows things to happen while the game is paused

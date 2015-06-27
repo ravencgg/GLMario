@@ -42,6 +42,9 @@ public:
 
 	Renderer(Window* w, Vector4 clear_color = Vector4(0, 0, 0, 1));
 
+	static void create_instance(Window*);
+	static Renderer* get_instance();
+
 	void set_camera(Camera*);
 	void begin_frame();
 	void end_frame();
@@ -114,4 +117,7 @@ private:
 	Camera* main_camera;
 
 	Window* draw_window;
+
+	static Renderer* s_instance;
+
 };

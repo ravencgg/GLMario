@@ -10,7 +10,7 @@
 class SceneManager
 {
 public:
-	SceneManager(Input*, IDrawer*, Window*, Camera*);
+	SceneManager(IDrawer*, Window*, Camera*);
 	~SceneManager();
 
 	void update_scene();
