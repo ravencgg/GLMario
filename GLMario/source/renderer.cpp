@@ -6,7 +6,7 @@
 char* Renderer::default_vert_shader = "..\\res\\default_vert.glsl";
 char* Renderer::default_frag_shader = "..\\res\\default_frag.glsl";
 char* Renderer::main_image = "..\\res\\supermariobros.png";
-uint32 Renderer::pixels_to_meters = 30;
+const uint32 Renderer::pixels_to_meters = 30;
 
 Renderer* Renderer::s_instance = nullptr;
 
@@ -52,12 +52,14 @@ void Renderer::set_camera(Camera* camera)
 
 void Renderer::begin_frame()
 {
+	frame_resolution = draw_window->get_resolution();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Renderer::set_clear_color(Vector4 color)
 {
-	glClearColor(color.x, color.y, color.z, color.w);
+	// glClearColor(color.x, color.y, color.z, color.w);
+	glClearColor(0, 0, 1, 1);
 }
 
 void Renderer::end_frame()
@@ -149,14 +151,6 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 
 void Renderer::draw_sprite(Sprite* sprite, Transform* t)
 {
-	Vector3 draw_position;
-	Dimension screen_dim = {};
-	if(main_camera)
-	{
-		draw_position = main_camera->transform.position;
-		screen_dim = main_camera->screen_resolution;
-	}
-
 	DrawBufferObject draw_call;
 	draw_call.image = sprite->image_file;
 	draw_call.shader = sprite->shader_type;

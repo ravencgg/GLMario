@@ -22,10 +22,10 @@ public:
 	void swap_buffer();
 	void set_window_mode(ScreenMode mode = ScreenMode::WINDOWED);
 	Dimension get_resolution();
+	void set_resolution(uint32, uint32);
 
 private:
-	Dimension resolution;	
-
+	
 	SDL_Window* sdl_window;
 	SDL_GLContext sdl_gl_context; 
 };

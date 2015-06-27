@@ -9,7 +9,6 @@ public:
 
 	Camera();
 	
-	Dimension screen_resolution;
 	Vector2 viewport_size;
 
 	Mat4 cached_projection_matrix;

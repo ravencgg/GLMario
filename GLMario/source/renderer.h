@@ -61,7 +61,7 @@ public:
 	static char* default_frag_shader;
 	static char* default_vert_shader;
 	static char* main_image;
-	static uint32 pixels_to_meters;
+	static const uint32 pixels_to_meters;
 
 private:
 
@@ -111,6 +111,7 @@ private:
 
 	// NOTE(chris): should this be multiple different draw buffers for each layer?
 	// DynamicArray<DrawBufferObject> draw_buffer[LAYER_COUNT];
+	Dimension frame_resolution;
 	DynamicArray<DrawBufferObject> draw_buffer;
 	DrawObject draw_object;
 
