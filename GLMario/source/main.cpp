@@ -16,18 +16,18 @@
 
 int main(int argc, char* argv[])
 {
-	Window window("Title", 800, 600);
+	Window window("Title", 960, 540);
 
 	Camera main_camera;
 	// main_camera.viewport_size = Vector2(16.f, 9.f);
-	main_camera.viewport_size = Vector2(8.f, 4.5f);
 
-	Renderer renderer(&window, Vector4(0, 0, 0, 1.0f));
-	renderer.set_camera(&main_camera);
+	Renderer::create_instance(&window);
+	Renderer* renderer = Renderer::get_instance();
+	renderer->set_camera(&main_camera);
 
 	Input* input = Input::get_instance();
 
-	SceneManager scene(&renderer, &window, &main_camera);
+	SceneManager scene(renderer, &main_camera);
 
 	SDL_Event e;
 	bool running = true;
@@ -67,30 +67,27 @@ int main(int argc, char* argv[])
 			running = false;
 		}
 
-		// Rendering stuff
-
 		if(input->on_down(SDLK_z))
 		{
 			window.set_window_mode(ScreenMode::WINDOWED);
+			renderer->force_color_clear();
 		}
 		else if(input->on_down(SDLK_c))
 		{
 			window.set_window_mode(ScreenMode::BORDERLESS);
+			renderer->force_color_clear();
 		}
 
-		Dimension res = window.get_resolution();
-		printf("Resolution X:%d, Y:%d\n", res.width, res.height);
-
 		// Begin rendering: Don't change resolution in here or it will mess up for a frame;
-		renderer.begin_frame();
-
+		renderer->begin_frame();
+		main_camera.update();
 		scene.update_scene();
 
-		renderer.end_frame();
+		renderer->end_frame();
 		// End rendering
 
 
-		// TODO(chris): Dynamic frame rate;
+		// TODO(cgenova): Dynamic frame rate;
 		SDL_Delay(1000 / 60);
 
 	}// End main loop	

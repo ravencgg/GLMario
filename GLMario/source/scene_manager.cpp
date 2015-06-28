@@ -1,23 +1,24 @@
 #include "scene_manager.h"
 
 
-SceneManager::SceneManager(IDrawer* ren, Window* win, Camera* cam)
-	:input(Input::get_instance()),
-	 renderer(ren),
-	 window(win),
-	 main_camera(cam)
+SceneManager::SceneManager(IDrawer* ren, Camera* cam)
+	:renderer(ren),
+	 main_camera(cam),
+	 tilemap(16, 9)
 {
-#ifdef USE_LINKED_LIST
+	input = (Input::get_instance());
+#if defined(USE_LINKED_LIST)
 	add_object(new Player());
 #else
 	game_objects.add(new Player());
 #endif
 
+	tilemap.fill_checkerboard();
 }
 
 SceneManager::~SceneManager()
 {
-#ifdef USE_LINKED_LIST	
+#if defined(USE_LINKED_LIST)
 	GameObjectNode* it = first_game_object; 
 	GameObjectNode* temp;
 
@@ -95,8 +96,7 @@ void SceneManager::update_scene()
 
 	for (uint32 i = 0; i < game_objects.size(); ++i)
 	{
-		game_objects[i]->update();
-		game_objects[i]->draw(renderer);
+		game_objects[i]->update_and_draw(renderer);
 
 		if (game_objects[i]->delete_this_frame)
 		{
@@ -105,6 +105,9 @@ void SceneManager::update_scene()
 	}
 
 #endif
+
+	tilemap.draw();
+
 }
 
 void SceneManager::add_object(GameObject* object)

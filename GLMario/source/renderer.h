@@ -9,7 +9,7 @@
 #include "camera.h"
 #include "dynamic_array.h"
 
-enum ImageFiles  { MAIN_IMAGE, IMAGE_COUNT }; 
+enum ImageFiles  { MAIN_IMAGE, MARIO_IMAGE, IMAGE_COUNT }; 
 enum ShaderTypes { DEFAULT_SHADER, SHADER_COUNT };
 enum DrawLayer   { FOREGROUND, BACKGROUND, LAYER_COUNT };
 
@@ -49,18 +49,20 @@ public:
 	void begin_frame();
 	void end_frame();
 	void set_clear_color(Vector4);
+	void force_color_clear();
 	void load_image(char*, ImageFiles);
 	void load_shader(char*, char*, ShaderTypes);
 
 	// virtual void draw(Sprite*);
 	// virtual void draw(Animation*);
 
-	virtual void draw_sprite(Sprite*, Transform*);
+	virtual void draw_sprite(Sprite*, Vector2);
 	virtual void draw_animation(Animation*, Transform*, float time);
 
 	static char* default_frag_shader;
 	static char* default_vert_shader;
 	static char* main_image;
+	static char* mario_image;
 	static const uint32 pixels_to_meters;
 
 private:
@@ -116,9 +118,7 @@ private:
 	DrawObject draw_object;
 
 	Camera* main_camera;
-
 	Window* draw_window;
 
 	static Renderer* s_instance;
-
 };

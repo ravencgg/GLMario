@@ -55,6 +55,8 @@ void Input::process_key_press(int32 key)
 
 void Input::process_key_release(int32 key)
 {
+	volatile int i = 0; 
+	i++;
 	if(key_states[key] == KeyState::FRAME_DOWN)
 		key_states[key] = KeyState::DOWN_UP;
 

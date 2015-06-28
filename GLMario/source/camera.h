@@ -2,6 +2,7 @@
 
 #include "game_object.h"
 #include "mathops.h"
+#include "input.h"
 
 class Camera : public GameObject
 {

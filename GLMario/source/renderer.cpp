@@ -5,8 +5,9 @@
 
 char* Renderer::default_vert_shader = "..\\res\\default_vert.glsl";
 char* Renderer::default_frag_shader = "..\\res\\default_frag.glsl";
-char* Renderer::main_image = "..\\res\\supermariobros.png";
-const uint32 Renderer::pixels_to_meters = 30;
+char* Renderer::mario_image = "..\\res\\supermariobros.png";
+char* Renderer::main_image = "..\\res\\tiles.png";
+const uint32 Renderer::pixels_to_meters = 16;
 
 Renderer* Renderer::s_instance = nullptr;
 
@@ -21,14 +22,9 @@ Renderer::Renderer(Window* w, Vector4 clear_color)
 	}
 	set_clear_color(clear_color);
 
-	GLuint t = 0;
-	glGenVertexArrays(1, &t);
-
-	void* test = glGenVertexArrays;
-	void* test2 = glEnable;
-
 	// NOTE(chris): also enables textures and blending
 	load_image(Renderer::main_image, MAIN_IMAGE);
+	load_image(Renderer::mario_image, MARIO_IMAGE);
 	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, DEFAULT_SHADER);
 	build_buffer_object();
 }
@@ -53,6 +49,7 @@ void Renderer::set_camera(Camera* camera)
 void Renderer::begin_frame()
 {
 	frame_resolution = draw_window->get_resolution();
+	glViewport(0, 0, frame_resolution.width, frame_resolution.height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -60,6 +57,11 @@ void Renderer::set_clear_color(Vector4 color)
 {
 	// glClearColor(color.x, color.y, color.z, color.w);
 	glClearColor(0, 0, 1, 1);
+}
+
+void Renderer::force_color_clear()
+{
+	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void Renderer::end_frame()
@@ -149,7 +151,7 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 	shaders[location].shader_handle = program;
 }
 
-void Renderer::draw_sprite(Sprite* sprite, Transform* t)
+void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
 {
 	DrawBufferObject draw_call;
 	draw_call.image = sprite->image_file;
@@ -157,7 +159,7 @@ void Renderer::draw_sprite(Sprite* sprite, Transform* t)
 	draw_call.layer = sprite->layer;
 	draw_call.tex_rect = sprite->tex_rect;
 	draw_call.world_size = sprite->world_size;
-	draw_call.world_position = t->position;
+	draw_call.world_position = Vector3(position, 0);
 	draw_call.draw_angle = sprite->angle;
 	// draw_call.camera_position = draw_position;
 	// draw_call.camera_size = screen_dim;
@@ -182,12 +184,35 @@ void Renderer::render_draw_buffer()
 
 void Renderer::draw_call(DrawBufferObject data)
 {
-	glUseProgram(shaders[data.shader].shader_handle);
-	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-	glBindVertexArray(draw_object.vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
-	glBindTexture(GL_TEXTURE_2D, textures[data.image].texture_handle);
+	const float bo_scale = 2.0f;
+
+	glUseProgram(shaders[data.shader].shader_handle); // NOTE(cgenova): useless with only one shader.
+	glBindTexture(GL_TEXTURE_2D, textures[data.image].texture_handle); 
+	// glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
+	// glBindVertexArray(draw_object.vao);
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
 	// NOTE(chris): Layer is ignored until sorting is implemented;
+	//TODO(chris): still need some conversion from pixels to world space
+
+ 	float scale_x = main_camera->viewport_size.x / (float)(frame_resolution.width / pixels_to_meters);
+ 	float scale_y = main_camera->viewport_size.y / (float)(frame_resolution.height / pixels_to_meters); 
+
+ 	int32 width = data.tex_rect.width;
+ 	int32 height = data.tex_rect.height;
+
+	//TODO(cgenova): handle rotated scaling;
+ 	Vector2 size((float)width / pixels_to_meters, (float)height / pixels_to_meters);
+ 	size.x /= bo_scale; //(main_camera->viewport_size.x / bo_scale);
+ 	size.y /= bo_scale; //(main_camera->viewport_size.y / bo_scale);
+ 	Vector3 scale_vec(data.world_size.x / size.x, data.world_size.y / size.y, 1.0f);
+
+ 	Vector3 new_position(data.world_position.x, // * main_camera->viewport_size.x, 
+ 						 data.world_position.y, // * main_camera->viewport_size.y,
+ 						 0);
+
+ 	// NOTE(cgenova): position is baked into the projection matrix, view matrix is just the identity here.
+	Mat4 mvp = ortho_mvp_matrix(scale_vec, new_position, data.draw_angle,
+ 							main_camera->cached_projection_matrix, main_camera->cached_view_matrix); 
 
 	int32 tw = textures[data.image].w;
 	int32 th = textures[data.image].h;
@@ -196,14 +221,6 @@ void Renderer::draw_call(DrawBufferObject data)
  	float right = (float)(data.tex_rect.left + data.tex_rect.width) / tw;
  	float bot   = (float)(th - (data.tex_rect.top + data.tex_rect.height)) / th; 
  	float top   = (float)(th - data.tex_rect.top) / th;
-
-	//TODO(chris): still need some conversion from pixels to world space
-
- 	Vector3 scale_vec(data.world_size.x, data.world_size.y, 1.0f);
-
- 	// NOTE(cgenova): position is baked into the projection matrix, view matrix is just the identity here.
-	Mat4 mvp = ortho_mvp_matrix(scale_vec, data.world_position, data.draw_angle,
- 							main_camera->cached_projection_matrix, main_camera->cached_view_matrix); 
 
 	draw_object.tex_coords[0] = Vector2(left, top);
 	draw_object.tex_coords[1] = Vector2(right, top);

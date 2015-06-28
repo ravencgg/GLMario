@@ -10,6 +10,7 @@
     <ClCompile Include="source\player.cpp" />
     <ClCompile Include="source\helper.cpp" />
     <ClCompile Include="source\camera.cpp" />
+    <ClCompile Include="source\tilemap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\mathops.h" />
@@ -24,5 +25,6 @@
     <ClInclude Include="source\IDrawer.h" />
     <ClInclude Include="source\camera.h" />
     <ClInclude Include="source\helper.h" />
+    <ClInclude Include="source\tilemap.h" />
   </ItemGroup>
 </Project>

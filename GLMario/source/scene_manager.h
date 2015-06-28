@@ -5,12 +5,13 @@
 #include "player.h"
 #include "input.h"
 #include "camera.h"
+#include "tilemap.h"
 
 
 class SceneManager
 {
 public:
-	SceneManager(IDrawer*, Window*, Camera*);
+	SceneManager(IDrawer*, Camera*);
 	~SceneManager();
 
 	void update_scene();
@@ -21,8 +22,9 @@ private:
 
 	IDrawer* renderer;
 	Input* input;
-	Window* window;
 	Camera* main_camera;
+
+	Tilemap tilemap;
 
 #define USE_LINKED_LIST
 
