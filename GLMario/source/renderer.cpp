@@ -55,8 +55,7 @@ void Renderer::begin_frame()
 
 void Renderer::set_clear_color(Vector4 color)
 {
-	// glClearColor(color.x, color.y, color.z, color.w);
-	glClearColor(0, 0, 1, 1);
+	glClearColor(color.x, color.y, color.z, color.w);
 }
 
 void Renderer::force_color_clear()
@@ -97,8 +96,8 @@ void Renderer::load_image(char* filename, ImageFiles location)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	GLenum error_type = glGetError();
-	GLenum tex2D_enabled = glIsEnabled(GL_TEXTURE_2D);
+//	GLenum error_type = glGetError();
+//	GLenum tex2D_enabled = glIsEnabled(GL_TEXTURE_2D);
 
 	stbi_image_free(data);
 
@@ -153,18 +152,18 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 
 void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
 {
-	DrawBufferObject draw_call;
-	draw_call.image = sprite->image_file;
-	draw_call.shader = sprite->shader_type;
-	draw_call.layer = sprite->layer;
-	draw_call.tex_rect = sprite->tex_rect;
-	draw_call.world_size = sprite->world_size;
-	draw_call.world_position = Vector3(position, 0);
-	draw_call.draw_angle = sprite->angle;
-	// draw_call.camera_position = draw_position;
-	// draw_call.camera_size = screen_dim;
+	DrawBufferObject draw_info;
+	draw_info.image = sprite->image_file;
+	draw_info.shader = sprite->shader_type;
+	draw_info.layer = sprite->layer;
+	draw_info.tex_rect = sprite->tex_rect;
+	draw_info.world_size = sprite->world_size;
+	draw_info.world_position = Vector3(position, 0);
+	draw_info.draw_angle = sprite->angle;
+	// draw_info.camera_position = draw_position;
+	// draw_info.camera_size = screen_dim;
 
-	draw_buffer.add(draw_call); 
+	draw_buffer.add(draw_info); 
 }
 
 void Renderer::render_draw_buffer()
@@ -184,7 +183,8 @@ void Renderer::render_draw_buffer()
 
 void Renderer::draw_call(DrawBufferObject data)
 {
-	const float bo_scale = 2.0f;
+	// NOTE(cgenova): The buffer object is (-1, 1) so this conversion factor will return it to a one length object.
+	const float bo_scale = 0.5;
 
 	glUseProgram(shaders[data.shader].shader_handle); // NOTE(cgenova): useless with only one shader.
 	glBindTexture(GL_TEXTURE_2D, textures[data.image].texture_handle); 
@@ -194,22 +194,22 @@ void Renderer::draw_call(DrawBufferObject data)
 	// NOTE(chris): Layer is ignored until sorting is implemented;
 	//TODO(chris): still need some conversion from pixels to world space
 
- 	float scale_x = main_camera->viewport_size.x / (float)(frame_resolution.width / pixels_to_meters);
- 	float scale_y = main_camera->viewport_size.y / (float)(frame_resolution.height / pixels_to_meters); 
+ 	//float scale_x = main_camera->viewport_size.x / (float)(frame_resolution.width / pixels_to_meters);
+ 	//float scale_y = main_camera->viewport_size.y / (float)(frame_resolution.height / pixels_to_meters); 
+ 	//int32 width = data.tex_rect.width;
+ 	//int32 height = data.tex_rect.height;
 
- 	int32 width = data.tex_rect.width;
- 	int32 height = data.tex_rect.height;
-
-	//TODO(cgenova): handle rotated scaling;
- 	Vector2 size((float)width / pixels_to_meters, (float)height / pixels_to_meters);
- 	size.x /= bo_scale; //(main_camera->viewport_size.x / bo_scale);
- 	size.y /= bo_scale; //(main_camera->viewport_size.y / bo_scale);
- 	Vector3 scale_vec(data.world_size.x / size.x, data.world_size.y / size.y, 1.0f);
+	// TODO(cgenova): handle rotated scaling;
+ 	// Vector2 size((float)width / pixels_to_meters, (float)height / pixels_to_meters);
+ 	// size.x /= bo_scale; //(main_camera->viewport_size.x / bo_scale);
+ 	// size.y /= bo_scale; //(main_camera->viewport_size.y / bo_scale);
+ 	Vector3 scale_vec(data.world_size.x * bo_scale, data.world_size.y * bo_scale, 1.0f);
 
  	Vector3 new_position(data.world_position.x, // * main_camera->viewport_size.x, 
  						 data.world_position.y, // * main_camera->viewport_size.y,
  						 0);
 
+ 	// scale_vec = Vector3(1, 1, 1);
  	// NOTE(cgenova): position is baked into the projection matrix, view matrix is just the identity here.
 	Mat4 mvp = ortho_mvp_matrix(scale_vec, new_position, data.draw_angle,
  							main_camera->cached_projection_matrix, main_camera->cached_view_matrix); 
@@ -277,9 +277,6 @@ void Renderer::build_buffer_object()
 		0, 2, 3
 	};
 
-	void* test = glGenVertexArrays;
-	void* test2 = glEnable;
-
 	glGenVertexArrays(1, &draw_object.vao);
 	glBindVertexArray(draw_object.vao);
 
@@ -303,5 +300,5 @@ void Renderer::build_buffer_object()
 
 void Renderer::draw_animation(Animation* animation, Transform* t, float time)
 {
-	assert(1);
+	assert(animation && t && time > 1);
 }

@@ -16,6 +16,7 @@
 
 int main(int argc, char* argv[])
 {
+	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 	Window window("Title", 960, 540);
 
 	Camera main_camera;

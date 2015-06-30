@@ -120,7 +120,7 @@ void Input::update_mouse()
 void Input::update_mouse_position()
 {
 	Point2 new_position;
-	uint32 mouse_info = SDL_GetMouseState(&new_position.x, &new_position.y);
+	SDL_GetMouseState(&new_position.x, &new_position.y);
 
 	if(!mouse_loc_updated_this_frame)
 	{

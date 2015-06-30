@@ -12,6 +12,5 @@ void main()
  	color_modifier = color * time;
  	frag_tex_coord = in_tex_coord;
 
- 	vec4 new_position = mvp * vec4(position, 1.0f);
-	gl_Position = new_position; // mvp * vec4(position, 1.0f);
+	gl_Position = mvp * vec4(position, 1.0f);
 }

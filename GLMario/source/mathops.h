@@ -12,7 +12,7 @@
 inline int32 round_float_to_int32(float num)
 {
 	int32 result = (int32)(num + 0.5f);
-	return(result);
+	return result;
 }
 
 inline float rad_to_deg(float f)
@@ -24,6 +24,7 @@ inline float rad_to_deg(float f)
 inline float deg_to_rad(float f)
 {
 	float result = (f * PI) / 180.f;
+	return result;
 }
 
 class Vector2
@@ -137,7 +138,7 @@ public:
 	Vector4 e[4];
 };
 
-Mat4 operator * (Mat4& a, Mat4& b);
+Mat4 operator * (const Mat4& a, const Mat4& b);
 
 Mat4 scale_matrix(Vector3 scale);
 Mat4 translation_matrix(Vector3 position);

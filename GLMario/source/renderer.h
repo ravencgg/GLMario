@@ -41,6 +41,7 @@ class Renderer : public IDrawer
 public:
 
 	Renderer(Window* w, Vector4 clear_color = Vector4(0, 0, 0, 1));
+	virtual ~Renderer() {};
 
 	static void create_instance(Window*);
 	static Renderer* get_instance();

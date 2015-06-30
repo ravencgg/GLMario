@@ -8,7 +8,9 @@ SceneManager::SceneManager(IDrawer* ren, Camera* cam)
 {
 	input = (Input::get_instance());
 #if defined(USE_LINKED_LIST)
-	add_object(new Player());
+	Player* player = new Player();
+	player->attach_object(&cam->transform);
+	add_object(player);
 #else
 	game_objects.add(new Player());
 #endif

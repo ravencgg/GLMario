@@ -367,7 +367,7 @@ std::string Vector4::to_string()
 *************************************************/
 
 
-Mat4 operator * (Mat4& a, Mat4& b) {
+Mat4 operator * (const Mat4& a, const Mat4& b) {
 	
 	// Extract columns from the second matrix;
 	Vector4 c[4];
@@ -447,7 +447,6 @@ Mat4 z_rotation_matrix(float angle)
 	return result;
 }
 
-// NOTE(chris): Unity style lerp between these two matrices? Is that what they do?
 Mat4 orthographic_matrix(float w, float h, float n, float f, Vector2 center)
 {
 	float r = center.x + (w / 2);
@@ -456,8 +455,8 @@ Mat4 orthographic_matrix(float w, float h, float n, float f, Vector2 center)
 	float t = center.y + (h / 2);
 	float b = center.y - (h / 2);
 
-	float nr = 0.1f;
-	float far = 10.f;
+	float nr = n;
+	float far = f;
 
 	Mat4 result;
 

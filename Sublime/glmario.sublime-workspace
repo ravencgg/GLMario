@@ -4,6 +4,22 @@
 		"selected_items":
 		[
 			[
+				"view",
+				"viewport_size"
+			],
+			[
+				"tile_",
+				"tile_height"
+			],
+			[
+				"pixels",
+				"pixels_to_meters"
+			],
+			[
+				"get",
+				"get_resolution"
+			],
+			[
 				"cached",
 				"cached_projection_mat"
 			],
@@ -68,10 +84,6 @@
 				"AlgorithmType"
 			],
 			[
-				"get",
-				"get_page_id"
-			],
-			[
 				"Page",
 				"PageTable"
 			],
@@ -100,18 +112,10 @@
 	"buffers":
 	[
 		{
-			"file": "/C/Projects/GLMario/glmario/source/helper.h",
+			"file": "/C/Projects/GLMario/glmario/source/main.cpp",
 			"settings":
 			{
-				"buffer_size": 84,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/mathops.cpp",
-			"settings":
-			{
-				"buffer_size": 11864,
+				"buffer_size": 1977,
 				"line_ending": "Windows"
 			}
 		},
@@ -119,39 +123,7 @@
 			"file": "/C/Projects/GLMario/glmario/source/renderer.cpp",
 			"settings":
 			{
-				"buffer_size": 8705,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/player.cpp",
-			"settings":
-			{
-				"buffer_size": 1094,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/renderer.h",
-			"settings":
-			{
-				"buffer_size": 2347,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/player.h",
-			"settings":
-			{
-				"buffer_size": 354,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/mathops.h",
-			"settings":
-			{
-				"buffer_size": 2944,
+				"buffer_size": 9972,
 				"line_ending": "Windows"
 			}
 		},
@@ -159,8 +131,40 @@
 			"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
 			"settings":
 			{
-				"buffer_size": 505,
+				"buffer_size": 1030,
 				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/tilemap.cpp",
+			"settings":
+			{
+				"buffer_size": 1463,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/player.cpp",
+			"settings":
+			{
+				"buffer_size": 1125,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "glmario.sublime-project",
+			"settings":
+			{
+				"buffer_size": 274,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+			"settings":
+			{
+				"buffer_size": 370,
+				"line_ending": "Unix"
 			}
 		}
 	],
@@ -191,10 +195,14 @@
 	"build_varint": "",
 	"command_palette":
 	{
-		"height": 357.0,
-		"last_filter": ":w",
+		"height": 81.0,
+		"last_filter": "Package Control: install package",
 		"selected_items":
 		[
+			[
+				"Package Control: install package",
+				"Package Control: Install Package"
+			],
 			[
 				":w",
 				":w - Save"
@@ -308,28 +316,37 @@
 	"file_history":
 	[
 		"/C/Projects/GLMario/glmario/source/camera.cpp",
+		"/C/Projects/GLMario/glmario/source/main.cpp",
+		"/C/Projects/GLMario/glmario/source/camera.h",
+		"/C/Projects/GLMario/glmario/source/player.cpp",
+		"/C/Projects/GLMario/glmario/source/renderer.h",
+		"/C/Projects/GLMario/glmario/source/tilemap.cpp",
+		"/C/Projects/GLMario/glmario/source/renderer.cpp",
+		"/C/Projects/GLMario/glmario/source/scene_manager.cpp",
+		"/C/Projects/GLMario/glmario/source/tilemap.h",
+		"/C/Projects/GLMario/glmario/source/IDrawer.h",
+		"/C/Projects/GLMario/glmario/source/scene_manager.h",
+		"/C/Projects/GLMario/GLMario/source/tilemap.cpp",
+		"/C/Projects/GLMario/glmario/source/window.h",
+		"/C/Projects/GLMario/glmario/source/window.cpp",
+		"/C/Projects/GLMario/GLMario/source/tilemap.h",
+		"/C/Projects/GLMario/glmario/source/IWindowListener.cpp",
+		"/C/Projects/GLMario/GLMario/source/IWindowListener",
+		"/C/Projects/GLMario/glmario/source/helper.h",
+		"/C/Projects/GLMario/glmario/source/mathops.cpp",
+		"/C/Projects/GLMario/glmario/source/player.h",
+		"/C/Projects/GLMario/glmario/source/input.cpp",
+		"/C/Projects/GLMario/glmario/source/input.h",
+		"/C/Projects/GLMario/glmario/source/mathops.h",
 		"/C/Projects/GLMario/Sublime/glmario.sublime-project",
 		"/C/Projects/GLMario/Sublime/build.bat",
 		"/C/Projects/GLMario/res/default_frag.glsl",
-		"/C/Projects/GLMario/glmario/source/mathops.cpp",
-		"/C/Projects/GLMario/glmario/source/camera.h",
-		"/C/Projects/GLMario/glmario/source/renderer.cpp",
 		"/C/Projects/GLMario/res/default_vert.glsl",
-		"/C/Projects/GLMario/glmario/source/main.cpp",
-		"/C/Projects/GLMario/glmario/source/renderer.h",
-		"/C/Projects/GLMario/glmario/source/mathops.h",
 		"/C/Projects/GLMario/.gitignore",
-		"/C/Projects/GLMario/glmario/source/scene_manager.h",
-		"/C/Projects/GLMario/glmario/source/scene_manager.cpp",
-		"/C/Projects/GLMario/glmario/source/window.cpp",
 		"/C/Projects/GLMario/glmario/source/types.h",
 		"/C/Projects/GLMario/GLMario/source/camera.cpp",
-		"/C/Projects/GLMario/glmario/source/window.h",
-		"/C/Projects/GLMario/glmario/source/player.cpp",
-		"/C/Projects/GLMario/glmario/source/player.h",
 		"/C/Projects/GLMario/glmario/source/game_object.h",
 		"/C/Projects/GLMario/glmario/source/dynamic_array.h",
-		"/C/Projects/GLMario/glmario/source/IDrawer.h",
 		"/C/Projects/GLMario/glmario/source/helper.cpp",
 		"/C/Projects/GLMario/GLMario/source/IDrawer.h",
 		"/C/Projects/GLMario/GLMario/source/helper.cpp",
@@ -339,11 +356,9 @@
 		"/C/Projects/GLMario/GLMario/source/IDrawer",
 		"/C/Projects/GLMario/GLMario/source/player.h",
 		"/C/Projects/GLMario/GLMario/source/scene_manager.h",
-		"/C/Projects/GLMario/glmario/source/input.h",
 		"/C/Projects/GLMario/GLMario/source/main.cpp",
 		"/C/Projects/GLMario/GLMario/source/renderer.cpp",
 		"/C/Projects/GLMario/GLMario/source/scene_manager.cpp",
-		"/C/Projects/GLMario/glmario/source/input.cpp",
 		"/C/Projects/GLMario/GLMario/source/dynamic_array.h",
 		"/C/Projects/GLMario/GLMario/source/renderer.h",
 		"/C/Projects/GLMario/GLMario/source/game_object.h",
@@ -437,9 +452,16 @@
 	},
 	"find_state":
 	{
-		"case_sensitive": true,
+		"case_sensitive": false,
 		"find_history":
 		[
+			"bot",
+			"Searching",
+			"Transform",
+			"window",
+			"create",
+			"clear",
+			"input",
 			"projection",
 			"f",
 			"n",
@@ -560,14 +582,7 @@
 			"run_simul",
 			"run_simulation",
 			"something is the best",
-			"something",
-			"run_simulation",
-			"write_counter;\n            }\n",
-			";\n            }\n",
-			"\n            }\n",
-			"            }\n",
-			"}\n",
-			"accessed_memory_counter"
+			"something"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -596,119 +611,181 @@
 	"groups":
 	[
 		{
-			"selected": 3,
+			"selected": 1,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "/C/Projects/GLMario/glmario/source/helper.h",
+					"file": "/C/Projects/GLMario/glmario/source/main.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 84,
+						"buffer_size": 1977,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								84,
-								84
+								1791,
+								1791
 							]
 						],
 						"settings":
 						{
 							"history_list_is_closing": true,
-							"syntax": "Packages/C++/C++.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 9,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/C/Projects/GLMario/glmario/source/mathops.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 11864,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								11629,
-								11629
-							]
-						],
-						"settings":
-						{
 							"syntax": "Packages/C++/C++.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 7159.0,
+						"translation.y": 324.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 2,
+					"buffer": 1,
 					"file": "/C/Projects/GLMario/glmario/source/renderer.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8705,
+						"buffer_size": 9972,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3989,
-								3989
+								5590,
+								5590
 							]
 						],
 						"settings":
 						{
-							"history_list_is_closing": true,
 							"syntax": "Packages/C++/C++.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 2010.0,
+						"translation.y": 2775.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1030,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1030,
+								1030
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 3,
+			"sheets":
+			[
+				{
+					"buffer": 3,
+					"file": "/C/Projects/GLMario/glmario/source/tilemap.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1463,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1165,
+								1165
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 352.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/C/Projects/GLMario/glmario/source/player.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1125,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								209,
+								209
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 3,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
-					"file": "/C/Projects/GLMario/glmario/source/player.cpp",
+					"buffer": 5,
+					"file": "glmario.sublime-project",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1094,
+						"buffer_size": 274,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								870,
-								870
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"history_list_is_closing": true,
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
+							"syntax": "Packages/JavaScript/JSON.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -716,120 +793,55 @@
 					},
 					"stack_index": 2,
 					"type": "text"
-				}
-			]
-		},
-		{
-			"selected": 0,
-			"sheets":
-			[
-				{
-					"buffer": 1,
-					"file": "/C/Projects/GLMario/glmario/source/mathops.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 11864,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2023,
-								2023
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 1076.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
 				},
 				{
-					"buffer": 4,
-					"file": "/C/Projects/GLMario/glmario/source/renderer.h",
+					"buffer": 6,
+					"file": "/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/User/Preferences.sublime-settings",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2347,
+						"buffer_size": 370,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1617,
-								1617
+								370,
+								370
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.tmLanguage",
+							"syntax": "Packages/JavaScript/JSON.tmLanguage",
 							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 997.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "/C/Projects/GLMario/glmario/source/player.h",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 354,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								350,
-								350
-							]
-						],
-						"settings":
-						{
-							"history_list_is_closing": true,
-							"syntax": "Packages/C++/C++.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
-					"file": "/C/Projects/GLMario/glmario/source/player.cpp",
+					"buffer": 2,
+					"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1094,
+						"buffer_size": 1030,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								871,
-								871
+								115,
+								115
 							]
 						],
 						"settings":
 						{
-							"history_list_is_closing": true,
 							"syntax": "Packages/C++/C++.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
@@ -838,64 +850,6 @@
 						"zoom_level": 1.0
 					},
 					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "/C/Projects/GLMario/glmario/source/mathops.h",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2944,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1107,
-								1107
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 423.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 7,
-					"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 505,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								463,
-								463
-							]
-						],
-						"settings":
-						{
-							"history_list_is_closing": true,
-							"syntax": "Packages/C++/C++.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 8,
 					"type": "text"
 				}
 			]
@@ -961,12 +915,116 @@
 		"selected_items":
 		[
 			[
-				"mathops.cpp",
-				"source\\mathops.cpp"
+				"camera.cpp",
+				"source\\camera.cpp"
+			],
+			[
+				"camera.cp",
+				"source\\camera.cpp"
 			],
 			[
 				"player.cpp",
 				"source\\player.cpp"
+			],
+			[
+				"tilemap.cpp",
+				"source\\tilemap.cpp"
+			],
+			[
+				"renderer.cpp",
+				"source\\renderer.cpp"
+			],
+			[
+				"sceme",
+				"source\\scene_manager.cpp"
+			],
+			[
+				"main.cpp",
+				"source\\main.cpp"
+			],
+			[
+				"camera.h",
+				"source\\camera.h"
+			],
+			[
+				"scene_manager.cpp",
+				"source\\scene_manager.cpp"
+			],
+			[
+				"renderer.h",
+				"source\\renderer.h"
+			],
+			[
+				"window.cpp",
+				"source\\window.cpp"
+			],
+			[
+				"window.h",
+				"source\\window.h"
+			],
+			[
+				"scenem",
+				"source\\scene_manager.h"
+			],
+			[
+				"scene",
+				"source\\scene_manager.h"
+			],
+			[
+				"sce",
+				"source\\scene_manager.h"
+			],
+			[
+				"idrawer.h",
+				"source\\IDrawer.h"
+			],
+			[
+				"tilemap.h",
+				"source\\tilemap.h"
+			],
+			[
+				"scne",
+				"source\\scene_manager.cpp"
+			],
+			[
+				"main.cp",
+				"source\\main.cpp"
+			],
+			[
+				"rende",
+				"source\\renderer.cpp"
+			],
+			[
+				"renderer.",
+				"source\\renderer.h"
+			],
+			[
+				"iwindow",
+				"source\\IWindowListener.cpp"
+			],
+			[
+				"scene_man",
+				"source\\scene_manager.cpp"
+			],
+			[
+				"scene_manager.h",
+				"source\\scene_manager.h"
+			],
+			[
+				"player.h",
+				"source\\player.h"
+			],
+			[
+				"input.cpp",
+				"source\\input.cpp"
+			],
+			[
+				"input.h",
+				"source\\input.h"
+			],
+			[
+				"mathops.cpp",
+				"source\\mathops.cpp"
 			],
 			[
 				"mathops.h",
@@ -985,18 +1043,6 @@
 				"Sublime\\build.bat"
 			],
 			[
-				"renderer.h",
-				"source\\renderer.h"
-			],
-			[
-				"camera.cpp",
-				"source\\camera.cpp"
-			],
-			[
-				"renderer.cpp",
-				"source\\renderer.cpp"
-			],
-			[
 				"helper.h",
 				"source\\helper.h"
 			],
@@ -1009,40 +1055,8 @@
 				"res\\default_frag.glsl"
 			],
 			[
-				"camera.h",
-				"source\\camera.h"
-			],
-			[
 				"glsl",
 				"res\\default_vert.glsl"
-			],
-			[
-				"main.cpp",
-				"source\\main.cpp"
-			],
-			[
-				"scene",
-				"source\\scene_manager.h"
-			],
-			[
-				"scene_manager.cpp",
-				"source\\scene_manager.cpp"
-			],
-			[
-				"scene_manager.h",
-				"source\\scene_manager.h"
-			],
-			[
-				"window.cpp",
-				"source\\window.cpp"
-			],
-			[
-				"window.h",
-				"source\\window.h"
-			],
-			[
-				"player.h",
-				"source\\player.h"
 			],
 			[
 				"render",
@@ -1059,10 +1073,6 @@
 			[
 				"plyaer.cpp",
 				"C:\\Projects\\GLMario\\glmario\\source\\player.cpp"
-			],
-			[
-				"scenem",
-				"scene_manager.cpp"
 			],
 			[
 				"",
@@ -1103,10 +1113,6 @@
 			[
 				"sc",
 				"scene_manager.h"
-			],
-			[
-				"sce",
-				"scene_manager.cpp"
 			],
 			[
 				"plyaer.h",
@@ -1151,14 +1157,6 @@
 			[
 				"plya",
 				"player.cpp"
-			],
-			[
-				"input.cpp",
-				"input.cpp"
-			],
-			[
-				"input.h",
-				"input.h"
 			],
 			[
 				"dyn",
@@ -1297,7 +1295,7 @@
 		],
 		"width": 0.0
 	},
-	"selected_group": 1,
+	"selected_group": 0,
 	"settings":
 	{
 	},

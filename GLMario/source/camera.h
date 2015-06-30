@@ -23,6 +23,6 @@ public:
 
 private:
 
-	float near = 10.f;
-	float far  = 0.1f;
+	float far = 10.f;
+	float near = 0.1f;
 };
