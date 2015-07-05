@@ -122,6 +122,11 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 	glShaderSource(vert_loc, 1, &vert_shader, 0);
 	glShaderSource(frag_loc, 1, &frag_shader, 0);
 
+	glCompileShader(vert_loc);
+	glCompileShader(frag_loc);
+
+	//TODO(cgenova): compilation error checking
+
 	GLuint program = glCreateProgram();
 
 	glAttachShader(program, vert_loc);
