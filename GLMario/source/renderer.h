@@ -9,9 +9,16 @@
 #include "camera.h"
 #include "dynamic_array.h"
 
+// GLM includes
+#include <glm/glm.hpp>
+#include "glm/gtc/matrix_transform.hpp"
+#include <glm/gtx/transform.hpp>
+#include "glm/mat4x4.hpp"
+
 enum ImageFiles  { MAIN_IMAGE, MARIO_IMAGE, IMAGE_COUNT }; 
 enum ShaderTypes { DEFAULT_SHADER, SHADER_COUNT };
 enum DrawLayer   { FOREGROUND, BACKGROUND, LAYER_COUNT };
+
 
 struct Sprite
 {
@@ -39,6 +46,10 @@ struct Animation
 class Renderer : public IDrawer
 {
 public:
+	static glm::mat4 proj_matrix;
+	static glm::mat4 view_matrix;
+	static glm::mat4 vp_matrix;
+
 
 	Renderer(Window* w, Vector4 clear_color = Vector4(0, 0, 0, 1));
 	virtual ~Renderer() {};
@@ -115,6 +126,7 @@ private:
 	// NOTE(chris): should this be multiple different draw buffers for each layer?
 	// DynamicArray<DrawBufferObject> draw_buffer[LAYER_COUNT];
 	Dimension frame_resolution;
+
 	DynamicArray<DrawBufferObject> draw_buffer;
 	DrawObject draw_object;
 

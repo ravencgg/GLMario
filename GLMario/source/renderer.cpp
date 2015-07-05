@@ -11,6 +11,10 @@ const uint32 Renderer::pixels_to_meters = 16;
 
 Renderer* Renderer::s_instance = nullptr;
 
+glm::mat4 Renderer::proj_matrix;
+glm::mat4 Renderer::view_matrix;
+glm::mat4 Renderer::vp_matrix;
+
 Renderer::Renderer(Window* w, Vector4 clear_color)
 : draw_window(w)
 {
@@ -50,7 +54,7 @@ void Renderer::begin_frame()
 {
 	frame_resolution = draw_window->get_resolution();
 	glViewport(0, 0, frame_resolution.width, frame_resolution.height);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //TODO(cgenova): disable depth buffer for better 2d rendering simulation
 }
 
 void Renderer::set_clear_color(Vector4 color)
@@ -170,7 +174,18 @@ void Renderer::render_draw_buffer()
 {
 	//TODO(chris): sort draw calls;
 
-	main_camera->update_matrices();
+	float width  = main_camera->viewport_size.x;
+	float height = main_camera->viewport_size.y;
+
+	proj_matrix = glm::ortho(-width / 2, width / 2, -height / 2, height / 2, 0.1f, 10.f);
+
+	Vector3 cp = main_camera->transform.position;
+	glm::vec3 look = glm::vec3(cp.x, cp.y, -1.0f);
+	view_matrix = glm::lookAt(glm::vec3(cp.x, cp.y, 1.0f), 
+							  look, 
+							  glm::vec3(0, 1, 0));
+
+	vp_matrix = proj_matrix * view_matrix;
 
 	for(uint32 i = 0; i < draw_buffer.size(); ++i)
 	{
@@ -193,26 +208,24 @@ void Renderer::draw_call(DrawBufferObject data)
 	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
 	// NOTE(chris): Layer is ignored until sorting is implemented;
 	//TODO(chris): still need some conversion from pixels to world space
-
- 	//float scale_x = main_camera->viewport_size.x / (float)(frame_resolution.width / pixels_to_meters);
- 	//float scale_y = main_camera->viewport_size.y / (float)(frame_resolution.height / pixels_to_meters); 
- 	//int32 width = data.tex_rect.width;
- 	//int32 height = data.tex_rect.height;
-
+	
 	// TODO(cgenova): handle rotated scaling;
  	// Vector2 size((float)width / pixels_to_meters, (float)height / pixels_to_meters);
  	// size.x /= bo_scale; //(main_camera->viewport_size.x / bo_scale);
  	// size.y /= bo_scale; //(main_camera->viewport_size.y / bo_scale);
- 	Vector3 scale_vec(data.world_size.x * bo_scale, data.world_size.y * bo_scale, 1.0f);
+ 	Vector3 scale_vec(data.world_size.x * 800 * bo_scale, data.world_size.y * 600 * bo_scale, 1.0f);
 
  	Vector3 new_position(data.world_position.x, // * main_camera->viewport_size.x, 
  						 data.world_position.y, // * main_camera->viewport_size.y,
  						 0);
 
- 	// scale_vec = Vector3(1, 1, 1);
- 	// NOTE(cgenova): position is baked into the projection matrix, view matrix is just the identity here.
-	Mat4 mvp = ortho_mvp_matrix(scale_vec, new_position, data.draw_angle,
- 							main_camera->cached_projection_matrix, main_camera->cached_view_matrix); 
+	glm::mat4 model_matrix = glm::mat4(1.0f);
+	glm::mat4 scale = glm::scale(glm::vec3(data.world_size.x * bo_scale, data.world_size.y * bo_scale, 1.0f));
+	glm::mat4 rot = glm::rotate(glm::radians(data.draw_angle), glm::vec3(0, 0, 1.0f));
+	glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
+
+	//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
+	glm::mat4 mvp = vp_matrix * trans * rot * scale;
 
 	int32 tw = textures[data.image].w;
 	int32 th = textures[data.image].h;
@@ -236,7 +249,7 @@ void Renderer::draw_call(DrawBufferObject data)
 	glUniform1f(time_loc, time);
 
 	GLint mat_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "mvp");
-	glUniformMatrix4fv(mat_loc, 1, GL_TRUE, (GLfloat*)&mvp);
+	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
