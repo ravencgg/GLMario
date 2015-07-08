@@ -44,13 +44,17 @@ void Tilemap::fill_checkerboard()
 	}	
 }
 
+void Tilemap::update()
+{
+}
+
 void Tilemap::draw()
 {
-	static Rect brick_rect = { 0, 85, tile_width, tile_height };
+	static Rect brick_rect = { 85, 0, tile_width, tile_height };
 	static Rect ground_rect = { 0, 0, tile_width, tile_height }; 
-	static Sprite sprite = { MAIN_IMAGE,
-							 DEFAULT_SHADER,
-							 BACKGROUND,
+	static Sprite sprite = { ImageFiles::MAIN_IMAGE,
+							 ShaderTypes::DEFAULT_SHADER,
+							 DrawLayer::BACKGROUND,
 							 Vector2(1.0f, 1.0f),
 							 0,
 							 brick_rect };
@@ -62,7 +66,7 @@ void Tilemap::draw()
 		{
 			uint32 loc = array_loc(x, y);
 
-			sprite.image_file = MAIN_IMAGE;
+			sprite.image_file = ImageFiles::MAIN_IMAGE;
 			position.x = (float)x;
 			position.y = (float)y;
 
@@ -72,6 +76,10 @@ void Tilemap::draw()
 			}
 		}
 	}
+
+
+	Console* console = Console::get();
+	console->log_message(std::string("Log this, bitch"));
 }
 
 void Tilemap::init()

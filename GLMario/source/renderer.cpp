@@ -7,6 +7,7 @@ char* Renderer::default_vert_shader = "..\\res\\default_vert.glsl";
 char* Renderer::default_frag_shader = "..\\res\\default_frag.glsl";
 char* Renderer::mario_image = "..\\res\\supermariobros.png";
 char* Renderer::main_image = "..\\res\\tiles.png";
+char* Renderer::text_image = "..\\res\\charmap.png";
 const uint32 Renderer::pixels_to_meters = 16;
 
 Renderer* Renderer::s_instance = nullptr;
@@ -27,9 +28,14 @@ Renderer::Renderer(Window* w, Vector4 clear_color)
 	set_clear_color(clear_color);
 
 	// NOTE(chris): also enables textures and blending
-	load_image(Renderer::main_image, MAIN_IMAGE);
-	load_image(Renderer::mario_image, MARIO_IMAGE);
-	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, DEFAULT_SHADER);
+	load_image(Renderer::main_image, ImageFiles::MAIN_IMAGE);
+	load_image(Renderer::mario_image, ImageFiles::MARIO_IMAGE);
+	load_image(Renderer::text_image, ImageFiles::TEXT_IMAGE);
+	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, ShaderTypes::DEFAULT_SHADER);
+
+	text_data.chars_per_line = 18;
+	text_data.char_size = { 7, 9 };
+
 	build_buffer_object();
 }
 
@@ -73,6 +79,11 @@ void Renderer::end_frame()
 	draw_window->swap_buffer();
 }
 
+Dimension Renderer::get_resolution()
+{
+	return draw_window->get_resolution();
+}
+
 void Renderer::load_image(char* filename, ImageFiles location)
 {
 	GLuint handle = 0;
@@ -105,10 +116,10 @@ void Renderer::load_image(char* filename, ImageFiles location)
 
 	stbi_image_free(data);
 
-	textures[location].texture_handle = handle; 
-	textures[location].w = x;
-	textures[location].h = y;
-	textures[location].bytes_per_color = n;
+	textures[(uint32)location].texture_handle = handle; 
+	textures[(uint32)location].w = x;
+	textures[(uint32)location].h = y;
+	textures[(uint32)location].bytes_per_color = n;
 }
 
 void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes location)
@@ -156,7 +167,7 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 	delete vert_shader;
 	delete frag_shader;
 
-	shaders[location].shader_handle = program;
+	shaders[(uint32)location].shader_handle = program;
 }
 
 void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
@@ -173,6 +184,82 @@ void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
 	// draw_info.camera_size = screen_dim;
 
 	draw_buffer.add(draw_info); 
+}
+
+void Renderer::draw_character(char c, uint32 x, uint32 y)
+{
+	uint32 tshader = (uint32) ShaderTypes::DEFAULT_SHADER;
+
+	glUseProgram(shaders[tshader].shader_handle); // NOTE(cgenova): useless with only one shader.
+	glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
+	// glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
+	// glBindVertexArray(draw_object.vao);
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
+	// NOTE(chris): Layer is ignored until sorting is implemented;
+	//TODO(chris): still need some conversion from pixels to world space
+
+	Vector3 new_position((float) x, (float) y, 0);
+	glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
+	glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width, (float) text_data.char_size.height, 1.0f));
+	glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
+
+	//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
+	glm::mat4 mvp = proj * trans * scale;
+
+	int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
+	int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
+
+	uint32 ascii_position = c - ' ';
+
+	Point2 char_pos;
+	char_pos.x = ascii_position % text_data.chars_per_line;
+	char_pos.x *= text_data.char_size.width;
+	char_pos.y = ascii_position / text_data.chars_per_line;
+	char_pos.y *= text_data.char_size.height;
+
+	float left = (float)char_pos.x / tw;
+	float right = (float)(char_pos.x + text_data.char_size.width) / tw;
+	float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
+	float top = (float)(th - char_pos.y) / th;
+
+	draw_object.tex_coords[0] = Vector2(left, top);
+	draw_object.tex_coords[1] = Vector2(right, top);
+	draw_object.tex_coords[2] = Vector2(right, bot);
+	draw_object.tex_coords[3] = Vector2(left, bot);
+
+	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
+	glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
+
+	GLint mat_loc = glGetUniformLocation(shaders[tshader].shader_handle, "mvp");
+	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+// TODO(cgenova): text drawing styles;
+TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start_y)
+{
+	uint32 x = start_x;
+	uint32 y = start_y;
+	uint32 ld = 0;
+
+	for (uint32 i = 0; i < s.length(); ++i)
+	{
+		draw_character(s[i], x, y);
+		x += text_data.char_size.width;
+		if (x + text_data.char_size.width > (uint32)frame_resolution.width)
+		{
+			x = start_x;
+			y += text_data.char_size.height + 3;
+			ld++;
+		}
+	}
+
+	TextDrawResult result;
+	result.bottom_right = { x, y };
+	result.lines_drawn = ld;
+
+	return result;
 }
 
 void Renderer::render_draw_buffer()
@@ -206,8 +293,8 @@ void Renderer::draw_call(DrawBufferObject data)
 	// NOTE(cgenova): The buffer object is (-1, 1) so this conversion factor will return it to a one length object.
 	const float bo_scale = 0.5;
 
-	glUseProgram(shaders[data.shader].shader_handle); // NOTE(cgenova): useless with only one shader.
-	glBindTexture(GL_TEXTURE_2D, textures[data.image].texture_handle); 
+	glUseProgram(shaders[(uint32)data.shader].shader_handle); // NOTE(cgenova): useless with only one shader.
+	glBindTexture(GL_TEXTURE_2D, textures[(uint32)data.image].texture_handle);
 	// glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	// glBindVertexArray(draw_object.vao);
 	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
@@ -232,8 +319,8 @@ void Renderer::draw_call(DrawBufferObject data)
 	//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
 	glm::mat4 mvp = vp_matrix * trans * rot * scale;
 
-	int32 tw = textures[data.image].w;
-	int32 th = textures[data.image].h;
+	int32 tw = textures[(uint32)data.image].w;
+	int32 th = textures[(uint32)data.image].h;
 
  	float left  = (float)data.tex_rect.left / tw;
  	float right = (float)(data.tex_rect.left + data.tex_rect.width) / tw;
@@ -250,10 +337,10 @@ void Renderer::draw_call(DrawBufferObject data)
 
 	// NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call	
 	float time = 1.f;
-	GLint time_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "time");
+	GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
 	glUniform1f(time_loc, time);
 
-	GLint mat_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "mvp");
+	GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
 	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -320,3 +407,6 @@ void Renderer::draw_animation(Animation* animation, Transform* t, float time)
 {
 	assert(animation && t && time > 1);
 }
+
+
+

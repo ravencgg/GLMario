@@ -35,5 +35,16 @@ struct Point3
 
 struct Rect
 {
-	int32 top, left, width, height;
+	union
+	{
+		struct
+		{
+			int32 x, y, w, h;
+		};
+		struct
+		{
+			int32 left, top, width, height;
+		};
+		int32 E[4];
+	};
 };

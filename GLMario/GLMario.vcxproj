@@ -79,6 +79,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\camera.cpp" />
+    <ClCompile Include="source\console.cpp" />
     <ClCompile Include="source\helper.cpp" />
     <ClCompile Include="source\input.cpp" />
     <ClCompile Include="source\main.cpp" />
@@ -132,6 +133,7 @@
     <ClInclude Include="Dependencies\glm\vec4.hpp" />
     <ClInclude Include="Dependencies\glm\vector_relational.hpp" />
     <ClInclude Include="source\camera.h" />
+    <ClInclude Include="source\console.h" />
     <ClInclude Include="source\dynamic_array.h" />
     <ClInclude Include="source\game_object.h" />
     <ClInclude Include="source\helper.h" />

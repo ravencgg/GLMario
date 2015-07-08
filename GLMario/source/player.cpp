@@ -5,9 +5,9 @@ Player::Player()
 {
 	memset(attached_objects, 0, sizeof(attached_objects));
 
-	sprite.image_file = MARIO_IMAGE;
-	sprite.shader_type = DEFAULT_SHADER;
-	sprite.layer = FOREGROUND;
+	sprite.image_file = ImageFiles::MARIO_IMAGE;
+	sprite.shader_type = ShaderTypes::DEFAULT_SHADER;
+	sprite.layer = DrawLayer::FOREGROUND;
 	sprite.world_size = Vector2(1.0f, 1.5f);
 	sprite.angle = 0;
 	sprite.tex_rect.top = 903;

@@ -43,6 +43,7 @@ SceneManager::~SceneManager()
 void SceneManager::update_scene()
 {
 
+	tilemap.draw();
 #ifdef USE_LINKED_LIST
 
 	if(input->on_down(SDLK_g))
@@ -108,7 +109,6 @@ void SceneManager::update_scene()
 
 #endif
 
-	tilemap.draw();
 
 }
 

@@ -4,6 +4,7 @@
 #include "mathops.h"
 #include "game_object.h"
 #include "renderer.h"
+#include "console.h"
 
 class Tilemap
 {
@@ -22,6 +23,7 @@ public:
 
 	void fill_checkerboard();
 
+	void update();
 	void draw();
 
 private:

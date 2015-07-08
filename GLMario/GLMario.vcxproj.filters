@@ -11,6 +11,7 @@
     <ClCompile Include="source\helper.cpp" />
     <ClCompile Include="source\camera.cpp" />
     <ClCompile Include="source\tilemap.cpp" />
+    <ClCompile Include="source\console.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\mathops.h" />
@@ -149,6 +150,7 @@
     <ClInclude Include="Dependencies\glm\gtc\vec1.hpp">
       <Filter>GLM</Filter>
     </ClInclude>
+    <ClInclude Include="source\console.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="GLM">

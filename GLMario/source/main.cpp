@@ -84,6 +84,7 @@ int main(int argc, char* argv[])
 		main_camera.update();
 		scene.update_scene();
 
+		Console::get()->draw();
 		renderer->end_frame();
 		// End rendering
 

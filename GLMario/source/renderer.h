@@ -15,10 +15,9 @@
 #include <glm/gtx/transform.hpp>
 #include "glm/mat4x4.hpp"
 
-enum ImageFiles  { MAIN_IMAGE, MARIO_IMAGE, IMAGE_COUNT }; 
-enum ShaderTypes { DEFAULT_SHADER, SHADER_COUNT };
-enum DrawLayer   { FOREGROUND, BACKGROUND, LAYER_COUNT };
-
+enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, IMAGE_COUNT }; 
+enum class ShaderTypes : uint32 { DEFAULT_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
+enum class DrawLayer   : uint32 { FOREGROUND, BACKGROUND, LAYER_COUNT };
 
 struct Sprite
 {
@@ -43,6 +42,12 @@ struct Animation
 	AnimationMode animation_mode;
 };
 
+struct TextDrawResult
+{
+	uint32 lines_drawn;
+	Point2 bottom_right;
+};
+
 class Renderer : public IDrawer
 {
 public:
@@ -65,20 +70,32 @@ public:
 	void load_image(char*, ImageFiles);
 	void load_shader(char*, char*, ShaderTypes);
 
+	Dimension get_resolution();
+
 	// virtual void draw(Sprite*);
 	// virtual void draw(Animation*);
 
 	virtual void draw_sprite(Sprite*, Vector2);
 	virtual void draw_animation(Animation*, Transform*, float time);
 
+private:
+	void draw_character(char, uint32, uint32);
+public:
+	TextDrawResult draw_string(std::string, uint32 x, uint32 y);
+
 	static char* default_frag_shader;
 	static char* default_vert_shader;
 	static char* main_image;
 	static char* mario_image;
+	static char* text_image;
 	static const uint32 pixels_to_meters;
 
 private:
-
+	struct TextData 
+	{
+		uint32 chars_per_line;
+		Dimension char_size;
+	};
 	struct Texture
 	{
 		int32 w, h, bytes_per_color;
@@ -90,7 +107,7 @@ private:
 		GLuint shader_handle;
 	};
 
-	struct DrawBufferObject
+	struct DrawBufferObject // Used for drawing to the screen.
 	{
 		ImageFiles image;
 		ShaderTypes shader;
@@ -120,12 +137,14 @@ private:
 	void draw_call(DrawBufferObject);
 	void build_buffer_object();
 
-	Texture textures[ImageFiles::IMAGE_COUNT];
-	Shader shaders[ShaderTypes::SHADER_COUNT];
+	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
+	Shader shaders[(uint32) ShaderTypes::SHADER_COUNT];
 
 	// NOTE(chris): should this be multiple different draw buffers for each layer?
 	// DynamicArray<DrawBufferObject> draw_buffer[LAYER_COUNT];
 	Dimension frame_resolution;
+
+	TextData text_data;
 
 	DynamicArray<DrawBufferObject> draw_buffer;
 	DrawObject draw_object;
