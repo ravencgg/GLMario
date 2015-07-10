@@ -12,6 +12,7 @@
     <ClCompile Include="source\camera.cpp" />
     <ClCompile Include="source\tilemap.cpp" />
     <ClCompile Include="source\console.cpp" />
+    <ClCompile Include="source\particles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\mathops.h" />
@@ -151,6 +152,7 @@
       <Filter>GLM</Filter>
     </ClInclude>
     <ClInclude Include="source\console.h" />
+    <ClInclude Include="source\particles.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="GLM">

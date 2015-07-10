@@ -14,6 +14,7 @@ Player::Player()
 	sprite.tex_rect.left = 17;
 	sprite.tex_rect.width = 34;
 	sprite.tex_rect.height = 34;
+	sprite.color_mod = Vector4(1, 1, 1, 1);
 }
 
 void Player::attach_object(Transform* t)
@@ -87,6 +88,7 @@ void Player::update_and_draw(IDrawer* drawer)
 	transform.position += Vector3(velocity);
 	update_attached_objects();
 
+	//sprite.color_mod.w = 0.5f;
 	drawer->draw_sprite(&sprite, transform.position.xy());
 }
 

@@ -15,7 +15,7 @@ void Console::log_message(string input)
 
 void Console::draw()
 {
-	Renderer* ren = Renderer::get_instance();
+	Renderer* ren = Renderer::get();
 	
 	uint32 draw_y = (uint32)((float)ren->get_resolution().height * screen_start.y);
 	uint32 draw_x = (uint32)((float)ren->get_resolution().width * screen_start.x);

@@ -57,7 +57,8 @@ void Tilemap::draw()
 							 DrawLayer::BACKGROUND,
 							 Vector2(1.0f, 1.0f),
 							 0,
-							 brick_rect };
+							 brick_rect, 
+							 Vector4(1, 1, 1, 1)};
 	Vector2 position;
 
 	for(uint32 y = 0; y < height; ++y)
@@ -69,6 +70,10 @@ void Tilemap::draw()
 			sprite.image_file = ImageFiles::MAIN_IMAGE;
 			position.x = (float)x;
 			position.y = (float)y;
+
+			//position.x = (float) (rand() % 20 - 10);
+			//position.y = (float) (rand() % 20 - 10);
+
 
 			if(tiles[loc].tile_type != EMPTY)
 			{
@@ -84,7 +89,7 @@ void Tilemap::draw()
 
 void Tilemap::init()
 {
-	ren = Renderer::get_instance();	
+	ren = Renderer::get();	
 	tile_width = 16;
 	tile_height = 16;
 }

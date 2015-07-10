@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 	// main_camera.viewport_size = Vector2(16.f, 9.f);
 
 	Renderer::create_instance(&window);
-	Renderer* renderer = Renderer::get_instance();
+	Renderer* renderer = Renderer::get();
 	renderer->set_camera(&main_camera);
 
 	Input* input = Input::get_instance();
@@ -79,10 +79,16 @@ int main(int argc, char* argv[])
 			renderer->force_color_clear();
 		}
 
-		// Begin rendering: Don't change resolution in here or it will mess up for a frame;
+		// Update the scene first, pushing draw calls if necessary.
+		// Then call begin_frame which builds matrices and clears buffers;
+
+		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
+
 		renderer->begin_frame();
 		main_camera.update();
 		scene.update_scene();
+		
+		renderer->render_draw_buffer();
 
 		Console::get()->draw();
 		renderer->end_frame();

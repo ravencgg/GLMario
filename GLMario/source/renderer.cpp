@@ -5,9 +5,12 @@
 
 char* Renderer::default_vert_shader = "..\\res\\default_vert.glsl";
 char* Renderer::default_frag_shader = "..\\res\\default_frag.glsl";
+char* Renderer::particle_vert_shader = "..\\res\\particle_vert.glsl";
+char* Renderer::particle_frag_shader = "..\\res\\particle_frag.glsl";
 char* Renderer::mario_image = "..\\res\\supermariobros.png";
 char* Renderer::main_image = "..\\res\\tiles.png";
 char* Renderer::text_image = "..\\res\\charmap.png";
+char* Renderer::particle_image = "..\\res\\particle.png";
 const uint32 Renderer::pixels_to_meters = 16;
 
 Renderer* Renderer::s_instance = nullptr;
@@ -31,7 +34,9 @@ Renderer::Renderer(Window* w, Vector4 clear_color)
 	load_image(Renderer::main_image, ImageFiles::MAIN_IMAGE);
 	load_image(Renderer::mario_image, ImageFiles::MARIO_IMAGE);
 	load_image(Renderer::text_image, ImageFiles::TEXT_IMAGE);
+	load_image(Renderer::particle_image, ImageFiles::PARTICLE_IMAGE);
 	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, ShaderTypes::DEFAULT_SHADER);
+	load_shader(Renderer::particle_vert_shader, Renderer::particle_frag_shader, ShaderTypes::PARTICLE_SHADER);
 
 	text_data.chars_per_line = 18;
 	text_data.char_size = { 7, 9 };
@@ -45,7 +50,7 @@ void Renderer::create_instance(Window* w)
 	s_instance = new Renderer(w);
 }
 
-Renderer* Renderer::get_instance()
+Renderer* Renderer::get()
 {
 	assert(s_instance);
 	return s_instance;
@@ -61,6 +66,20 @@ void Renderer::begin_frame()
 	frame_resolution = draw_window->get_resolution();
 	glViewport(0, 0, frame_resolution.width, frame_resolution.height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //TODO(cgenova): disable depth buffer for better 2d rendering simulation
+
+
+	float width = main_camera->viewport_size.x;
+	float height = main_camera->viewport_size.y;
+
+	proj_matrix = glm::ortho(-width / 2, width / 2, -height / 2, height / 2, 0.1f, 10.f);
+
+	Vector3 cp = main_camera->transform.position;
+	glm::vec3 look = glm::vec3(cp.x, cp.y, -1.0f);
+	view_matrix = glm::lookAt(glm::vec3(cp.x, cp.y, 1.0f),
+		look,
+		glm::vec3(0, 1, 0));
+
+	vp_matrix = proj_matrix * view_matrix;
 }
 
 void Renderer::set_clear_color(Vector4 color)
@@ -180,6 +199,7 @@ void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
 	draw_info.world_size = sprite->world_size;
 	draw_info.world_position = Vector3(position, 0);
 	draw_info.draw_angle = sprite->angle;
+	draw_info.color_mod = sprite->color_mod;
 	// draw_info.camera_position = draw_position;
 	// draw_info.camera_size = screen_dim;
 
@@ -192,9 +212,7 @@ void Renderer::draw_character(char c, uint32 x, uint32 y)
 
 	glUseProgram(shaders[tshader].shader_handle); // NOTE(cgenova): useless with only one shader.
 	glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
-	// glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-	// glBindVertexArray(draw_object.vao);
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
+
 	// NOTE(chris): Layer is ignored until sorting is implemented;
 	//TODO(chris): still need some conversion from pixels to world space
 
@@ -229,6 +247,9 @@ void Renderer::draw_character(char c, uint32 x, uint32 y)
 
 	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
+	glBindVertexArray(draw_object.vao);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
 
 	GLint mat_loc = glGetUniformLocation(shaders[tshader].shader_handle, "mvp");
 	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
@@ -237,6 +258,15 @@ void Renderer::draw_character(char c, uint32 x, uint32 y)
 }
 
 // TODO(cgenova): text drawing styles;
+
+/*  Text drawing TODO(cgenova):
+		* precalculate MVP matrix in draw_string as much as possible
+		* have console move down for each line
+		* Character width is not correct
+		* Character height is probably not correct
+		* figure out the border color issue
+		*/
+
 TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start_y)
 {
 	uint32 x = start_x;
@@ -266,20 +296,7 @@ void Renderer::render_draw_buffer()
 {
 	//TODO(chris): sort draw calls;
 
-	float width  = main_camera->viewport_size.x;
-	float height = main_camera->viewport_size.y;
-
-	proj_matrix = glm::ortho(-width / 2, width / 2, -height / 2, height / 2, 0.1f, 10.f);
-
-	Vector3 cp = main_camera->transform.position;
-	glm::vec3 look = glm::vec3(cp.x, cp.y, -1.0f);
-	view_matrix = glm::lookAt(glm::vec3(cp.x, cp.y, 1.0f), 
-							  look, 
-							  glm::vec3(0, 1, 0));
-
-	vp_matrix = proj_matrix * view_matrix;
-
-	for(uint32 i = 0; i < draw_buffer.size(); ++i)
+	for (uint32 i = 0; i < draw_buffer.size(); ++i)
 	{
 		draw_call(draw_buffer[i]);
 	}
@@ -294,17 +311,20 @@ void Renderer::draw_call(DrawBufferObject data)
 	const float bo_scale = 0.5;
 
 	glUseProgram(shaders[(uint32)data.shader].shader_handle); // NOTE(cgenova): useless with only one shader.
-	glBindTexture(GL_TEXTURE_2D, textures[(uint32)data.image].texture_handle);
-	// glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-	// glBindVertexArray(draw_object.vao);
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
-	// NOTE(chris): Layer is ignored until sorting is implemented;
-	//TODO(chris): still need some conversion from pixels to world space
+
+	{
+		GLint active_tex = 0;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
+
+		if (active_tex != textures[(uint32)data.image].texture_handle)
+		{
+			glBindTexture(GL_TEXTURE_2D, textures[(uint32)data.image].texture_handle);
+		}
+	}
 	
+	// NOTE(chris): Layer is ignored until sorting is implemented;
+	// TODO(chris): still need some conversion from pixels to world space
 	// TODO(cgenova): handle rotated scaling;
- 	// Vector2 size((float)width / pixels_to_meters, (float)height / pixels_to_meters);
- 	// size.x /= bo_scale; //(main_camera->viewport_size.x / bo_scale);
- 	// size.y /= bo_scale; //(main_camera->viewport_size.y / bo_scale);
  	Vector3 scale_vec(data.world_size.x * 800 * bo_scale, data.world_size.y * 600 * bo_scale, 1.0f);
 
  	Vector3 new_position(data.world_position.x, // * main_camera->viewport_size.x, 
@@ -334,15 +354,21 @@ void Renderer::draw_call(DrawBufferObject data)
 
 	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
+	glBindVertexArray(draw_object.vao);
 
 	// NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call	
 	float time = 1.f;
 	GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
 	glUniform1f(time_loc, time);
 
+
+	GLint color_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "color_in");
+	glUniform4f(color_loc, data.color_mod.x, data.color_mod.y, data.color_mod.z, data.color_mod.w);
+
 	GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
 	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
 
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
@@ -358,19 +384,12 @@ void Renderer::build_buffer_object()
 
 	draw_object.vert_positions = (Vector3*) mem_loc;
 	mem_loc += sizeof(*draw_object.vert_positions) * num_vertices;
-	draw_object.colors = (Vector4*) mem_loc;
-	mem_loc += sizeof(*draw_object.colors) * num_vertices;
 	draw_object.tex_coords = (Vector2*) mem_loc;
 
 	draw_object.vert_positions[0] = Vector3(-1, 1, -1);//Vector3(-0.5f, 0.5f, 0.0f);
 	draw_object.vert_positions[1] = Vector3(1, 1, -1);//Vector3(0.5f, 0.5f, 0.0f); 
 	draw_object.vert_positions[2] = Vector3(1, -1, -1);//Vector3(0.5f, -0.5f, 0.0f);
 	draw_object.vert_positions[3] = Vector3(-1, -1, -1);//Vector3(-0.5f, -0.5f, 0.0f); 
-
-	draw_object.colors[0] = Vector4(1.0f, 1.0f, 1.0f, 1.0f); 
-	draw_object.colors[1] = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	draw_object.colors[2] = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	draw_object.colors[3] = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	draw_object.tex_coords[0] = Vector2(0.0f, 1.0f);
 	draw_object.tex_coords[1] = Vector2(1.0f, 1.0f);
@@ -391,11 +410,9 @@ void Renderer::build_buffer_object()
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(4 * sizeof(*draw_object.vert_positions)));
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(4 * ( sizeof(*draw_object.vert_positions) + sizeof(*draw_object.colors))));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(4 * sizeof(*draw_object.vert_positions)));
 
 	glGenBuffers(1, &draw_object.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);

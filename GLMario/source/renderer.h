@@ -15,8 +15,8 @@
 #include <glm/gtx/transform.hpp>
 #include "glm/mat4x4.hpp"
 
-enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, IMAGE_COUNT }; 
-enum class ShaderTypes : uint32 { DEFAULT_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
+enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT }; 
+enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
 enum class DrawLayer   : uint32 { FOREGROUND, BACKGROUND, LAYER_COUNT };
 
 struct Sprite
@@ -27,6 +27,7 @@ struct Sprite
 	Vector2 world_size;
 	float angle;
 	Rect tex_rect;
+	Vector4 color_mod;
 };
 
 enum class AnimationMode { LOOP, PING_PONG, STOP };
@@ -60,7 +61,7 @@ public:
 	virtual ~Renderer() {};
 
 	static void create_instance(Window*);
-	static Renderer* get_instance();
+	static Renderer* get();
 
 	void set_camera(Camera*);
 	void begin_frame();
@@ -75,22 +76,27 @@ public:
 	// virtual void draw(Sprite*);
 	// virtual void draw(Animation*);
 
+	void render_draw_buffer();
 	virtual void draw_sprite(Sprite*, Vector2);
 	virtual void draw_animation(Animation*, Transform*, float time);
 
-private:
+	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }
+	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
+
 	void draw_character(char, uint32, uint32);
-public:
 	TextDrawResult draw_string(std::string, uint32 x, uint32 y);
 
 	static char* default_frag_shader;
 	static char* default_vert_shader;
+	static char* particle_vert_shader;
+	static char* particle_frag_shader;
 	static char* main_image;
 	static char* mario_image;
 	static char* text_image;
+	static char* particle_image;
 	static const uint32 pixels_to_meters;
 
-private:
+
 	struct TextData 
 	{
 		uint32 chars_per_line;
@@ -107,6 +113,10 @@ private:
 		GLuint shader_handle;
 	};
 
+	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
+	Shader shaders[(uint32) ShaderTypes::SHADER_COUNT];
+
+private:
 	struct DrawBufferObject // Used for drawing to the screen.
 	{
 		ImageFiles image;
@@ -116,6 +126,7 @@ private:
 		Rect tex_rect;
 		Vector2 world_size;
 		Vector3 world_position;
+		Vector4 color_mod;
 		float draw_angle;
 	};
 
@@ -127,18 +138,14 @@ private:
 		uint8* memory = nullptr;
 		uint32 memory_size = 0;
 		Vector3* vert_positions = nullptr;
-		Vector4* colors = nullptr;
 		Vector2* tex_coords = nullptr;
 
 		~DrawObject() { if(memory) delete[] memory; }
 	};
 
-	void render_draw_buffer();
 	void draw_call(DrawBufferObject);
 	void build_buffer_object();
 
-	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
-	Shader shaders[(uint32) ShaderTypes::SHADER_COUNT];
 
 	// NOTE(chris): should this be multiple different draw buffers for each layer?
 	// DynamicArray<DrawBufferObject> draw_buffer[LAYER_COUNT];

@@ -6,7 +6,7 @@
 #include "input.h"
 #include "camera.h"
 #include "tilemap.h"
-
+#include "particles.h"
 
 class SceneManager
 {

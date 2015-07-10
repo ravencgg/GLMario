@@ -27,6 +27,18 @@ inline float deg_to_rad(float f)
 	return result;
 }
 
+inline int32 max(int32 a, int32 b)
+{
+	int32 result = (a < b ? b : a);
+	return result;
+}
+
+inline int32 min(int32 a, int32 b)
+{
+	int32 result = (a < b ? a : b);
+	return result;
+}
+
 class Vector2
 {
 public:

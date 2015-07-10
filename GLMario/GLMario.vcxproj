@@ -63,7 +63,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\Dependencies\;.\Dependencies\glew;.\Dependencies;.\Dependencies\sdl\include;.\Dependencies\sdl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Dependencies\;.\Dependencies\glew;.\Dependencies;.\Dependencies\sdl\include;.\Dependencies\glm;.\Dependencies\sdl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -84,6 +84,7 @@
     <ClCompile Include="source\input.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\mathops.cpp" />
+    <ClCompile Include="source\particles.cpp" />
     <ClCompile Include="source\player.cpp" />
     <ClCompile Include="source\renderer.cpp" />
     <ClCompile Include="source\scene_manager.cpp" />
@@ -140,6 +141,7 @@
     <ClInclude Include="source\IDrawer.h" />
     <ClInclude Include="source\input.h" />
     <ClInclude Include="source\mathops.h" />
+    <ClInclude Include="source\particles.h" />
     <ClInclude Include="source\player.h" />
     <ClInclude Include="source\renderer.h" />
     <ClInclude Include="source\scene_manager.h" />

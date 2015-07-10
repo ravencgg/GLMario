@@ -109,7 +109,8 @@ void SceneManager::update_scene()
 
 #endif
 
-
+	static graphics::ParticleSystem ps(5000);
+	ps.render();
 }
 
 void SceneManager::add_object(GameObject* object)
