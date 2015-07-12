@@ -89,7 +89,7 @@ void Player::update_and_draw(IDrawer* drawer)
 	update_attached_objects();
 
 	//sprite.color_mod.w = 0.5f;
-	drawer->draw_sprite(&sprite, transform.position.xy());
+	// drawer->draw_sprite(&sprite, transform.position.xy());
 }
 
 void Player::paused_update_and_draw(IDrawer* drawer)

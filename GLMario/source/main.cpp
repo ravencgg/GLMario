@@ -6,6 +6,7 @@
 #include "renderer.h"
 #include "input.h"
 #include "scene_manager.h"
+#include "time.h"
 
 //TODO(chris):
 //	Window class -> stores resolution information, has methods to change the resolution, in charge of SDL windowing
@@ -18,6 +19,8 @@ int main(int argc, char* argv[])
 {
 	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 	Window window("Title", 960, 540);
+
+	Time* time = Time::get(); // Initialize the static time object
 
 	Camera main_camera;
 	// main_camera.viewport_size = Vector2(16.f, 9.f);
@@ -66,6 +69,7 @@ int main(int argc, char* argv[])
 		if(input->on_down(SDLK_ESCAPE))
 		{
 			running = false;
+			break;
 		}
 
 		if(input->on_down(SDLK_z))
@@ -78,25 +82,32 @@ int main(int argc, char* argv[])
 			window.set_window_mode(ScreenMode::BORDERLESS);
 			renderer->force_color_clear();
 		}
+		// TODO(cgenova): profiling;
+
+		time->begin_frame();
 
 		// Update the scene first, pushing draw calls if necessary.
 		// Then call begin_frame which builds matrices and clears buffers;
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
-
 		renderer->begin_frame();
 		main_camera.update();
 		scene.update_scene();
 		
 		renderer->render_draw_buffer();
-
+		
 		Console::get()->draw();
 		renderer->end_frame();
 		// End rendering
 
 
-		// TODO(cgenova): Dynamic frame rate;
-		SDL_Delay(1000 / 60);
+		// TODO(cgenova): High granularity sleep function! 
+		uint32 delay_time = time->ticks_for_frame_cap();
+		if(delay_time > 5) {
+			std::cout << "Delaying: " << delay_time << " ms" << std::endl;
+			SDL_Delay(delay_time);
+		}
+		std::cout << "Delta T : " << delay_time << " ms" << std::endl;
 
 	}// End main loop	
 

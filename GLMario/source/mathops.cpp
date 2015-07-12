@@ -17,7 +17,7 @@ void Vector2::operator=(const Vector2 &rhs)
 	this->y = rhs.y;
 }
 
-const Vector2 Vector2::operator+(const Vector2 &rhs) const
+Vector2 Vector2::operator+(const Vector2 &rhs) const
 {
 	Vector2 result;
 	result.x = this->x + rhs.x;
@@ -31,7 +31,7 @@ void Vector2::operator+=(const Vector2 &rhs)
 	this->y += rhs.y;
 }
 
-const Vector2 Vector2::operator-(const Vector2 &rhs) const
+Vector2 Vector2::operator-(const Vector2 &rhs) const
 {
 	Vector2 result;
 	result.x = this->x - rhs.x;
@@ -45,18 +45,24 @@ void Vector2::operator-=(const Vector2 &rhs)
 	this->y -= rhs.y;
 }
 
-const Vector2 Vector2::operator*(const float &rhs)
-{
-	Vector2 result;
-	result.x = this->x * rhs;
-	result.y = this->y * rhs;
-	return result;
-}
+// const Vector2 Vector2::operator*(const float &rhs)
+// {
+// 	Vector2 result;
+// 	result.x = this->x * rhs;
+// 	result.y = this->y * rhs;
+// 	return result;
+// }
 
 void Vector2::operator*=(const float &rhs)
 {
 	this->x *= rhs;
 	this->y *= rhs;
+}
+
+Vector2 Vector2::operator*(const float& rhs)
+{
+	Vector2 result(this->x * rhs, this->y * rhs);
+	return result;
 }
 
 float Vector2::dot(const Vector2& rhs) const
@@ -126,7 +132,7 @@ void Vector3::operator=(const Vector3 &rhs)
 	this->z = rhs.z;
 }
 
-const Vector3 Vector3::operator+(const Vector3 &rhs) const
+Vector3 Vector3::operator+(const Vector3 &rhs) const
 {
 	Vector3 result;
 	result.x = this->x + rhs.x;
@@ -142,7 +148,7 @@ void Vector3::operator+=(const Vector3 &rhs)
 	this->z += rhs.z;
 }
 
-const Vector3 Vector3::operator-(const Vector3 &rhs) const
+Vector3 Vector3::operator-(const Vector3 &rhs) const
 {
 	Vector3 result;
 	result.x = this->x - rhs.x;
@@ -158,20 +164,26 @@ void Vector3::operator-=(const Vector3 &rhs)
 	this->z -= rhs.z;
 }
 
-const Vector3 Vector3::operator*(const float &rhs)
-{
-	Vector3 result;
-	result.x = this->x * rhs;
-	result.y = this->y * rhs;
-	result.z = this->z * rhs;
-	return result;
-}
+// const Vector3 Vector3::operator*(const float &rhs)
+// {
+// 	Vector3 result;
+// 	result.x = this->x * rhs;
+// 	result.y = this->y * rhs;
+// 	result.z = this->z * rhs;
+// 	return result;
+// }
 
 void Vector3::operator*=(const float &rhs)
 {
 	this->x *= rhs;
 	this->y *= rhs;
 	this->z *= rhs;
+}
+
+Vector3 Vector3::operator*(const float& rhs)
+{
+	Vector3 result(this->x * rhs, this->y * rhs, this->z * rhs);
+	return result;
 }
 
 float Vector3::dot(const Vector3& rhs) const
@@ -247,7 +259,7 @@ void Vector4::operator=(const Vector4 &rhs)
 	this->w = rhs.w;
 }
 
-const Vector4 Vector4::operator+(const Vector4 &rhs) const
+Vector4 Vector4::operator+(const Vector4 &rhs) const
 {
 	Vector4 result;
 	result.x = this->x + rhs.x;
@@ -265,7 +277,7 @@ void Vector4::operator+=(const Vector4 &rhs)
 	this->w += rhs.w;
 }
 
-const Vector4 Vector4::operator-(const Vector4 &rhs) const
+Vector4 Vector4::operator-(const Vector4 &rhs) const
 {
 	Vector4 result;
 	result.x = this->x - rhs.x;
@@ -283,15 +295,15 @@ void Vector4::operator-=(const Vector4 &rhs)
 	this->w -= rhs.w;
 }
 
-const Vector4 Vector4::operator*(const float &rhs)
-{
-	Vector4 result;
-	result.x = this->x * rhs;
-	result.y = this->y * rhs;
-	result.z = this->z * rhs;
-	result.w = this->w * rhs;
-	return result;
-}
+// const Vector4 Vector4::operator*(const float &rhs)
+// {
+// 	Vector4 result;
+// 	result.x = this->x * rhs;
+// 	result.y = this->y * rhs;
+// 	result.z = this->z * rhs;
+// 	result.w = this->w * rhs;
+// 	return result;
+// }
 
 void Vector4::operator*=(const float &rhs)
 {
@@ -299,6 +311,12 @@ void Vector4::operator*=(const float &rhs)
 	this->y *= rhs;
 	this->z *= rhs;
 	this->w *= rhs;
+}
+
+Vector4 Vector4::operator*(const float& rhs)
+{
+	Vector4 result(this->x * rhs, this->y * rhs, this->z * rhs, this->w * rhs);
+	return result;
 }
 
 float Vector4::dot(const Vector4& rhs) const
@@ -356,6 +374,25 @@ std::string Vector4::to_string()
 	std::string z_str = std::to_string(this->z);
 	std::string w_str = std::to_string(this->w);
 	std::string result = "(" + x_str + ", " + y_str + ", " + z_str + ", " + z_str + ")";
+	return result;
+}
+
+
+Vector2 lerp(Vector2& a, Vector2& b, float t)
+{
+	Vector2 result = (b - a) * t + a;  
+	return result;
+}
+
+Vector3 lerp(Vector3& a, Vector3& b, float t)
+{
+	Vector3 result = (b - a) * t + a;  
+	return result;
+}
+
+Vector4 lerp(Vector4& a, Vector4& b, float t)
+{
+	Vector4 result = (b - a) * t + a;  
 	return result;
 }
 

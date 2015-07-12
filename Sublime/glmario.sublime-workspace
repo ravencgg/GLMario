@@ -4,6 +4,38 @@
 		"selected_items":
 		[
 			[
+				"delta",
+				"delay_time"
+			],
+			[
+				"current",
+				"current_frame_ticks"
+			],
+			[
+				"curr",
+				"current_frame_ticks"
+			],
+			[
+				"Particle",
+				"ParticleVertexData"
+			],
+			[
+				"viewp",
+				"viewport_size"
+			],
+			[
+				"in_",
+				"in_position"
+			],
+			[
+				"Particl",
+				"ParticleArray"
+			],
+			[
+				"Shade",
+				"ShaderTypes"
+			],
+			[
 				"view",
 				"viewport_size"
 			],
@@ -112,77 +144,50 @@
 	"buffers":
 	[
 		{
+			"file": "/C/Projects/GLMario/glmario/source/particles.cpp",
+			"settings":
+			{
+				"buffer_size": 3372,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/time.cpp",
+			"settings":
+			{
+				"buffer_size": 686,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Projects/GLMario/glmario/source/scene_manager.cpp",
+			"settings":
+			{
+				"buffer_size": 2994,
+				"line_ending": "Windows"
+			}
+		},
+		{
 			"file": "/C/Projects/GLMario/glmario/source/main.cpp",
 			"settings":
 			{
-				"buffer_size": 2058,
+				"buffer_size": 2626,
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "/C/Projects/GLMario/glmario/source/renderer.cpp",
+			"file": "/C/Projects/GLMario/glmario/source/particles.h",
 			"settings":
 			{
-				"buffer_size": 9616,
+				"buffer_size": 1576,
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "/C/Projects/GLMario/glmario/source/player.cpp",
+			"file": "/C/Projects/GLMario/glmario/source/time.h",
 			"settings":
 			{
-				"buffer_size": 1916,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/tilemap.cpp",
-			"settings":
-			{
-				"buffer_size": 1455,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/res/default_vert.glsl",
-			"settings":
-			{
-				"buffer_size": 350,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
-			"settings":
-			{
-				"buffer_size": 1023,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/renderer.h",
-			"settings":
-			{
-				"buffer_size": 2658,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"contents": "#include \"mathops.h\"\n\n\n/*************************************************\n*\n*  Vector2 Implementation\n*\n*************************************************/\n\nVector2::Vector2(float x, float y)\n	:x(x),\n	y(y){}\n\nvoid Vector2::operator=(const Vector2 &rhs)\n{\n	this->x = rhs.x;\n	this->y = rhs.y;\n}\n\nconst Vector2 Vector2::operator+(const Vector2 &rhs) const\n{\n	Vector2 result;\n	result.x = this->x + rhs.x;\n	result.y = this->y + rhs.y;\n	return(result);\n}\n\nvoid Vector2::operator+=(const Vector2 &rhs)\n{\n	this->x += rhs.x;\n	this->y += rhs.y;\n}\n\nconst Vector2 Vector2::operator-(const Vector2 &rhs) const\n{\n	Vector2 result;\n	result.x = this->x - rhs.x;\n	result.y = this->y - rhs.y;\n	return result;\n}\n\nvoid Vector2::operator-=(const Vector2 &rhs)\n{\n	this->x -= rhs.x;\n	this->y -= rhs.y;\n}\n\nconst Vector2 Vector2::operator*(const float &rhs)\n{\n	Vector2 result;\n	result.x = this->x * rhs;\n	result.y = this->y * rhs;\n	return result;\n}\n\nvoid Vector2::operator*=(const float &rhs)\n{\n	this->x *= rhs;\n	this->y *= rhs;\n}\n\nfloat Vector2::dot(const Vector2& rhs) const\n{\n	float result = this->x * rhs.x + this->y * rhs.y;\n	return result;\n}\n\nvoid Vector2::normalize()\n{\n	float length = this->get_length();\n	this->x /= length;\n	this->y /= length;\n}\n\n// removed static\nVector2 Vector2::normalized(const Vector2 &rhs)\n{\n	Vector2 result;\n	float length = rhs.get_length();\n	result.x = rhs.x / length;\n	result.y = rhs.y / length;\n	return result;\n}\n\nfloat Vector2::get_length() const\n{\n	float result = sqrt(this->x * this->x + this->y * this->y);\n	return result;\n}\n\nstd::string Vector2::to_string()\n{\n	std::string x_str = std::to_string(this->x);\n	std::string y_str = std::to_string(this->y);\n	std::string result = \"(\" + x_str + \", \" + y_str + \")\";\n	return result;\n}\n\n\n/*************************************************\n *\n *  Vector3 Implementation\n *\n *************************************************/\n\n\nVector3::Vector3(float x, float y, float z)\n	: x(x),\n	  y(y),\n	  z(z){}\n\nVector3::Vector3(Vector2 xy, float z)\n	: x(xy.x),\n	  y(xy.y),\n	  z(z){}\n\nVector2 Vector3::xy()\n{\n	return Vector2(this->x, this->y);\n}\n\nvoid Vector3::operator=(const Vector3 &rhs)\n{\n	this->x = rhs.x;\n	this->y = rhs.y;\n	this->z = rhs.z;\n}\n\nconst Vector3 Vector3::operator+(const Vector3 &rhs) const\n{\n	Vector3 result;\n	result.x = this->x + rhs.x;\n	result.y = this->y + rhs.y;\n	result.z = this->z + rhs.z;\n	return(result);\n}\n\nvoid Vector3::operator+=(const Vector3 &rhs)\n{\n	this->x += rhs.x;\n	this->y += rhs.y;\n	this->z += rhs.z;\n}\n\nconst Vector3 Vector3::operator-(const Vector3 &rhs) const\n{\n	Vector3 result;\n	result.x = this->x - rhs.x;\n	result.y = this->y - rhs.y;\n	result.z = this->z - rhs.z;\n	return result;\n}\n\nvoid Vector3::operator-=(const Vector3 &rhs)\n{\n	this->x -= rhs.x;\n	this->y -= rhs.y;\n	this->z -= rhs.z;\n}\n\nconst Vector3 Vector3::operator*(const float &rhs)\n{\n	Vector3 result;\n	result.x = this->x * rhs;\n	result.y = this->y * rhs;\n	result.z = this->z * rhs;\n	return result;\n}\n\nvoid Vector3::operator*=(const float &rhs)\n{\n	this->x *= rhs;\n	this->y *= rhs;\n	this->z *= rhs;\n}\n\nfloat Vector3::dot(const Vector3& rhs) const\n{\n	float result = this->x * rhs.x + this->y * rhs.y + this->z * rhs.z;\n	return result;\n}\n\nvoid Vector3::normalize()\n{\n	float length = this->get_length();\n	this->x /= length;\n	this->y /= length;\n	this->z /= length;\n}\n\n//removed static\nVector3 Vector3::normalized(const Vector3 &rhs)\n{\n	Vector3 result;\n	float length = rhs.get_length();\n	result.x = rhs.x / length;\n	result.y = rhs.y / length;\n	result.z = rhs.z / length;\n	return result;\n}\n\nfloat Vector3::get_length() const\n{\n	float result = sqrt(this->x * this->x + this->y * this->y + this->z * this->z);\n	return result;\n}\n\nstd::string Vector3::to_string()\n{\n	std::string x_str = std::to_string(this->x);\n	std::string y_str = std::to_string(this->y);\n	std::string z_str = std::to_string(this->z);\n	std::string result = \"(\" + x_str + \", \" + y_str + \", \" + z_str + \")\";\n	return result;\n}\n\n\n/*************************************************\n*\n*  Vector4 Implementation\n*\n*************************************************/\n\n\nVector4::Vector4(float x, float y, float z, float w)\n	: x(x),\n	y(y),\n	z(z),\n	w(w){}\n\nVector4::Vector4(Vector3 xyz, float w = 0)\n	: x(xyz.x),\n	y(xyz.y),\n	z(xyz.z),\n	w(w){}\n\nVector3 Vector4::xyz()\n{\n	return Vector3(this->x, this->y, this->z);\n}\n\nvoid Vector4::operator=(const Vector4 &rhs)\n{\n	this->x = rhs.x;\n	this->y = rhs.y;\n	this->z = rhs.z;\n	this->w = rhs.w;\n}\n\nconst Vector4 Vector4::operator+(const Vector4 &rhs) const\n{\n	Vector4 result;\n	result.x = this->x + rhs.x;\n	result.y = this->y + rhs.y;\n	result.z = this->z + rhs.z;\n	result.w = this->w + rhs.w;\n	return(result);\n}\n\nvoid Vector4::operator+=(const Vector4 &rhs)\n{\n	this->x += rhs.x;\n	this->y += rhs.y;\n	this->z += rhs.z;\n	this->w += rhs.w;\n}\n\nconst Vector4 Vector4::operator-(const Vector4 &rhs) const\n{\n	Vector4 result;\n	result.x = this->x - rhs.x;\n	result.y = this->y - rhs.y;\n	result.z = this->z - rhs.z;\n	result.w = this->w - rhs.w;\n	return result;\n}\n\nvoid Vector4::operator-=(const Vector4 &rhs)\n{\n	this->x -= rhs.x;\n	this->y -= rhs.y;\n	this->z -= rhs.z;\n	this->w -= rhs.w;\n}\n\nconst Vector4 Vector4::operator*(const float &rhs)\n{\n	Vector4 result;\n	result.x = this->x * rhs;\n	result.y = this->y * rhs;\n	result.z = this->z * rhs;\n	result.w = this->w * rhs;\n	return result;\n}\n\nvoid Vector4::operator*=(const float &rhs)\n{\n	this->x *= rhs;\n	this->y *= rhs;\n	this->z *= rhs;\n	this->w *= rhs;\n}\n\nfloat Vector4::dot(const Vector4& rhs) const\n{\n	float result = this->x * rhs.x + this->y * rhs.y + this->z * rhs.z + this->w * rhs.w;\n	return result;\n}\n\nVector3 Vector3::cross_product(const Vector3 &rhs) const\n{\n	Vector3 result;\n\n	result.x = this->y * rhs.z - this->z * rhs.y;\n	result.y = this->z * rhs.x - this->x * rhs.z;\n	result.z = this->x * rhs.y - this->y * rhs.x;\n\n	result.x = -result.x;\n	result.y = -result.y;\n	result.z = -result.z;\n\n	return result;\n}\n\nvoid Vector4::normalize()\n{\n	float length = this->get_length();\n	this->x /= length;\n	this->y /= length;\n	this->z /= length;\n	this->w /= length;\n}\n\n//removed static\nVector4 Vector4::normalized(const Vector4 &rhs)\n{\n	Vector4 result;\n	float length = rhs.get_length();\n	result.x = rhs.x / length;\n	result.y = rhs.y / length;\n	result.z = rhs.z / length;\n	result.w = rhs.w / length;\n	return result;\n}\n\nfloat Vector4::get_length() const\n{\n	float result = sqrt(this->x * this->x + this->y * this->y + this->z * this->z + this->w * this->w);\n	return result;\n}\n\nstd::string Vector4::to_string()\n{\n	std::string x_str = std::to_string(this->x);\n	std::string y_str = std::to_string(this->y);\n	std::string z_str = std::to_string(this->z);\n	std::string w_str = std::to_string(this->w);\n	std::string result = \"(\" + x_str + \", \" + y_str + \", \" + z_str + \", \" + z_str + \")\";\n	return result;\n}\n\n\n/*************************************************\n*\n*  Mat4 Implementation\n*\n*************************************************/\n\n\nMat4 operator * (const Mat4& a, const Mat4& b) {\n	\n	// Extract columns from the second matrix;\n	Vector4 c[4];\n	c[0] = Vector4(b.e[0].x, b.e[1].x, b.e[2].x, b.e[3].x);\n	c[1] = Vector4(b.e[0].y, b.e[1].y, b.e[2].y, b.e[3].y);\n	c[2] = Vector4(b.e[0].z, b.e[1].z, b.e[2].z, b.e[3].z);\n	c[3] = Vector4(b.e[0].w, b.e[1].w, b.e[2].w, b.e[3].w);\n\n	Mat4 result;\n	result.e[0] = Vector4(a.e[0].dot(c[0]), a.e[0].dot(c[1]), a.e[0].dot(c[2]), a.e[0].dot(c[3]));\n	result.e[1] = Vector4(a.e[1].dot(c[0]), a.e[1].dot(c[1]), a.e[1].dot(c[2]), a.e[1].dot(c[3]));\n	result.e[2] = Vector4(a.e[2].dot(c[0]), a.e[2].dot(c[1]), a.e[2].dot(c[2]), a.e[2].dot(c[3]));\n	result.e[3] = Vector4(a.e[3].dot(c[0]), a.e[3].dot(c[1]), a.e[3].dot(c[2]), a.e[3].dot(c[3]));\n	\n	return result;\n}\n\nMat4 translation_matrix(Vector3 t)\n{\n	Mat4 result;\n\n	result.e[0] = Vector4(1.f, 0, 0, t.x);\n	result.e[1] = Vector4(0, 1.f, 0, t.y);\n	result.e[2] = Vector4(0, 0, 1.f, t.z);\n	result.e[3] = Vector4(0, 0, 0, 1.f);\n\n	return result;\n}\n\nMat4 scale_matrix(Vector3 scale)\n{\n	Mat4 result;\n\n	result.e[0] = Vector4(scale.x, 0, 0, 0);\n	result.e[1] = Vector4(0, scale.y, 0, 0);\n	result.e[2] = Vector4(0, 0, scale.z, 0);\n	result.e[3] = Vector4(0, 0, 0, 1.f);\n\n	return result;\n}\n\nMat4 rotation_matrix(Vector3 euler)\n{\n\n	Mat4 x_rot;\n	x_rot.e[0] = Vector4(1.f, 0, 0, 0);\n	x_rot.e[1] = Vector4(0, cos(euler.x), -sin(euler.x), 0);\n	x_rot.e[2] = Vector4(0, sin(euler.x), cos(euler.x), 0);\n	x_rot.e[3] = Vector4(0, 0, 0, 1.f);\n\n	Mat4 y_rot;\n	y_rot.e[0] = Vector4(cos(euler.y), 0, sin(euler.y), 0);\n	y_rot.e[1] = Vector4(0, 1.f, 0, 0);\n	y_rot.e[2] = Vector4(-sin(euler.y), 0, cos(euler.y), 0);\n	y_rot.e[3] = Vector4(0, 0, 0, 1.f);\n\n	Mat4 z_rot;\n	z_rot.e[0] = Vector4(cos(euler.z), -sin(euler.z), 0, 0);\n	z_rot.e[1] = Vector4(sin(euler.z), cos(euler.z), 0, 0);\n	z_rot.e[2] = Vector4(0, 0, 1.f, 0);\n	z_rot.e[3] = Vector4(0, 0, 0, 1.f);\n\n	Mat4 result = x_rot * y_rot * z_rot;\n\n	return result;\n}\n\nMat4 z_rotation_matrix(float angle)\n{\n	Mat4 result;\n\n	result.e[0] = Vector4(cos(angle), -sin(angle), 0, 0);\n	result.e[1] = Vector4(sin(angle), cos(angle), 0, 0);\n	result.e[2] = Vector4(0, 0, 1.f, 0);\n	result.e[3] = Vector4(0, 0, 0, 1.f);\n\n	return result;\n}\n\nMat4 orthographic_matrix(float w, float h, float n, float f, Vector2 center)\n{\n	float r = center.x + (w / 2);\n	float l = center.x - (w / 2);\n\n	float t = center.y + (h / 2);\n	float b = center.y - (h / 2);\n\n	float nr = n;\n	float far = f;\n\n	Mat4 result;\n\n	result.e[0] = Vector4((2.f * nr) / (r - l), 0, (r + l) / (r - l), 0);\n	result.e[1] = Vector4(0, (2.f * nr) / (t - b), (t + b) / (t - b), 0);\n	result.e[2] = Vector4(0, 0, (-far - nr) / (far - nr), (-2.f * far * nr) / (far - nr));\n	result.e[3] = Vector4(0, 0, -1.f, 0);\n\n	return result;\n}\n\n// TODO(chris): add in an aspect ratio version of this.\nMat4 perspective_matrix(float fov_x, float fov_y, float z_near, float z_far)\n{\n	Mat4 result = {};\n	// float aspect = 16.f/9.f;\n	fov_x *= DEG_2_RAD;\n	fov_y *= DEG_2_RAD;\n\n	result.e[0] = Vector4(atanf(fov_x / 2.f), 0, 0, 0);\n	result.e[1] = Vector4(0, atanf(fov_y / 2.f), 0, 0);\n	result.e[2] = Vector4(0, 0, - (z_far + z_near) / (z_far - z_near), - (2 * z_near * z_far) / (z_far - z_near));\n	result.e[3] = Vector4(0, 0, -1.f, 0);\n\n	// float tanHalfFovy = tan(fov_y / 2);\n\n	// //// tmat4x4<T, defaultp> Result(static_cast<T>(0));\n	// result.e[0].x = 1 / (aspect * tanHalfFovy);\n	// result.e[1].y = 1 / (tanHalfFovy);\n	// result.e[2].z = - (z_far + z_near) / (z_far - z_near);\n	// result.e[2].w = - 1;\n	// result.e[3].y = - ((2) * z_far * z_near) / (z_far - z_near);\n	// //return Result;\n\n	//TODO(chris): e[0] is not atanf, it is ar*tan;\n	//result.e[0] = Vector4(1.f / atanf(fov_x / 2.f), 0, 0, 0);\n	//result.e[1] = Vector4(0, 1 / tanf(fov_y / 2.f), 0, 0);\n	//result.e[2] = Vector4(0, 0, (-z_far - z_near) / (z_near - z_far), (2 * z_near * z_far) / (z_near - z_far));\n	//result.e[3] = Vector4(0, 0, 1.f, 0);\n\n	return result;\n}\n\nMat4 view_matrix(Vector3 right, Vector3 up, Vector3 look, Vector3 position)\n{\n	Mat4 result;\n\n	result.e[0] = Vector4(right.x, right.y, right.z, 0);\n	result.e[1] = Vector4(up.x, up.y, up.z, 0);\n	result.e[2] = Vector4(look.x, look.y, look.z, 0);\n	result.e[3] = Vector4(position.x, position.y, position.z, 1.f);\n\n	return result;\n}\n\nMat4 identity_matrix()\n{\n	Mat4 result;\n\n	result.e[0] = Vector4(1, 0, 0, 0);\n	result.e[1] = Vector4(0, 1, 0, 0);\n	result.e[2] = Vector4(0, 0, 1, 0);\n	result.e[3] = Vector4(0, 0, 0, 1);\n\n	return result;\n}\n\nMat4 mvp_matrix(Vector3 scale, Vector3 position, Vector3 euler, Mat4& perspective, Mat4& view)\n{\n	Mat4 result = perspective * view * translation_matrix(position) * scale_matrix(scale) * rotation_matrix(euler);\n	return result;\n}\n\nMat4 ortho_mvp_matrix(Vector3 scale, Vector3 position, float angle, Mat4& perspective, Mat4& view)\n{\n	Mat4 result = perspective * view * translation_matrix(position) * scale_matrix(scale) * z_rotation_matrix(angle);\n	return result;\n}\n",
-			"file": "/C/Projects/GLMario/glmario/source/mathops.cpp",
-			"file_size": 12324,
-			"file_write_time": 130801185664790961,
-			"settings":
-			{
-				"buffer_size": 11787,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "/C/Projects/GLMario/glmario/source/camera.h",
-			"settings":
-			{
-				"buffer_size": 520,
+				"buffer_size": 385,
 				"line_ending": "Windows"
 			}
 		}
@@ -335,21 +340,32 @@
 	],
 	"file_history":
 	[
+		"/C/Projects/GLMario/res/particle_vert.glsl",
+		"/C/Projects/GLMario/res/particle_frag.glsl",
+		"/C/Projects/GLMario/glmario/source/renderer.cpp",
+		"/C/Projects/GLMario/glmario/source/renderer.h",
+		"/C/Projects/GLMario/glmario/source/scene_manager.cpp",
+		"/C/Projects/GLMario/glmario/source/main.cpp",
+		"/C/Projects/GLMario/glmario/source/particles.cpp",
+		"/C/Projects/GLMario/res/default_frag.glsl",
+		"/C/Projects/GLMario/glmario/source/particles.h",
+		"/C/Projects/GLMario/glmario/source/scene_manager.h",
+		"/C/Projects/GLMario/res/default_vert.glsl",
+		"/C/Projects/GLMario/glmario/source/mathops.h",
+		"/C/Projects/GLMario/glmario/source/camera.h",
+		"/C/Projects/GLMario/glmario/source/mathops.cpp",
+		"/C/Projects/GLMario/GLMario/Dependencies/glm/detail/dummy.cpp",
+		"/C/Projects/GLMario/res/line_frag.glsl",
+		"/C/Projects/GLMario/res/line_frag",
 		"/C/Projects/GLMario/glmario/source/camera.cpp",
-		"/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/User/HighlightBuildErrors.sublime-settings",
 		"/C/Projects/GLMario/glmario/source/tilemap.cpp",
 		"/C/Projects/GLMario/glmario/source/player.cpp",
+		"/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/User/HighlightBuildErrors.sublime-settings",
 		"/C/Projects/GLMario/Sublime/glmario.sublime-project",
 		"/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/User/Preferences.sublime-settings",
 		"/C/Users/Genova/AppData/Roaming/Sublime Text 3/Packages/HighlightBuildErrors/HighlightBuildErrors.sublime-settings",
-		"/C/Projects/GLMario/glmario/source/main.cpp",
-		"/C/Projects/GLMario/glmario/source/camera.h",
-		"/C/Projects/GLMario/glmario/source/renderer.h",
-		"/C/Projects/GLMario/glmario/source/renderer.cpp",
-		"/C/Projects/GLMario/glmario/source/scene_manager.cpp",
 		"/C/Projects/GLMario/glmario/source/tilemap.h",
 		"/C/Projects/GLMario/glmario/source/IDrawer.h",
-		"/C/Projects/GLMario/glmario/source/scene_manager.h",
 		"/C/Projects/GLMario/GLMario/source/tilemap.cpp",
 		"/C/Projects/GLMario/glmario/source/window.h",
 		"/C/Projects/GLMario/glmario/source/window.cpp",
@@ -357,14 +373,10 @@
 		"/C/Projects/GLMario/glmario/source/IWindowListener.cpp",
 		"/C/Projects/GLMario/GLMario/source/IWindowListener",
 		"/C/Projects/GLMario/glmario/source/helper.h",
-		"/C/Projects/GLMario/glmario/source/mathops.cpp",
 		"/C/Projects/GLMario/glmario/source/player.h",
 		"/C/Projects/GLMario/glmario/source/input.cpp",
 		"/C/Projects/GLMario/glmario/source/input.h",
-		"/C/Projects/GLMario/glmario/source/mathops.h",
 		"/C/Projects/GLMario/Sublime/build.bat",
-		"/C/Projects/GLMario/res/default_frag.glsl",
-		"/C/Projects/GLMario/res/default_vert.glsl",
 		"/C/Projects/GLMario/.gitignore",
 		"/C/Projects/GLMario/glmario/source/types.h",
 		"/C/Projects/GLMario/GLMario/source/camera.cpp",
@@ -455,10 +467,7 @@
 		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/page_table.cpp",
 		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/page_table_entry.h",
 		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/page_table.h",
-		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/Makefile",
-		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/main.cpp",
-		"/C/Users/Genova/Documents/Code Blocks Projects/CS 433 HW/Homework 1/src/main.cpp",
-		"/C/Users/Genova/Documents/Code Blocks Projects/SFMLEngine/SFMLEngine/main.cpp"
+		"/C/Users/Genova/Documents/Code Blocks Projects/Homework5/Makefile"
 	],
 	"find":
 	{
@@ -477,6 +486,13 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"PARTICLE_SHADER",
+			"build_buf",
+			"build_buffer",
+			"10",
+			"dist(mt)",
+			"int",
+			"glm::scale",
 			"orthographic",
 			"draw_call",
 			"bot",
@@ -597,14 +613,7 @@
 			"lru_queue.push",
 			"lru_queue",
 			"full_pages.erase",
-			"unsigned",
-			"unsign",
-			"unsigne",
-			"unsigned",
-			"PageTable",
-			"to_return",
-			"run_simul",
-			"run_simulation"
+			"unsigned"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -612,6 +621,9 @@
 		"regex": false,
 		"replace_history":
 		[
+			"10.f",
+			"random_float(-10, 10)",
+			"int32",
 			"draw_call",
 			"_rect",
 			"mouse.buttons",
@@ -634,181 +646,120 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 0,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "/C/Projects/GLMario/glmario/source/main.cpp",
+					"file": "/C/Projects/GLMario/glmario/source/particles.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2058,
+						"buffer_size": 3372,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1791,
-								1791
+								155,
+								155
 							]
 						],
 						"settings":
 						{
-							"history_list_is_closing": true,
 							"syntax": "Packages/C++/C++.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 324.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "/C/Projects/GLMario/glmario/source/renderer.cpp",
+					"file": "/C/Projects/GLMario/glmario/source/time.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 9616,
+						"buffer_size": 686,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7830,
-								7830
+								459,
+								459
 							]
 						],
 						"settings":
 						{
 							"history_list_is_closing": true,
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
+							"syntax": "Packages/C++/C++.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 3004.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "/C/Projects/GLMario/glmario/source/player.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1916,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1410,
-								1410
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 513.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
-					"file": "/C/Projects/GLMario/glmario/source/tilemap.cpp",
+					"buffer": 2,
+					"file": "/C/Projects/GLMario/glmario/source/scene_manager.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1455,
+						"buffer_size": 2994,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1156,
-								1156
+								1777,
+								1777
 							]
 						],
 						"settings":
 						{
-							"history_list_is_closing": true,
 							"syntax": "Packages/C++/C++.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": -0.0,
-						"translation.y": 303.0,
+						"translation.y": 1260.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
-					"file": "/C/Projects/GLMario/res/default_vert.glsl",
+					"buffer": 3,
+					"file": "/C/Projects/GLMario/glmario/source/main.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 350,
+						"buffer_size": 2626,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								306,
-								306
+								2553,
+								2553
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/OpenGL Shading Language (GLSL)/GLSL.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "/C/Projects/GLMario/glmario/source/camera.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1023,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								692,
-								692
-							]
-						],
-						"settings":
-						{
-							"history_list_is_closing": true,
 							"syntax": "Packages/C++/C++.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 518.0,
+						"translation.y": 1110.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 5,
@@ -821,24 +772,25 @@
 			"sheets":
 			[
 				{
-					"buffer": 6,
-					"file": "/C/Projects/GLMario/glmario/source/renderer.h",
+					"buffer": 4,
+					"file": "/C/Projects/GLMario/glmario/source/particles.h",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2658,
+						"buffer_size": 1576,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1215,
-								1215
+								547,
+								547
 							]
 						],
 						"settings":
 						{
+							"history_list_is_closing": true,
 							"syntax": "Packages/C++/C++.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
@@ -850,61 +802,31 @@
 					"type": "text"
 				},
 				{
-					"buffer": 7,
-					"file": "/C/Projects/GLMario/glmario/source/mathops.cpp",
+					"buffer": 5,
+					"file": "/C/Projects/GLMario/glmario/source/time.h",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 11787,
+						"buffer_size": 385,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								11552,
-								11552
+								381,
+								381
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
+							"syntax": "Packages/C++/C++.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 7144.0,
+						"translation.y": 16.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 8,
-					"file": "/C/Projects/GLMario/glmario/source/camera.h",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 520,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								138,
-								138
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
+					"stack_index": 2,
 					"type": "text"
 				}
 			]
@@ -970,6 +892,102 @@
 		"selected_items":
 		[
 			[
+				"scene",
+				"source\\scene_manager.cpp"
+			],
+			[
+				"main.cpp",
+				"source\\main.cpp"
+			],
+			[
+				"time.h",
+				"source\\time.h"
+			],
+			[
+				"time.cpp",
+				"source\\time.cpp"
+			],
+			[
+				"particles.cp",
+				"source\\particles.cpp"
+			],
+			[
+				"rende",
+				"source\\renderer.h"
+			],
+			[
+				"renderer.cpp",
+				"source\\renderer.cpp"
+			],
+			[
+				"particle",
+				"res\\particle_vert.glsl"
+			],
+			[
+				"par",
+				"res\\particle_frag.glsl"
+			],
+			[
+				"particles.cpp",
+				"source\\particles.cpp"
+			],
+			[
+				"particle.h",
+				"source\\particles.h"
+			],
+			[
+				"renderer",
+				"source\\renderer.h"
+			],
+			[
+				"default",
+				"res\\default_frag.glsl"
+			],
+			[
+				"particl",
+				"res\\particle_vert.glsl"
+			],
+			[
+				"parti",
+				"res\\particle_vert.glsl"
+			],
+			[
+				"renderer.h",
+				"source\\renderer.h"
+			],
+			[
+				"s",
+				"source\\scene_manager.h"
+			],
+			[
+				"scen",
+				"source\\scene_manager.cpp"
+			],
+			[
+				"partic",
+				"source\\particles.h"
+			],
+			[
+				"render",
+				"source\\renderer.cpp"
+			],
+			[
+				"defaul",
+				"res\\default_vert.glsl"
+			],
+			[
+				"mathops.h",
+				"source\\mathops.h"
+			],
+			[
+				"particles.h",
+				"source\\particles.h"
+			],
+			[
+				"dummy.cpp",
+				"glm\\detail\\dummy.cpp"
+			],
+			[
 				"mathops.cpp",
 				"source\\mathops.cpp"
 			],
@@ -986,14 +1004,6 @@
 				"source\\camera.cpp"
 			],
 			[
-				"renderer.h",
-				"source\\renderer.h"
-			],
-			[
-				"renderer.cpp",
-				"source\\renderer.cpp"
-			],
-			[
 				"glsl",
 				"res\\default_vert.glsl"
 			],
@@ -1008,10 +1018,6 @@
 			[
 				"sceme",
 				"source\\scene_manager.cpp"
-			],
-			[
-				"main.cpp",
-				"source\\main.cpp"
 			],
 			[
 				"camera.h",
@@ -1034,10 +1040,6 @@
 				"source\\scene_manager.h"
 			],
 			[
-				"scene",
-				"source\\scene_manager.h"
-			],
-			[
 				"sce",
 				"source\\scene_manager.h"
 			],
@@ -1056,10 +1058,6 @@
 			[
 				"main.cp",
 				"source\\main.cpp"
-			],
-			[
-				"rende",
-				"source\\renderer.cpp"
 			],
 			[
 				"renderer.",
@@ -1090,10 +1088,6 @@
 				"source\\input.h"
 			],
 			[
-				"mathops.h",
-				"source\\mathops.h"
-			],
-			[
 				"palyerc",
 				"source\\player.cpp"
 			],
@@ -1118,16 +1112,8 @@
 				"res\\default_frag.glsl"
 			],
 			[
-				"render",
-				"source\\renderer.h"
-			],
-			[
 				"types.h",
 				"source\\types.h"
-			],
-			[
-				"renderer",
-				"C:\\Projects\\GLMario\\glmario\\source\\renderer.cpp"
 			],
 			[
 				"plyaer.cpp",
@@ -1144,10 +1130,6 @@
 			[
 				"game",
 				"game_object.h"
-			],
-			[
-				"s",
-				"scene_manager.h"
 			],
 			[
 				"idra",

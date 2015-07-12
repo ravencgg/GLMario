@@ -43,7 +43,14 @@ SceneManager::~SceneManager()
 void SceneManager::update_scene()
 {
 
-	tilemap.draw();
+	//static bool drawn = false;
+
+	//if (!drawn)
+	//{
+	//	drawn = true;
+	//	tilemap.draw();
+	//}
+
 #ifdef USE_LINKED_LIST
 
 	if(input->on_down(SDLK_g))
@@ -108,8 +115,8 @@ void SceneManager::update_scene()
 	}
 
 #endif
-
-	static graphics::ParticleSystem ps(5000);
+	static graphics::ParticleSystem ps(100000);
+	ps.update();
 	ps.render();
 }
 

@@ -13,6 +13,7 @@
     <ClCompile Include="source\tilemap.cpp" />
     <ClCompile Include="source\console.cpp" />
     <ClCompile Include="source\particles.cpp" />
+    <ClCompile Include="source\time.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\mathops.h" />
@@ -153,6 +154,7 @@
     </ClInclude>
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\particles.h" />
+    <ClInclude Include="source\time.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="GLM">

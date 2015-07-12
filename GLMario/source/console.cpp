@@ -9,7 +9,8 @@ Console::Console()
 
 void Console::log_message(string input)
 {
-	lines[head++] = input;
+	//lines[head++] = input;
+	lines[0] = input;
 	if (head >= max_stored_lines) head = 0;
 }
 

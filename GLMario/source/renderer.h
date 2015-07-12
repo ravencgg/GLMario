@@ -72,6 +72,7 @@ public:
 	void load_shader(char*, char*, ShaderTypes);
 
 	Dimension get_resolution();
+	float viewport_width();
 
 	// virtual void draw(Sprite*);
 	// virtual void draw(Animation*);

@@ -27,6 +27,18 @@ inline float deg_to_rad(float f)
 	return result;
 }
 
+inline uint32 max(uint32 a, uint32 b)
+{
+	uint32 result = (a < b ? b : a);
+	return result;
+}
+
+inline uint32 min(uint32 a, uint32 b)
+{
+	uint32 result = (a < b ? a : b);
+	return result;
+}
+
 inline int32 max(int32 a, int32 b)
 {
 	int32 result = (a < b ? b : a);
@@ -39,6 +51,19 @@ inline int32 min(int32 a, int32 b)
 	return result;
 }
 
+inline float max(float a, float b)
+{
+	float result = (a < b ? b : a);
+	return result;
+}
+
+inline float min(float a, float b)
+{
+	float result = (a < b ? a : b);
+	return result;
+}
+
+
 class Vector2
 {
 public:
@@ -49,17 +74,19 @@ public:
 
 	void operator=(const Vector2 &rhs);
 
-	const Vector2 operator+(const Vector2 &rhs) const;
+	Vector2 operator+(const Vector2 &rhs) const;
 
 	void operator+=(const Vector2 &rhs);
 
-	const Vector2 operator-(const Vector2 &rhs) const;
+	Vector2 operator-(const Vector2 &rhs) const;
 
 	void operator-=(const Vector2 &rhs);
 
-	const Vector2 operator*(const float &rhs);
+	Vector2 operator*(const float &rhs);
 
 	void operator*=(const float &rhs);
+
+	// Vector2 operator*(const float& rhs);
 
 	float dot(const Vector2& rhs) const;
 
@@ -84,17 +111,19 @@ public:
 
 	void operator=(const Vector3 &rhs);
 
-	const Vector3 operator+(const Vector3 &rhs) const;
+	Vector3 operator+(const Vector3 &rhs) const;
 
 	void operator+=(const Vector3 &rhs);
 
-	const Vector3 operator-(const Vector3 &rhs) const;
+	Vector3 operator-(const Vector3 &rhs) const;
 
 	void operator-=(const Vector3 &rhs);
 
-	const Vector3 operator*(const float &rhs);
+	Vector3 operator*(const float &rhs);
 
 	void operator*=(const float &rhs);
+
+	// Vector3 operator*(const float& rhs);
 
 	float dot(const Vector3& rhs) const;
 
@@ -121,17 +150,19 @@ public:
 
 	void operator=(const Vector4 &rhs);
 
-	const Vector4 operator+(const Vector4 &rhs) const;
+	Vector4 operator+(const Vector4 &rhs) const;
 
 	void operator+=(const Vector4 &rhs);
 
-	const Vector4 operator-(const Vector4 &rhs) const;
+	Vector4 operator-(const Vector4 &rhs) const;
 
 	void operator-=(const Vector4 &rhs);
 
-	const Vector4 operator*(const float &rhs);
+	Vector4 operator*(const float &rhs);
 
 	void operator*=(const float &rhs);
+
+	// Vector4 operator*(const float& rhs);
 
 	float dot(const Vector4& rhs) const;
 
@@ -143,6 +174,12 @@ public:
 
 	std::string to_string();
 };
+
+Vector2 lerp(Vector2&, Vector2&, float);
+
+Vector3 lerp(Vector3&, Vector3&, float);
+
+Vector4 lerp(Vector4&, Vector4&, float);
 
 class Mat4
 {

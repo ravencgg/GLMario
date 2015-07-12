@@ -89,6 +89,7 @@
     <ClCompile Include="source\renderer.cpp" />
     <ClCompile Include="source\scene_manager.cpp" />
     <ClCompile Include="source\tilemap.cpp" />
+    <ClCompile Include="source\time.cpp" />
     <ClCompile Include="source\window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -146,6 +147,7 @@
     <ClInclude Include="source\renderer.h" />
     <ClInclude Include="source\scene_manager.h" />
     <ClInclude Include="source\tilemap.h" />
+    <ClInclude Include="source\time.h" />
     <ClInclude Include="source\types.h" />
     <ClInclude Include="source\window.h" />
   </ItemGroup>

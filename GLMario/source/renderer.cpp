@@ -103,6 +103,12 @@ Dimension Renderer::get_resolution()
 	return draw_window->get_resolution();
 }
 
+float Renderer::viewport_width()
+{
+	float result = main_camera->viewport_size.x;
+	return result; 
+}
+
 void Renderer::load_image(char* filename, ImageFiles location)
 {
 	GLuint handle = 0;
@@ -208,17 +214,25 @@ void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
 
 void Renderer::draw_character(char c, uint32 x, uint32 y)
 {
+	const float bo_scale = 0.9f;
+
 	uint32 tshader = (uint32) ShaderTypes::DEFAULT_SHADER;
+	glUseProgram(shaders[tshader].shader_handle);
+	{ // TODO(cgenova): convert to function and pull this and the one in draw_call out
+		GLint active_tex = 0;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
 
-	glUseProgram(shaders[tshader].shader_handle); // NOTE(cgenova): useless with only one shader.
-	glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
-
+		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
+		{
+			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
+		}
+	}
 	// NOTE(chris): Layer is ignored until sorting is implemented;
 	//TODO(chris): still need some conversion from pixels to world space
 
 	Vector3 new_position((float) x, (float) y, 0);
 	glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
-	glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width, (float) text_data.char_size.height, 1.0f));
+	glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
 	glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
 
 	//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
@@ -247,13 +261,12 @@ void Renderer::draw_character(char c, uint32 x, uint32 y)
 
 	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	glBindVertexArray(draw_object.vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
 
 	GLint mat_loc = glGetUniformLocation(shaders[tshader].shader_handle, "mvp");
 	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
 
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
@@ -276,7 +289,7 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 	for (uint32 i = 0; i < s.length(); ++i)
 	{
 		draw_character(s[i], x, y);
-		x += text_data.char_size.width;
+		x += (uint32)(text_data.char_size.width * 1.2f);
 		if (x + text_data.char_size.width > (uint32)frame_resolution.width)
 		{
 			x = start_x;
@@ -310,7 +323,7 @@ void Renderer::draw_call(DrawBufferObject data)
 	// NOTE(cgenova): The buffer object is (-1, 1) so this conversion factor will return it to a one length object.
 	const float bo_scale = 0.5;
 
-	glUseProgram(shaders[(uint32)data.shader].shader_handle); // NOTE(cgenova): useless with only one shader.
+	glUseProgram(shaders[(uint32)data.shader].shader_handle); 
 
 	{
 		GLint active_tex = 0;
