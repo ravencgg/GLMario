@@ -80,10 +80,10 @@ struct ParticleEmmissionData
 	FRange lifetime			= FRange(1.5f, 16.0f);
 	Vector2 min_start_speed = Vector2(0.5f, 1.0f);
 	Vector2 max_start_speed = Vector2(1.6f, 5.0f);
-	Vector4 start_color		= Vector4(0, 0, 1, 0.6f);
+	Vector4 start_color		= Vector4(1, 0, 0, 0.6f);
 	Vector4 end_color		= Vector4(0, 1, 0.5f, 0);
 
-	uint32 spawn_rate = 500;
+	uint32 spawn_rate = 4000;
 };
 
 struct ParticleTransformData

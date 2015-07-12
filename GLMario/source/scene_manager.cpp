@@ -115,7 +115,7 @@ void SceneManager::update_scene()
 	}
 
 #endif
-	static graphics::ParticleSystem ps(100000);
+	static graphics::ParticleSystem ps(1000000);
 	ps.update();
 	ps.render();
 }
