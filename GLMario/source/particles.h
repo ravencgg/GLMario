@@ -74,21 +74,21 @@ private:
 
 struct ParticleEmmissionData
 {
-	Vector2 spawn_position	= Vector2(-8.0f, -4.f);
-	float spawn_radius		= 1.f;
-	FRange start_size		= FRange(0.5f, 10.5f);
-	FRange lifetime			= FRange(1.5f, 16.0f);
-	Vector2 min_start_speed = Vector2(0.5f, 1.0f);
-	Vector2 max_start_speed = Vector2(1.6f, 5.0f);
-	Vector4 start_color		= Vector4(1, 0, 0, 0.6f);
-	Vector4 end_color		= Vector4(0, 1, 0.5f, 0);
+	Vector2 spawn_position	= Vector2(0.f, 0.f);
+	float spawn_radius		= 0.5f;
+	FRange start_size		= FRange(1.f, 10.f);
+	FRange lifetime			= FRange(0.5f, 2.0f);
+	Vector2 min_start_speed = Vector2(-0.5f, -0.5f);
+	Vector2 max_start_speed = Vector2(0.5f, 0.5f);
+	Vector4 start_color		= Vector4(1.f, 0, 0, 1.f);
+	Vector4 end_color		= Vector4(0.6f, 0.f, 0.f, 0.4f);
 
-	uint32 spawn_rate = 4000;
+	uint32 spawn_rate = 10;
 };
 
 struct ParticleTransformData
 {
-	Vector2 gravity = Vector2(0, -1.f);
+	Vector2 gravity = Vector2(0.0f, 0.f);
 };
 
 class ParticleSystem

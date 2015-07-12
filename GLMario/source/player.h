@@ -3,6 +3,7 @@
 #include "game_object.h"
 #include "input.h"
 #include "renderer.h"
+#include "console.h"
 
 class Player : public GameObject
 {

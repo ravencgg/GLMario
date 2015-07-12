@@ -80,6 +80,13 @@ void ParticleSystem::update()
 			{
 				if (i >= particles.last_active_index)
 					break;
+				bool valid_particle = true;
+				while (!particles.pfd[particles.last_active_index].is_active(current_time) && particles.last_active_index > i)
+				{
+					--particles.last_active_index;
+				}
+				if (particles.last_active_index <= i) break;
+				assert(particles.pfd[particles.last_active_index].is_active(current_time));
 				pvd = particles.pvd[particles.last_active_index];
 				pfd = particles.pfd[particles.last_active_index];
 				particles.pfd[particles.last_active_index].lifetime = 0;
@@ -88,14 +95,14 @@ void ParticleSystem::update()
 			}
 		}
 	}
+
 	active_particles = i;
 
-	for (int i = 0; i < 10; ++i)
-	{
-		std::string message("Particle count: " + std::to_string(active_particles));
-		Console::get()->log_message(message);
-	}
-	
+	std::string message("Particle count: " + std::to_string(active_particles));
+	Console::get()->log_message(message);
+
+	// std::string long_message("\nThis is a very long message that has no chance of fitting on a single line in the program, \n\tand as such will have to wrap around \tor face many consequences of its actions.\n\t\tThat is final. I have nothing else to say on the matter.");
+	// Console::get()->log_message(long_message);
 }
 
 void ParticleSystem::update_particle(ParticleVertexData& pvd, ParticleFrameData& pfd, Vector2& frame_gravity, float dt, float current_time)

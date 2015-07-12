@@ -84,6 +84,9 @@ void Player::update_and_draw(IDrawer* drawer)
 		velocity.y = 0;
 	}
 
+
+	std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
+	Console::get()->log_message(p_info);
 	// sprite.angle += 0.1f;
 	transform.position += Vector3(velocity);
 	update_attached_objects();

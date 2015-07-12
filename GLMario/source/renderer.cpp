@@ -285,19 +285,37 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 	uint32 x = start_x;
 	uint32 y = start_y;
 	uint32 ld = 0;
+	uint32 y_spacing = 10;
+	const uint32 tab_size = 4;
+	int32 char_height = text_data.char_size.height;
+
+	auto new_line = [&y, &x, y_spacing, char_height, start_x](){
+		y -= (char_height + y_spacing);
+		x = start_x;
+	};
 
 	for (uint32 i = 0; i < s.length(); ++i)
 	{
-		draw_character(s[i], x, y);
-		x += (uint32)(text_data.char_size.width * 1.2f);
+		if(s[i] == '\n')
+		{
+			new_line();
+			continue;
+		}
+		else if (s[i] == '\t')
+		{
+			x += tab_size * text_data.char_size.width;
+		}
 		if (x + text_data.char_size.width > (uint32)frame_resolution.width)
 		{
 			x = start_x;
-			y += text_data.char_size.height + 3;
+			new_line();
 			ld++;
-		}
+		}		
+		draw_character(s[i], x, y);
+		x += (uint32)(text_data.char_size.width * 1.2f);
 	}
 
+	new_line();
 	TextDrawResult result;
 	result.bottom_right = { x, y };
 	result.lines_drawn = ld;

@@ -48,8 +48,8 @@ void SceneManager::update_scene()
 	//if (!drawn)
 	//{
 	//	drawn = true;
-	//	tilemap.draw();
 	//}
+	tilemap.draw();
 
 #ifdef USE_LINKED_LIST
 
@@ -115,9 +115,22 @@ void SceneManager::update_scene()
 	}
 
 #endif
-	static graphics::ParticleSystem ps(1000000);
-	ps.update();
-	ps.render();
+	static graphics::ParticleSystem ps1(100);
+	ps1.ped.spawn_position.x = -2.f;
+	ps1.update();
+	ps1.render();
+
+	static graphics::ParticleSystem ps2(100);
+	static bool setup = false;
+	if(!setup)
+	{
+		setup = true;
+		ps2.ped.spawn_position.x = 2.f;
+		ps2.ped.start_color = Vector4(0, 1.f, 0, 1.f);
+		ps2.ped.end_color   = Vector4(0.2f, 0.8f, 0.2f, 0.4f);
+	}
+	ps2.update();
+	ps2.render();
 }
 
 void SceneManager::add_object(GameObject* object)

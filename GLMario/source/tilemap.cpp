@@ -82,9 +82,7 @@ void Tilemap::draw()
 		}
 	}
 
-
-	// Console* console = Console::get();
-	// console->log_message(std::string("Log this, bitch"));
+	Console::get()->log_message(std::string("Log this, bitch"));
 }
 
 void Tilemap::init()

@@ -9,6 +9,8 @@ using std::string;
 //	console.log_message(std::string);
 //}
 
+
+// Immediate mode console/ per frame rendering
 class Console
 {
 public:
@@ -16,10 +18,9 @@ public:
 
 	string lines[max_stored_lines];
 //	string input; // TODO(cgenova): For writing things into the console
-	uint32 head;
 	uint32 count;
 
-	Vector2 screen_start{ 0.01f, 0.3f };
+	Vector2 screen_start{ 0.01f, 0.975f };
 
 	void log_message(string input);
 
