@@ -12,7 +12,7 @@ Camera::Camera()
 
 void Camera::update()
 {
-	static Input* input = Input::get_instance();
+	static Input* input = Input::get();
 
 	if(input->is_down(SDLK_LEFT))
 	{

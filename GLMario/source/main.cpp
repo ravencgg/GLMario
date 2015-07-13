@@ -29,9 +29,13 @@ int main(int argc, char* argv[])
 	Renderer* renderer = Renderer::get();
 	renderer->set_camera(&main_camera);
 
-	Input* input = Input::get_instance();
+	Input* input = Input::get();
 
 	SceneManager scene(renderer, &main_camera);
+
+	uint32 frame_count = 0;
+	uint32 fps = 0;
+	double last_fps_time = 0;
 
 	SDL_Event e;
 	bool running = true;
@@ -88,6 +92,15 @@ int main(int argc, char* argv[])
 
 		// Update the scene first, pushing draw calls if necessary.
 		// Then call begin_frame which builds matrices and clears buffers;
+
+		if(time->current_time - last_fps_time > 1.0f)
+		{
+			last_fps_time = time->current_time;
+			fps = frame_count;
+			frame_count = 0;	
+		}
+		frame_count++;
+		Console::get()->log_message(std::string("FPS: \t" + std::to_string(fps)));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();

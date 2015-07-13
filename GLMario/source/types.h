@@ -33,6 +33,15 @@ struct Point3
 	int32 x, y, z;
 };
 
+struct FRange
+{
+	float min;
+	float max;
+
+	FRange() : min(0), max(0) {}
+	FRange(float min, float max) : min(min), max(max) {}
+};
+
 struct Rect
 {
 	union

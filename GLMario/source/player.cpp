@@ -1,9 +1,23 @@
 #include "player.h"
 
 Player::Player()
-	: input(Input::get_instance())
+	: input(Input::get()),
+	  ps(graphics::ParticleSystem(200000))
 {
 	memset(attached_objects, 0, sizeof(attached_objects));
+
+	ps.ped.spawn_position	= Vector2(0.f, 0.f);
+	ps.ped.spawn_size = Vector2(0.5f, 0.75f);
+	ps.ped.start_size = FRange(1.f, 10.f);
+	ps.ped.lifetime = FRange(0.5f, 1.0f);
+	ps.ped.min_start_speed = Vector2(-0.5f, -0.5f);
+	ps.ped.max_start_speed = Vector2(0.5f, 0.5f);
+	ps.ped.start_color = Vector4(1.f, 0, 0, 1.f);
+	ps.ped.end_color = Vector4(0.0f, 1.f, 0.f, 1.f);
+	ps.ped.spawn_rate = 2500;
+	// This is fucking stupid........
+	ps.ptd.options = (graphics::ParticleOptions)((uint32)ps.ptd.options | (uint32)graphics::ParticleOptions::WORLD_SPACE_TRANSFORM);
+	//ps.ptd.options = graphics::ParticleOptions::NONE;// (graphics::ParticleOptions)((uint32)ps.ptd.options | (uint32)graphics::ParticleOptions::WORLD_SPACE_TRANSFORM);
 
 	sprite.image_file = ImageFiles::MARIO_IMAGE;
 	sprite.shader_type = ShaderTypes::DEFAULT_SHADER;
@@ -91,8 +105,11 @@ void Player::update_and_draw(IDrawer* drawer)
 	transform.position += Vector3(velocity);
 	update_attached_objects();
 
+
+	ps.update(this->transform.position.xy());
+	ps.render();
 	//sprite.color_mod.w = 0.5f;
-	// drawer->draw_sprite(&sprite, transform.position.xy());
+	drawer->draw_sprite(&sprite, transform.position.xy());
 }
 
 void Player::paused_update_and_draw(IDrawer* drawer)

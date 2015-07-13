@@ -8,16 +8,16 @@
 #include "time.h"
 #include "console.h"
 
+#include "SDL.h"
+#include "input.h" // REMOVE Me
+
 namespace graphics
 {
 
-struct FRange
+enum class ParticleOptions : uint32
 {
-	float min;
-	float max;
-
-	FRange() : min(0), max(0) {}
-	FRange(float min, float max) : min(min), max(max) {}
+	NONE = 0,
+	WORLD_SPACE_TRANSFORM = 0x01,
 };
 
 struct ParticleVertexData
@@ -34,7 +34,6 @@ struct ParticleFrameData
 	float lifetime;
 	Vector4 start_color;
 	Vector4 end_color;
-	bool is_alive;
 
 	float remaining_lifetime(float current_time)
 	{
@@ -75,20 +74,25 @@ private:
 struct ParticleEmmissionData
 {
 	Vector2 spawn_position	= Vector2(0.f, 0.f);
-	float spawn_radius		= 0.5f;
+	//float spawn_radius		= 0.5f;
+	Vector2 spawn_size      = Vector2(1, 1);
 	FRange start_size		= FRange(1.f, 10.f);
-	FRange lifetime			= FRange(0.5f, 2.0f);
+	FRange lifetime			= FRange(0.5f, 4.0f);
 	Vector2 min_start_speed = Vector2(-0.5f, -0.5f);
 	Vector2 max_start_speed = Vector2(0.5f, 0.5f);
 	Vector4 start_color		= Vector4(1.f, 0, 0, 1.f);
-	Vector4 end_color		= Vector4(0.6f, 0.f, 0.f, 0.4f);
+	Vector4 end_color		= Vector4(0.0f, 1.f, 0.f, 1.f);
 
 	uint32 spawn_rate = 10;
 };
 
 struct ParticleTransformData
 {
+	Vector2 world_position = Vector2(0, 0);
+	Vector2 last_world_position = Vector2(0, 0);
 	Vector2 gravity = Vector2(0.0f, 0.f);
+
+	ParticleOptions options = ParticleOptions::NONE;
 };
 
 class ParticleSystem
@@ -107,16 +111,21 @@ public:
 	
 	void init_random(uint32);
 	void prewarm(uint32);
-	void update();
+	void update(Vector2 p = Vector2(0, 0));
 	void render();
 
-	void create_particle(ParticleVertexData&, ParticleFrameData&, float TEMPTIME);
+	void create_particle(ParticleVertexData&, ParticleFrameData&, float);
 	void pack_particles();
+
 private:
 	void allocate();
 
 	float random_float(float, float);
-	void update_particle(ParticleVertexData&, ParticleFrameData&, Vector2&, float, float);
+	inline void update_particle(ParticleVertexData&, ParticleFrameData&, Vector2&, float, float, Vector2&);
+#define UPDATE_PARTICLE_WIDE
+#ifdef UPDATE_PARTICLE_WIDE
+	void update_particle_wide(uint32, Vector2&, float, float, Vector2&, uint32 count = 4);
+#endif
 
 	Renderer* ren;
 	Time* time;

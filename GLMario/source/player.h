@@ -4,6 +4,7 @@
 #include "input.h"
 #include "renderer.h"
 #include "console.h"
+#include "particles.h"
 
 class Player : public GameObject
 {
@@ -13,6 +14,8 @@ public:
 
 	Input* input;
 	Sprite sprite;
+
+	graphics::ParticleSystem ps;
 
 	static const uint32 max_attached_objects = 10;
 	Transform* attached_objects[10];

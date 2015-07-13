@@ -9,7 +9,7 @@ Input::Input()
 	mouse = {};
 }
 
-Input* Input::get_instance()
+Input* Input::get()
 {
 	if(!s_input)
 	{

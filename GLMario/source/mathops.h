@@ -64,6 +64,8 @@ inline float min(float a, float b)
 }
 
 
+
+
 class Vector2
 {
 public:
@@ -180,6 +182,14 @@ Vector2 lerp(Vector2&, Vector2&, float);
 Vector3 lerp(Vector3&, Vector3&, float);
 
 Vector4 lerp(Vector4&, Vector4&, float);
+
+inline __m128 lerp(__m128& a, __m128& b, __m128& t)
+{
+	__m128 result = _mm_sub_ps(b, a);
+	result = _mm_mul_ps(result, t);
+	result = _mm_add_ps(result, a);
+	return result;
+}
 
 class Mat4
 {

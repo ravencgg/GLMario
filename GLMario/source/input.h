@@ -21,7 +21,7 @@ public:
 
 	Input();
 	~Input() {};
-	static Input* get_instance();
+	static Input* get();
 
 	void begin_frame();
 

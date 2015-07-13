@@ -6,10 +6,10 @@ SceneManager::SceneManager(IDrawer* ren, Camera* cam)
 	 main_camera(cam),
 	 tilemap(16, 9)
 {
-	input = (Input::get_instance());
+	input = (Input::get());
 #if defined(USE_LINKED_LIST)
 	Player* player = new Player();
-	player->attach_object(&cam->transform);
+//	player->attach_object(&cam->transform);
 	add_object(player);
 #else
 	game_objects.add(new Player());
@@ -49,7 +49,7 @@ void SceneManager::update_scene()
 	//{
 	//	drawn = true;
 	//}
-	tilemap.draw();
+	//tilemap.draw();
 
 #ifdef USE_LINKED_LIST
 
@@ -115,22 +115,29 @@ void SceneManager::update_scene()
 	}
 
 #endif
-	static graphics::ParticleSystem ps1(100);
+	static graphics::ParticleSystem ps1(1000000);
 	ps1.ped.spawn_position.x = -2.f;
-	ps1.update();
-	ps1.render();
+	ps1.ped.spawn_rate = 200000;
+	ps1.ped.lifetime.min = 1.0f;
+	ps1.ped.lifetime.max = 10.f;
+	// ps1.update();
+	// ps1.render();
 
-	static graphics::ParticleSystem ps2(100);
+	static graphics::ParticleSystem ps2(1000000);
 	static bool setup = false;
 	if(!setup)
 	{
+		ps1.ptd.gravity = Vector2(0.0f, 1.0f);
+		ps2.ptd.gravity = Vector2(-10.0f, -10.0f);
+
+		ps2.ped.spawn_rate = 200000;
 		setup = true;
 		ps2.ped.spawn_position.x = 2.f;
 		ps2.ped.start_color = Vector4(0, 1.f, 0, 1.f);
 		ps2.ped.end_color   = Vector4(0.2f, 0.8f, 0.2f, 0.4f);
 	}
-	ps2.update();
-	ps2.render();
+	// ps2.update();
+	// ps2.render();
 }
 
 void SceneManager::add_object(GameObject* object)
