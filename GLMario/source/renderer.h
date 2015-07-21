@@ -17,7 +17,16 @@
 
 enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT }; 
 enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
-enum class DrawLayer   : uint32 { FOREGROUND, BACKGROUND, LAYER_COUNT };
+enum class DrawLayer   : uint32 { BACKGROUND, PRE_TILEMAP, TILEMAP, AFTER_TILEMAP, FOREGROUND, UI, LAYER_COUNT };
+
+
+namespace DrawOptions
+{
+	enum : uint32  {
+		WHOLE_TEXTURE = 0x1,
+		TEXTURE_RECT = 0x2,
+	};
+}
 
 struct Sprite
 {
@@ -49,7 +58,7 @@ struct TextDrawResult
 	Point2 bottom_right;
 };
 
-class Renderer : public IDrawer
+class Renderer
 {
 public:
 	static glm::mat4 proj_matrix;
@@ -97,7 +106,6 @@ public:
 	static char* particle_image;
 	static const uint32 pixels_to_meters;
 
-
 	struct TextData 
 	{
 		uint32 chars_per_line;
@@ -117,8 +125,7 @@ public:
 	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
 	Shader shaders[(uint32) ShaderTypes::SHADER_COUNT];
 
-private:
-	struct DrawBufferObject // Used for drawing to the screen.
+	struct DrawCall// Used for drawing to the screen.
 	{
 		ImageFiles image;
 		ShaderTypes shader;
@@ -131,6 +138,7 @@ private:
 		float draw_angle;
 	};
 
+private:
 	struct DrawObject
 	{
 		GLuint vao = 0;
@@ -144,17 +152,17 @@ private:
 		~DrawObject() { if(memory) delete[] memory; }
 	};
 
-	void draw_call(DrawBufferObject);
+	void draw_call(DrawCall);
 	void build_buffer_object();
 
 
 	// NOTE(chris): should this be multiple different draw buffers for each layer?
-	// DynamicArray<DrawBufferObject> draw_buffer[LAYER_COUNT];
+	// DynamicArray<DrawCall> draw_buffer[LAYER_COUNT];
 	Dimension frame_resolution;
 
 	TextData text_data;
 
-	DynamicArray<DrawBufferObject> draw_buffer;
+	DynamicArray<DrawCall> draw_buffer[(uint32)DrawLayer::LAYER_COUNT];
 	DrawObject draw_object;
 
 	Camera* main_camera;

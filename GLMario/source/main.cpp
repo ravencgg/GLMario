@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 
 	Input* input = Input::get();
 
-	SceneManager scene(renderer, &main_camera);
+	SceneManager scene(&main_camera);
 
 	uint32 frame_count = 0;
 	uint32 fps = 0;
@@ -100,7 +100,8 @@ int main(int argc, char* argv[])
 			frame_count = 0;	
 		}
 		frame_count++;
-		Console::get()->log_message(std::string("FPS: \t" + std::to_string(fps)));
+		Console::get()->log_message(std::string("FPS: \t\t" + std::to_string(fps)));
+		Console::get()->log_message(std::string("Frames:\t" + std::to_string(time->frame_count)));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();

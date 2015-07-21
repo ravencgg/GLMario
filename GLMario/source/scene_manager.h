@@ -11,7 +11,7 @@
 class SceneManager
 {
 public:
-	SceneManager(IDrawer*, Camera*);
+	SceneManager(Camera*);
 	~SceneManager();
 
 	void update_scene();
@@ -20,7 +20,7 @@ public:
 
 private:
 
-	IDrawer* renderer;
+	Renderer* renderer;
 	Input* input;
 	Camera* main_camera;
 

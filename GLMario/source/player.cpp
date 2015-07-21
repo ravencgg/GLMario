@@ -2,7 +2,8 @@
 
 Player::Player()
 	: input(Input::get()),
-	  ps(graphics::ParticleSystem(200000))
+	  ps(ParticleSystem(2000)),
+	  ren(Renderer::get())
 {
 	memset(attached_objects, 0, sizeof(attached_objects));
 
@@ -14,10 +15,10 @@ Player::Player()
 	ps.ped.max_start_speed = Vector2(0.5f, 0.5f);
 	ps.ped.start_color = Vector4(1.f, 0, 0, 1.f);
 	ps.ped.end_color = Vector4(0.0f, 1.f, 0.f, 1.f);
-	ps.ped.spawn_rate = 2500;
+	ps.ped.spawn_rate = 100;
 	// This is fucking stupid........
-	ps.ptd.options = (graphics::ParticleOptions)((uint32)ps.ptd.options | (uint32)graphics::ParticleOptions::WORLD_SPACE_TRANSFORM);
-	//ps.ptd.options = graphics::ParticleOptions::NONE;// (graphics::ParticleOptions)((uint32)ps.ptd.options | (uint32)graphics::ParticleOptions::WORLD_SPACE_TRANSFORM);
+	// ps.ptd.options = (graphics::ParticleOptions)((uint32)ps.ptd.options | (uint32)graphics::ParticleOptions::LOCAL_SIM);
+	ps.ptd.options = ParticleOptions::NONE;// (graphics::ParticleOptions)((uint32)ps.ptd.options | (uint32)graphics::ParticleOptions::WORLD_SPACE_TRANSFORM);
 
 	sprite.image_file = ImageFiles::MARIO_IMAGE;
 	sprite.shader_type = ShaderTypes::DEFAULT_SHADER;
@@ -63,7 +64,7 @@ void Player::update_attached_objects()
 	}
 }
 
-void Player::update_and_draw(IDrawer* drawer)
+void Player::update_and_draw()
 {
 	static uint32 count = 0;
 	if (input)
@@ -74,6 +75,19 @@ void Player::update_and_draw(IDrawer* drawer)
 		{
 			delete_this_frame = true;
 		}
+	}
+
+	if(input->is_down(SDLK_w))
+	{
+		velocity.y = 0.1f;
+	}	
+	else if(input->is_down(SDLK_s))
+	{
+		velocity.y = -0.1f;
+	}
+	else
+	{
+		velocity.y = 0;
 	}
 
 	if(input->is_down(SDLK_d))
@@ -89,30 +103,27 @@ void Player::update_and_draw(IDrawer* drawer)
 		velocity.x = 0;
 	}
 
-	if(input->is_down(SDLK_SPACE))
-	{
-		velocity.y = 1.0f;	
-	}
-	else
-	{
-		velocity.y = 0;
-	}
-
-
 	std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
 	Console::get()->log_message(p_info);
 	// sprite.angle += 0.1f;
 	transform.position += Vector3(velocity);
 	update_attached_objects();
 
-
+	//TODO(cgenova): get rid of this, but maybe add it in for real? use a separate particle system for bursts and have the particles subject to high amounts of gravity or something.
+	static bool draw_player = true;
+	if(input->on_down(SDLK_p))
+	{
+		draw_player = !draw_player;
+		ps.create_particle_burst(500);
+	}
 	ps.update(this->transform.position.xy());
 	ps.render();
 	//sprite.color_mod.w = 0.5f;
-	drawer->draw_sprite(&sprite, transform.position.xy());
+	if(draw_player)
+		ren->draw_sprite(&sprite, transform.position.xy());
 }
 
-void Player::paused_update_and_draw(IDrawer* drawer)
+void Player::paused_update_and_draw()
 {
-	drawer->draw_sprite(&sprite, transform.position.xy());
+	ren->draw_sprite(&sprite, transform.position.xy());
 } // Allows things to happen while the game is paused

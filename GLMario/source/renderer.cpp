@@ -197,10 +197,9 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 
 void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
 {
-	DrawBufferObject draw_info;
+	DrawCall draw_info;
 	draw_info.image = sprite->image_file;
 	draw_info.shader = sprite->shader_type;
-	draw_info.layer = sprite->layer;
 	draw_info.tex_rect = sprite->tex_rect;
 	draw_info.world_size = sprite->world_size;
 	draw_info.world_position = Vector3(position, 0);
@@ -209,7 +208,7 @@ void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
 	// draw_info.camera_position = draw_position;
 	// draw_info.camera_size = screen_dim;
 
-	draw_buffer.add(draw_info); 
+	draw_buffer[(uint32)sprite->layer].add(draw_info); 
 }
 
 void Renderer::draw_character(char c, uint32 x, uint32 y)
@@ -327,16 +326,18 @@ void Renderer::render_draw_buffer()
 {
 	//TODO(chris): sort draw calls;
 
-	for (uint32 i = 0; i < draw_buffer.size(); ++i)
+	for (uint32 layer = 0; layer < (uint32)DrawLayer::LAYER_COUNT; ++layer)
 	{
-		draw_call(draw_buffer[i]);
+		for (uint32 i = 0; i < draw_buffer[layer].size(); ++i)
+		{
+			draw_call(draw_buffer[layer][i]);
+		}
+		draw_buffer[layer].clear();
 	}
-
 	// Clear it for the next frame;
-	draw_buffer.clear();
 }
 
-void Renderer::draw_call(DrawBufferObject data)
+void Renderer::draw_call(DrawCall data)
 {
 	// NOTE(cgenova): The buffer object is (-1, 1) so this conversion factor will return it to a one length object.
 	const float bo_scale = 0.5;

@@ -69,8 +69,10 @@ inline float min(float a, float b)
 class Vector2
 {
 public:
-	float x;
-	float y;
+	union { float x; float u; };
+	union { float y; float v; };
+	// float x;
+	// float y;
 
 	Vector2(float = 0, float = 0);
 
@@ -104,7 +106,10 @@ public:
 class Vector3
 {
 public:
-	float x, y, z;
+	union { float x; float r; };
+	union { float y; float g; };
+	union { float z; float b; };
+	// float x, y, z;
 
 	Vector3(float = 0, float = 0, float = 0);
 	Vector3(Vector2, float z = 0);
@@ -143,7 +148,11 @@ public:
 class Vector4
 {
 public:
-	float x, y, z, w;
+	union { float x; float r; };
+	union { float y; float g; };
+	union { float z; float b; };
+	union { float w; float a; };
+	// float x, y, z, w;
 
 	Vector4(float = 0, float = 0, float = 0, float = 0);
 	Vector4(Vector3, float x);

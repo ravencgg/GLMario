@@ -13,9 +13,10 @@ public:
 	Player();
 
 	Input* input;
+	Renderer* ren;
 	Sprite sprite;
 
-	graphics::ParticleSystem ps;
+	ParticleSystem ps;
 
 	static const uint32 max_attached_objects = 10;
 	Transform* attached_objects[10];
@@ -23,8 +24,8 @@ public:
 	void detach_object(Transform*);
 	void update_attached_objects();
 
-	virtual void update_and_draw(IDrawer*);
-	virtual void paused_update_and_draw(IDrawer*); // Allows things to happen while the game is paused
+	virtual void update_and_draw();
+	virtual void paused_update_and_draw(); // Allows things to happen while the game is paused
 
 private:
 	Vector2 velocity;

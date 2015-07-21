@@ -11,14 +11,15 @@
 #include "SDL.h"
 #include "input.h" // REMOVE Me
 
-namespace graphics
-{
 
-enum class ParticleOptions : uint32
+namespace ParticleOptions
 {
-	NONE = 0,
-	WORLD_SPACE_TRANSFORM = 0x01,
-};
+	enum ParticleOptions : uint32
+	{
+		NONE = 0,
+		LOCAL_SIM = 0x01,
+	};
+}
 
 struct ParticleVertexData
 {
@@ -60,8 +61,11 @@ struct ParticleData
 	void init(int32 count)
 	{
 		if (memory) delete[] memory;
-		size_t mem_size = count * (sizeof(ParticleVertexData) + sizeof(ParticleFrameData)); 
+		uint32 alignment = 16; // 16 byte align data for SIMD.
+		size_t mem_size = count * (sizeof(ParticleVertexData) + sizeof(ParticleFrameData)) + alignment;
 		memory = new uint8[mem_size];
+		memory = (uint8*)(((uint32)memory + (alignment - 1)) & ~(alignment - 1));
+		assert(((size_t)memory & 0xF) == 0);
 		memset(memory, 0, mem_size);
 		this->pvd = (ParticleVertexData*) memory;
 		this->pfd = (ParticleFrameData*)(memory + (count * sizeof(ParticleVertexData)));
@@ -71,10 +75,9 @@ private:
 	uint8* memory = nullptr;
 };
 
-struct ParticleEmmissionData
+struct ParticleEmissionData
 {
 	Vector2 spawn_position	= Vector2(0.f, 0.f);
-	//float spawn_radius		= 0.5f;
 	Vector2 spawn_size      = Vector2(1, 1);
 	FRange start_size		= FRange(1.f, 10.f);
 	FRange lifetime			= FRange(0.5f, 4.0f);
@@ -92,7 +95,7 @@ struct ParticleTransformData
 	Vector2 last_world_position = Vector2(0, 0);
 	Vector2 gravity = Vector2(0.0f, 0.f);
 
-	ParticleOptions options = ParticleOptions::NONE;
+	uint32 options = ParticleOptions::NONE;
 };
 
 class ParticleSystem
@@ -102,19 +105,20 @@ public:
 	~ParticleSystem() { particles.destroy(); }//if (particles) delete[] particles; }
 
 	uint32 max_particles;
+	uint32 active_particles;
+	uint32 burst_particles;
 
 	ParticleData particles;
 	ParticleTransformData ptd;
-	ParticleEmmissionData ped;
+	ParticleEmissionData ped;
 
-	uint32 active_particles;
 	
 	void init_random(uint32);
-	void prewarm(uint32);
 	void update(Vector2 p = Vector2(0, 0));
 	void render();
 
 	void create_particle(ParticleVertexData&, ParticleFrameData&, float);
+	void create_particle_burst(uint32);
 	void pack_particles();
 
 private:
@@ -133,5 +137,3 @@ private:
 	GLuint vbo;
 	GLuint vao;
 };
-
-}

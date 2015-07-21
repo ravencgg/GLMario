@@ -1,18 +1,16 @@
 #include "particles.h"
 
-namespace graphics
-{
-
 
 ParticleSystem::ParticleSystem(uint32 max)
-	: max_particles(max) 
+	: max_particles(max),
+	  active_particles(0),
+	  burst_particles(0) 
 {
 	time = Time::get();
 	ren = Renderer::get();
 	particles.init(max);
 	allocate();
 	// init_random(max_particles);
-	// prewarm(max_particles);
 }
 
 void ParticleSystem::allocate()
@@ -39,15 +37,20 @@ void ParticleSystem::init_random(uint32 count)
 	}
 }
 
-void ParticleSystem::prewarm(uint32 count)
+void ParticleSystem::create_particle_burst(uint32 num_particles)
 {
-	active_particles = min(count, max_particles);
-	particles.last_active_index = active_particles;
+	burst_particles += num_particles;
+	// if(count + active_particles > max_particles)
+	// {
+	// 	int count = max_particles - active_particles;
+	// }
+	// active_particles += count;
+	// particles.last_active_index = active_particles;
 
-	for(uint32 i = 0; i < active_particles; ++i)
-	{
-		create_particle(particles.pvd[i], particles.pfd[i], (float)time->current_time);
-	}
+	// for(uint32 i = 0; i < active_particles; ++i)
+	// {
+	// 	create_particle(particles.pvd[i], particles.pfd[i], (float)time->current_time);
+	// }
 }
 
 void ParticleSystem::update(Vector2 new_position)
@@ -59,7 +62,8 @@ void ParticleSystem::update(Vector2 new_position)
 	float dt = (float)time->delta_time;
 	Vector2 frame_gravity = ptd.gravity * dt;
 	uint32 new_particles = (uint32)((float)ped.spawn_rate * dt);
-	new_particles = max(new_particles, (uint32)1);
+	new_particles = max(new_particles + burst_particles, (uint32)1);
+	burst_particles = 0;
 	ptd.world_position = new_position;
 
 	std::string new_particle_str("New Particles: " + std::to_string(new_particles));
@@ -73,7 +77,6 @@ if(input->is_down(SDLK_m)) // Hold m for SIMD, currently not optimized
 {
 // #ifdef UPDATE_PARTICLE_WIDE
 
-	//TODO(cgenova): see if memory has to be 16 bit aligned, and do that on allocation
 	const int wide_count = 4;
 	uint32 j;
 	for(j = 0; j < max_particles;)
@@ -220,13 +223,13 @@ inline void ParticleSystem::update_particle(ParticleVertexData& pvd, ParticleFra
 {
 	pfd.velocity += frame_gravity;
 
-	if((uint32)ptd.options & (uint32)ParticleOptions::WORLD_SPACE_TRANSFORM)
+	if(ptd.options & ParticleOptions::LOCAL_SIM)
 	{
-		pvd.position += pfd.velocity * dt;
+		pvd.position += pfd.velocity * dt + delta_p;
 	}
 	else
 	{
-		pvd.position += pfd.velocity * dt + delta_p;
+		pvd.position += pfd.velocity * dt;
 	}
 	pvd.color = lerp(pfd.start_color, pfd.end_color, 1.f - pfd.remaining_lifetime_percent(current_time));
 }
@@ -249,46 +252,46 @@ void ParticleSystem::update_particle_wide(uint32 s_index, Vector2& frame_gravity
 	};
 	__m128 lerp_t = _mm_setr_ps(*(float *)&times[0], *(float *)&times[1], *(float *)&times[2], *(float *)&times[3]);
 
-	__m128 r_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.x,
-								*(float *) &particles.pfd[s_index + 1].start_color.x,
-								*(float *) &particles.pfd[s_index + 2].start_color.x,
-								*(float *) &particles.pfd[s_index + 3].start_color.x);
+	__m128 r_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.r,
+								*(float *) &particles.pfd[s_index + 1].start_color.r,
+								*(float *) &particles.pfd[s_index + 2].start_color.r,
+								*(float *) &particles.pfd[s_index + 3].start_color.r);
 
-	__m128 g_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.y,
-								*(float *) &particles.pfd[s_index + 1].start_color.y,
-								*(float *) &particles.pfd[s_index + 2].start_color.y,
-								*(float *) &particles.pfd[s_index + 3].start_color.y);
+	__m128 g_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.g,
+								*(float *) &particles.pfd[s_index + 1].start_color.g,
+								*(float *) &particles.pfd[s_index + 2].start_color.g,
+								*(float *) &particles.pfd[s_index + 3].start_color.g);
 
-	__m128 b_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.z,
-								*(float *) &particles.pfd[s_index + 1].start_color.z,
-								*(float *) &particles.pfd[s_index + 2].start_color.z,
-								*(float *) &particles.pfd[s_index + 3].start_color.z);
+	__m128 b_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.b,
+								*(float *) &particles.pfd[s_index + 1].start_color.b,
+								*(float *) &particles.pfd[s_index + 2].start_color.b,
+								*(float *) &particles.pfd[s_index + 3].start_color.b);
 
-	__m128 a_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.w,
-								*(float *) &particles.pfd[s_index + 1].start_color.w,
-								*(float *) &particles.pfd[s_index + 2].start_color.w,
-								*(float *) &particles.pfd[s_index + 3].start_color.w);
+	__m128 a_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.a,
+								*(float *) &particles.pfd[s_index + 1].start_color.a,
+								*(float *) &particles.pfd[s_index + 2].start_color.a,
+								*(float *) &particles.pfd[s_index + 3].start_color.a);
 
 // End colors
-	__m128 r_ecol = _mm_setr_ps(*(float *) &particles.pfd[s_index].end_color.x,
-								*(float *) &particles.pfd[s_index + 1].end_color.x,
-								*(float *) &particles.pfd[s_index + 2].end_color.x,
-								*(float *) &particles.pfd[s_index + 3].end_color.x);
+	__m128 r_ecol = _mm_setr_ps(*(float *) &particles.pfd[s_index].end_color.r,
+								*(float *) &particles.pfd[s_index + 1].end_color.r,
+								*(float *) &particles.pfd[s_index + 2].end_color.r,
+								*(float *) &particles.pfd[s_index + 3].end_color.r);
 
-	__m128 g_ecol = _mm_setr_ps(*(float *) &particles.pfd[s_index].end_color.y,
-								*(float *) &particles.pfd[s_index + 1].end_color.y,
-								*(float *) &particles.pfd[s_index + 2].end_color.y,
-								*(float *) &particles.pfd[s_index + 3].end_color.y);
+	__m128 g_ecol = _mm_setr_ps(*(float *) &particles.pfd[s_index].end_color.g,
+								*(float *) &particles.pfd[s_index + 1].end_color.g,
+								*(float *) &particles.pfd[s_index + 2].end_color.g,
+								*(float *) &particles.pfd[s_index + 3].end_color.g);
 
-	__m128 b_ecol = _mm_setr_ps(*(float *) &particles.pfd[s_index].end_color.z,
-								*(float *) &particles.pfd[s_index + 1].end_color.z,
-								*(float *) &particles.pfd[s_index + 2].end_color.z,
-								*(float *) &particles.pfd[s_index + 3].end_color.z);
+	__m128 b_ecol = _mm_setr_ps(*(float *) &particles.pfd[s_index].end_color.b,
+								*(float *) &particles.pfd[s_index + 1].end_color.b,
+								*(float *) &particles.pfd[s_index + 2].end_color.b,
+								*(float *) &particles.pfd[s_index + 3].end_color.b);
 
-	__m128 a_ecol = _mm_setr_ps(*(float *) &particles.pfd[s_index].end_color.w,
-								*(float *) &particles.pfd[s_index + 1].end_color.w,
-								*(float *) &particles.pfd[s_index + 2].end_color.w,
-								*(float *) &particles.pfd[s_index + 3].end_color.w);
+	__m128 a_ecol = _mm_setr_ps(*(float *) &particles.pfd[s_index].end_color.a,
+								*(float *) &particles.pfd[s_index + 1].end_color.a,
+								*(float *) &particles.pfd[s_index + 2].end_color.a,
+								*(float *) &particles.pfd[s_index + 3].end_color.a);
 
 // Position
 	__m128 x_pos  = _mm_setr_ps(*(float *) &particles.pvd[s_index].position.x,
@@ -322,8 +325,11 @@ void ParticleSystem::update_particle_wide(uint32 s_index, Vector2& frame_gravity
 	x_pos = _mm_add_ps(x_pos, x_veldt);
 	y_pos = _mm_add_ps(y_pos, y_veldt);
 
-	x_pos = _mm_add_ps(x_pos, delta_px);
-	y_pos = _mm_add_ps(y_pos, delta_py);
+	if((uint32) ptd.options & (uint32) ParticleOptions::LOCAL_SIM)
+	{
+		x_pos = _mm_add_ps(x_pos, delta_px);
+		y_pos = _mm_add_ps(y_pos, delta_py);
+	}
 
 // Resulting colors after the lerp 
 	__m128 r_col  = lerp(r_scol, r_ecol, lerp_t);
@@ -340,10 +346,10 @@ void ParticleSystem::update_particle_wide(uint32 s_index, Vector2& frame_gravity
 		particles.pvd[p].position.x = ((float *)&(x_pos))[i];
 		particles.pvd[p].position.y = ((float *)&(y_pos))[i];
 
-		particles.pvd[p].color.x = ((float *)&(r_col))[i];
-		particles.pvd[p].color.y = ((float *)&(g_col))[i];
-		particles.pvd[p].color.z = ((float *)&(b_col))[i];
-		particles.pvd[p].color.w = ((float *)&(a_col))[i];
+		particles.pvd[p].color.r = ((float *)&(r_col))[i];
+		particles.pvd[p].color.g = ((float *)&(g_col))[i];
+		particles.pvd[p].color.b = ((float *)&(b_col))[i];
+		particles.pvd[p].color.a = ((float *)&(a_col))[i];
 	}
 
 	for (uint32 i = 0; i < count; ++i)
@@ -379,6 +385,11 @@ void ParticleSystem::create_particle(ParticleVertexData& pvd, ParticleFrameData&
 
 void ParticleSystem::render()
 {
+	// Renderer::DrawCall draw_call = {};
+
+	// draw_call.image = ImageFiles::PARTICLE_IMAGE; 
+	// draw_call.shader = ShaderTypes::PARTICLE_SHADER;
+	// draw_call.options |= WHOLE_TEXTURE; 
 	ren->activate_texture(ImageFiles::PARTICLE_IMAGE);
 	ren->activate_shader(ShaderTypes::PARTICLE_SHADER);
 
@@ -418,7 +429,4 @@ float ParticleSystem::random_float(float x_min, float x_max)
     result *= (x_max - x_min); // range;
     result += x_min;
     return result;
-}
-
-
 }
