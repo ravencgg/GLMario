@@ -12,7 +12,7 @@ public:
 
 	Camera();
 	
-	Vector2 viewport_size;
+	Vec2 viewport_size;
 
 	//Mat4 cached_projection_matrix;
 	//Mat4 cached_view_matrix;

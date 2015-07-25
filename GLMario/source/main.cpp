@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 	Time* time = Time::get(); // Initialize the static time object
 
 	Camera main_camera;
-	// main_camera.viewport_size = Vector2(16.f, 9.f);
+	// main_camera.viewport_size = Vec2(16.f, 9.f);
 
 	Renderer::create_instance(&window);
 	Renderer* renderer = Renderer::get();

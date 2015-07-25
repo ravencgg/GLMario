@@ -7,7 +7,7 @@ Camera::Camera()
 
 	transform.position.x = 0; //viewport_size.x / 2;
 	transform.position.y = 0; //viewport_size.y / 2;
-	transform.position.z = -1.0f;
+	//transform.position.z = -1.0f;
 }
 
 void Camera::update()

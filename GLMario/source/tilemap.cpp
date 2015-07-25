@@ -55,11 +55,11 @@ void Tilemap::draw()
 	static Sprite sprite = { ImageFiles::MAIN_IMAGE,
 							 ShaderTypes::DEFAULT_SHADER,
 							 DrawLayer::BACKGROUND,
-							 Vector2(1.0f, 1.0f),
+							 vec2(1.0f, 1.0f),
 							 0,
 							 brick_rect, 
-							 Vector4(1, 1, 1, 1)};
-	Vector2 position;
+							 vec4(1, 1, 1, 1)};
+	Vec2 position;
 
 	for(uint32 y = 0; y < height; ++y)
 	{

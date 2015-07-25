@@ -20,7 +20,7 @@ public:
 //	string input; // TODO(cgenova): For writing things into the console
 	uint32 count;
 
-	Vector2 screen_start{ 0.01f, 0.975f };
+	Vec2 screen_start = vec2( 0.01f, 0.975f );
 
 	void log_message(string input);
 

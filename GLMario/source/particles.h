@@ -23,18 +23,18 @@ namespace ParticleOptions
 
 struct ParticleVertexData
 {
-	Vector2 position;
-	Vector4 color;
+	Vec2 position;
+	Vec4 color;
 	float scale;
 };
 
 struct ParticleFrameData
 {
-	Vector2 velocity;
+	Vec2 velocity;
 	float start_time;
 	float lifetime;
-	Vector4 start_color;
-	Vector4 end_color;
+	Vec4 start_color;
+	Vec4 end_color;
 
 	float remaining_lifetime(float current_time)
 	{
@@ -77,23 +77,23 @@ private:
 
 struct ParticleEmissionData
 {
-	Vector2 spawn_position	= Vector2(0.f, 0.f);
-	Vector2 spawn_size      = Vector2(1, 1);
+	Vec2 spawn_position	= vec2(0.f, 0.f);
+	Vec2 spawn_size      = vec2(1, 1);
 	FRange start_size		= FRange(1.f, 10.f);
 	FRange lifetime			= FRange(0.5f, 4.0f);
-	Vector2 min_start_speed = Vector2(-0.5f, -0.5f);
-	Vector2 max_start_speed = Vector2(0.5f, 0.5f);
-	Vector4 start_color		= Vector4(1.f, 0, 0, 1.f);
-	Vector4 end_color		= Vector4(0.0f, 1.f, 0.f, 1.f);
+	Vec2 min_start_speed = vec2(-0.5f, -0.5f);
+	Vec2 max_start_speed = vec2(0.5f, 0.5f);
+	Vec4 start_color		= vec4(1.f, 0, 0, 1.f);
+	Vec4 end_color		= vec4(0.0f, 1.f, 0.f, 1.f);
 
 	uint32 spawn_rate = 10;
 };
 
 struct ParticleTransformData
 {
-	Vector2 world_position = Vector2(0, 0);
-	Vector2 last_world_position = Vector2(0, 0);
-	Vector2 gravity = Vector2(0.0f, 0.f);
+	Vec2 world_position = vec2(0, 0);
+	Vec2 last_world_position = vec2(0, 0);
+	Vec2 gravity = vec2(0.0f, 0.f);
 
 	uint32 options = ParticleOptions::NONE;
 };
@@ -101,8 +101,8 @@ struct ParticleTransformData
 class ParticleSystem
 {
 public:
-	ParticleSystem(uint32 max);
-	~ParticleSystem() { particles.destroy(); }//if (particles) delete[] particles; }
+	ParticleSystem(uint32 max, DrawLayer dl = DrawLayer::FOREGROUND);
+	~ParticleSystem();
 
 	uint32 max_particles;
 	uint32 active_particles;
@@ -111,10 +111,10 @@ public:
 	ParticleData particles;
 	ParticleTransformData ptd;
 	ParticleEmissionData ped;
-
+	DrawLayer draw_layer;
 	
 	void init_random(uint32);
-	void update(Vector2 p = Vector2(0, 0));
+	void update(Vec2 p = vec2(0, 0));
 	void render();
 
 	void create_particle(ParticleVertexData&, ParticleFrameData&, float);
@@ -125,10 +125,10 @@ private:
 	void allocate();
 
 	float random_float(float, float);
-	inline void update_particle(ParticleVertexData&, ParticleFrameData&, Vector2&, float, float, Vector2&);
+	inline void update_particle(ParticleVertexData&, ParticleFrameData&, Vec2&, float, float, Vec2&);
 #define UPDATE_PARTICLE_WIDE
 #ifdef UPDATE_PARTICLE_WIDE
-	void update_particle_wide(uint32, Vector2&, float, float, Vector2&, uint32 count = 4);
+	void update_particle_wide(uint32, Vec2&, float, float, Vec2&, uint32 count = 4);
 #endif
 
 	Renderer* ren;

@@ -10,11 +10,14 @@ class Player : public GameObject
 {
 public:
 
+	Vec2 velocity;
+	
 	Player();
 
 	Input* input;
 	Renderer* ren;
 	Sprite sprite;
+	DrawCall draw_call;
 
 	ParticleSystem ps;
 
@@ -27,6 +30,4 @@ public:
 	virtual void update_and_draw();
 	virtual void paused_update_and_draw(); // Allows things to happen while the game is paused
 
-private:
-	Vector2 velocity;
 };

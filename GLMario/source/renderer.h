@@ -23,20 +23,57 @@ enum class DrawLayer   : uint32 { BACKGROUND, PRE_TILEMAP, TILEMAP, AFTER_TILEMA
 namespace DrawOptions
 {
 	enum : uint32  {
-		WHOLE_TEXTURE = 0x1,
+		WHOLE_TEXTURE = 0x1, // TODO(cgenova): remove this? pointless with flags
 		TEXTURE_RECT = 0x2,
 	};
 }
+ 
+namespace DrawType
+{
+	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
+}
+
+struct SpriteData 
+{
+	Rect tex_rect;
+	Vec2 world_size;
+	Vec2 world_position;
+	Vec4 color_mod;
+	float draw_angle;
+};
+
+struct ParticleBufferData 
+{
+	GLuint vao;
+	GLuint vbo;
+	GLuint draw_method;
+	uint32 num_vertices;
+};
+
+struct DrawCall// Used for drawing to the screen.
+{
+	DrawType::Type draw_type;
+
+	ImageFiles image;
+	ShaderTypes shader;
+	uint32 options;
+
+	union 
+	{
+		SpriteData sd;
+		ParticleBufferData pbd;
+	};
+};
 
 struct Sprite
 {
 	ImageFiles image_file;
 	ShaderTypes shader_type;
 	DrawLayer layer;
-	Vector2 world_size;
+	Vec2 world_size;
 	float angle;
 	Rect tex_rect;
-	Vector4 color_mod;
+	Vec4 color_mod;
 };
 
 enum class AnimationMode { LOOP, PING_PONG, STOP };
@@ -65,8 +102,7 @@ public:
 	static glm::mat4 view_matrix;
 	static glm::mat4 vp_matrix;
 
-
-	Renderer(Window* w, Vector4 clear_color = Vector4(0, 0, 0, 1));
+	Renderer(Window* w, Vec4 clear_color = vec4(0, 0, 0, 1));
 	virtual ~Renderer() {};
 
 	static void create_instance(Window*);
@@ -75,7 +111,7 @@ public:
 	void set_camera(Camera*);
 	void begin_frame();
 	void end_frame();
-	void set_clear_color(Vector4);
+	void set_clear_color(Vec4);
 	void force_color_clear();
 	void load_image(char*, ImageFiles);
 	void load_shader(char*, char*, ShaderTypes);
@@ -83,12 +119,9 @@ public:
 	Dimension get_resolution();
 	float viewport_width();
 
-	// virtual void draw(Sprite*);
-	// virtual void draw(Animation*);
-
 	void render_draw_buffer();
-	virtual void draw_sprite(Sprite*, Vector2);
-	virtual void draw_animation(Animation*, Transform*, float time);
+	void draw_sprite(Sprite*, Vec2);
+	void draw_animation(Animation*, Transform*, float time);
 
 	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }
 	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
@@ -125,19 +158,8 @@ public:
 	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
 	Shader shaders[(uint32) ShaderTypes::SHADER_COUNT];
 
-	struct DrawCall// Used for drawing to the screen.
-	{
-		ImageFiles image;
-		ShaderTypes shader;
-		DrawLayer layer;
-
-		Rect tex_rect;
-		Vector2 world_size;
-		Vector3 world_position;
-		Vector4 color_mod;
-		float draw_angle;
-	};
-
+	void push_draw_call(DrawCall, DrawLayer);
+	void draw_call(DrawCall);
 private:
 	struct DrawObject
 	{
@@ -146,18 +168,14 @@ private:
 		GLuint ebo = 0;
 		uint8* memory = nullptr;
 		uint32 memory_size = 0;
-		Vector3* vert_positions = nullptr;
-		Vector2* tex_coords = nullptr;
+		Vec3* vert_positions = nullptr;
+		Vec2* tex_coords = nullptr;
 
 		~DrawObject() { if(memory) delete[] memory; }
 	};
 
-	void draw_call(DrawCall);
 	void build_buffer_object();
 
-
-	// NOTE(chris): should this be multiple different draw buffers for each layer?
-	// DynamicArray<DrawCall> draw_buffer[LAYER_COUNT];
 	Dimension frame_resolution;
 
 	TextData text_data;
@@ -170,3 +188,4 @@ private:
 
 	static Renderer* s_instance;
 };
+	

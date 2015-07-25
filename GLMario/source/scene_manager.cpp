@@ -8,9 +8,9 @@ SceneManager::SceneManager(Camera* cam)
 {
 	input = (Input::get());
 #if defined(USE_LINKED_LIST)
-	//Player* player = new Player();
+	Player* player = new Player();
 //	player->attach_object(&cam->transform);
-	//add_object(player);
+	add_object(player);
 #else
 	game_objects.add(new Player());
 #endif
@@ -134,26 +134,26 @@ void SceneManager::update_scene()
 		ps1.ped.spawn_size.y = 1.f;
 		ps1.ped.lifetime.min = 9.0f;
 		ps1.ped.lifetime.max = 10.f;
-		ps1.ptd.gravity = Vector2(-10.0f, 1.0f);
+		ps1.ptd.gravity = vec2(-10.0f, 1.0f);
 		
-		ps2.ptd.gravity = Vector2(1.0f, 0.3f);
+		ps2.ptd.gravity = vec2(1.0f, 0.3f);
 		ps2.ped.spawn_size.x = 1.f;
 		ps2.ped.spawn_size.y = 1.f;
 		ps2.ped.spawn_rate = 1000;
 		ps2.ped.spawn_position.x = 2.f;
-		ps2.ped.start_color = Vector4(0, 1.f, 0, 1.f);
-		ps2.ped.end_color   = Vector4(0.2f, 0.8f, 0.2f, 0.4f);
+		ps2.ped.start_color = vec4(0, 1.f, 0, 1.f);
+		ps2.ped.end_color   = vec4(0.2f, 0.8f, 0.2f, 0.4f);
 
 		data[0] = ps2.ped;
 		data[1] = ps2.ped;
-		data[0].start_color = Vector4(1, 0, 0, 1);
-		data[0].end_color   = Vector4(0, 1, 0, 0.5f);
-		data[1].start_color = Vector4(0, 1, 0, 1);
-		data[1].end_color   = Vector4(1, 1, 0, 0);
+		data[0].start_color = vec4(1, 0, 0, 1);
+		data[0].end_color   = vec4(0, 1, 0, 0.5f);
+		data[1].start_color = vec4(0, 1, 0, 1);
+		data[1].end_color   = vec4(1, 1, 0, 0);
 	}
 
-	ps2.ped.start_color = Vector4((float)sin(time->current_time), (float)cos(time->current_time), 1, 1.f);
-	ps2.ped.end_color = Vector4(0.2f, (float)sin(time->current_time), (float)cos(time->current_time), 0.4f);
+	ps2.ped.start_color = vec4((float)sin(time->current_time), (float)cos(time->current_time), 1, 1.f);
+	ps2.ped.end_color = vec4(0.2f, (float)sin(time->current_time), (float)cos(time->current_time), 0.4f);
 
 	static Timer timer(1.0f);
 	if (timer.is_finished())

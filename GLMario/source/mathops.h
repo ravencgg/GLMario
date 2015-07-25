@@ -63,7 +63,492 @@ inline float min(float a, float b)
 	return result;
 }
 
+inline float clamp01(float f)
+{
+	float result = min(max(f, 0.f), 1.f);
+}
 
+union Vec2 
+{
+	struct { float x, y; };
+	struct { float r, g; };
+	float e[2];
+};
+
+union Vec3
+{
+	struct { float x, y, z; };
+	struct { float r, g, b; };
+	struct { Vec2 xy; float _ignoredv3; };
+	float e[3];
+};
+
+union Vec4
+{
+	struct { float x, y, z, w; };
+	struct { float r, g, b, a; };
+	struct { Vec3 xyz; float _ignoredv4; };	
+	float e[4];
+};
+
+inline Vec2 vec2(float x, float y)
+{
+	Vec2 result = { x, y };
+	return result;
+}
+
+inline Vec3 vec3(float x, float y, float z)
+{
+	Vec3 result = { x, y, z };
+	return result;
+}
+
+inline Vec3 vec3(Vec2 xy, float z)
+{
+	Vec3 result = { xy.x, xy.y, z };
+	return result;
+}
+
+inline Vec4 vec4(float x, float y, float z, float w)
+{
+	Vec4 result = { x, y, z, w };
+	return result;
+}
+
+
+inline Vec2
+Perp(Vec2 A)
+{
+    Vec2 result = {-A.y, A.x};
+    return result;
+}
+
+inline Vec2
+operator*(float A, Vec2 B)
+{
+    Vec2 result;
+
+    result.x = A*B.x;
+    result.y = A*B.y;
+
+    return result;
+}
+
+inline Vec2
+operator*(Vec2 B, float A)
+{
+    Vec2 result = A*B;
+
+    return result;
+}
+
+inline Vec2 &
+operator*=(Vec2 &B, float A)
+{
+    B = A * B;
+
+    return B;
+}
+
+inline Vec2
+operator-(Vec2 A)
+{
+    Vec2 result;
+
+    result.x = -A.x;
+    result.y = -A.y;
+
+    return result;
+}
+
+inline Vec2
+operator+(Vec2 A, Vec2 B)
+{
+    Vec2 result;
+
+    result.x = A.x + B.x;
+    result.y = A.y + B.y;
+
+    return result;
+}
+
+inline Vec2 &
+operator+=(Vec2 &A, Vec2 B)
+{
+    A = A + B;
+
+    return(A);
+}
+
+inline Vec2
+operator-(Vec2 A, Vec2 B)
+{
+    Vec2 result;
+
+    result.x = A.x - B.x;
+    result.y = A.y - B.y;
+
+    return result;
+}
+
+inline Vec2
+Hadamard(Vec2 A, Vec2 B)
+{
+    Vec2 result = {A.x*B.x, A.y*B.y};
+
+    return result;
+}
+
+inline float
+Inner(Vec2 A, Vec2 B)
+{
+    float result = A.x*B.x + A.y*B.y;
+
+    return result;
+}
+
+inline float
+LengthSq(Vec2 A)
+{
+    float result = Inner(A, A);
+
+    return result;
+}
+
+inline float
+Length(Vec2 A)
+{
+    float result = sqrt(LengthSq(A));
+    return result;
+}
+
+inline Vec2
+Clamp01(Vec2 Value)
+{
+    Vec2 result;
+
+    result.x = clamp01(Value.x);
+    result.y = clamp01(Value.y);
+
+    return result;
+}
+
+//
+// NOTE(casey): Vec3 operations
+//
+
+inline Vec3
+operator*(float A, Vec3 B)
+{
+    Vec3 result;
+
+    result.x = A*B.x;
+    result.y = A*B.y;
+    result.z = A*B.z;
+    
+    return result;
+}
+
+inline Vec3
+operator*(Vec3 B, float A)
+{
+    Vec3 result = A*B;
+
+    return result;
+}
+
+inline Vec3 &
+operator*=(Vec3 &B, float A)
+{
+    B = A * B;
+
+    return(B);
+}
+
+inline Vec3
+operator-(Vec3 A)
+{
+    Vec3 result;
+
+    result.x = -A.x;
+    result.y = -A.y;
+    result.z = -A.z;
+
+    return result;
+}
+
+inline Vec3
+operator+(Vec3 A, Vec3 B)
+{
+    Vec3 result;
+
+    result.x = A.x + B.x;
+    result.y = A.y + B.y;
+    result.z = A.z + B.z;
+
+    return result;
+}
+
+inline Vec3 &
+operator+=(Vec3 &A, Vec3 B)
+{
+    A = A + B;
+
+    return(A);
+}
+
+inline Vec3
+operator-(Vec3 A, Vec3 B)
+{
+    Vec3 result;
+
+    result.x = A.x - B.x;
+    result.y = A.y - B.y;
+    result.z = A.z - B.z;
+
+    return result;
+}
+
+inline Vec3
+Hadamard(Vec3 A, Vec3 B)
+{
+    Vec3 result = {A.x*B.x, A.y*B.y, A.z*B.z};
+
+    return result;
+}
+
+inline float
+Inner(Vec3 A, Vec3 B)
+{
+    float result = A.x*B.x + A.y*B.y + A.z*B.z;
+
+    return result;
+}
+
+inline float
+LengthSq(Vec3 A)
+{
+    float result = Inner(A, A);
+
+    return result;
+}
+
+inline float
+Length(Vec3 A)
+{
+    float result = sqrt(LengthSq(A));
+    return result;
+}
+
+inline Vec3
+Normalize(Vec3 A)
+{
+    Vec3 result = A * (1.0f / Length(A));
+
+    return result;
+}
+
+inline Vec3
+Clamp01(Vec3 Value)
+{
+    Vec3 result;
+
+    result.x = clamp01(Value.x);
+    result.y = clamp01(Value.y);
+    result.z = clamp01(Value.z);
+
+    return result;
+}
+
+inline Vec3
+Lerp(Vec3 A, float t, Vec3 B)
+{
+    Vec3 result = (1.0f - t)*A + t*B;
+
+    return result;
+}
+
+//
+// NOTE(casey): Vec4 operations
+//
+
+inline Vec4
+operator*(float A, Vec4 B)
+{
+    Vec4 result;
+
+    result.x = A*B.x;
+    result.y = A*B.y;
+    result.z = A*B.z;
+    result.w = A*B.w;
+    
+    return result;
+}
+
+inline Vec4
+operator*(Vec4 B, float A)
+{
+    Vec4 result = A*B;
+
+    return result;
+}
+
+inline Vec4 &
+operator*=(Vec4 &B, float A)
+{
+    B = A * B;
+
+    return(B);
+}
+
+inline Vec4
+operator-(Vec4 A)
+{
+    Vec4 result;
+
+    result.x = -A.x;
+    result.y = -A.y;
+    result.z = -A.z;
+    result.w = -A.w;
+
+    return result;
+}
+
+inline Vec4
+operator+(Vec4 A, Vec4 B)
+{
+    Vec4 result;
+
+    result.x = A.x + B.x;
+    result.y = A.y + B.y;
+    result.z = A.z + B.z;
+    result.w = A.w + B.w;
+
+    return result;
+}
+
+inline Vec4 &
+operator+=(Vec4 &A, Vec4 B)
+{
+    A = A + B;
+
+    return(A);
+}
+
+inline Vec4
+operator-(Vec4 A, Vec4 B)
+{
+    Vec4 result;
+
+    result.x = A.x - B.x;
+    result.y = A.y - B.y;
+    result.z = A.z - B.z;
+    result.w = A.w - B.w;
+
+    return result;
+}
+
+inline Vec4
+Hadamard(Vec4 A, Vec4 B)
+{
+    Vec4 result = {A.x*B.x, A.y*B.y, A.z*B.z, A.w*B.w};
+
+    return result;
+}
+
+inline float
+Inner(Vec4 A, Vec4 B)
+{
+    float result = A.x*B.x + A.y*B.y + A.z*B.z + A.w*B.w;
+
+    return result;
+}
+
+inline float
+LengthSq(Vec4 A)
+{
+    float result = Inner(A, A);
+
+    return result;
+}
+
+inline float
+Length(Vec4 A)
+{
+    float result = sqrt(LengthSq(A));
+    return result;
+}
+
+inline Vec4
+Clamp01(Vec4 Value)
+{
+    Vec4 result;
+
+    result.x = clamp01(Value.x);
+    result.y = clamp01(Value.y);
+    result.z = clamp01(Value.z);
+    result.w = clamp01(Value.w);
+
+    return result;
+}
+
+inline Vec4
+Lerp(Vec4 A, float t, Vec4 B)
+{
+    Vec4 result = (1.0f - t)*A + t*B;
+
+    return result;
+}
+
+// inline 
+// Vec2 vec2(Vec2 rhs)
+// {
+// 	Vec2 result = {};
+// 	lhs.x = rhs.x;
+// 	lhx.y = rhs.y;
+// 	return result;
+// }
+
+// inline
+// Vec2 operator+(Vec2 lhs, Vec2 rhs)
+// {
+// 	Vec2 result = { lhs.x + rhs.x, lhs.y + rhs.y };
+// 	return result;
+// }
+
+// inline
+// Vec2 & operator+=(Vec2& lhs, Vec2 rhs)
+// {
+// 	lhs = lhs + rhs;
+// 	return lhs;
+// }
+
+// inline
+// Vec2 operator-(Vec2 l, Vec2 r) 
+// {
+// 	Vec2 result = { l.x - r.x, l.y - r.y };
+// 	return result;
+// }
+
+// inline 
+// Vec2 & operator-=(vector2 &rhs);
+
+
+// vector2 operator*(const float &rhs);
+
+// void operator*=(const float &rhs);
+
+// // vector2 operator*(const float& rhs);
+
+// float dot(const vector2& rhs) const;
+
+// void normalize();
+
+// static vector2 normalized(const vector2 &rhs);
+
+// float get_length() const;
+
+// std::string to_string();
 
 
 class Vector2
@@ -71,8 +556,6 @@ class Vector2
 public:
 	union { float x; float u; };
 	union { float y; float v; };
-	// float x;
-	// float y;
 
 	Vector2(float = 0, float = 0);
 
@@ -90,7 +573,7 @@ public:
 
 	void operator*=(const float &rhs);
 
-	// Vector2 operator*(const float& rhs);
+	// vector2 operator*(const float& rhs);
 
 	float dot(const Vector2& rhs) const;
 
@@ -185,6 +668,27 @@ public:
 
 	std::string to_string();
 };
+
+inline
+Vec2 lerp(Vec2 a, Vec2 b, float t)
+{
+	Vec2 result = (b - a) * t + a;
+	return result;
+}
+
+inline
+Vec3 lerp(Vec3 a, Vec3 b, float t)
+{
+	Vec3 result = (b - a) * t + a;
+	return result;
+}
+
+inline
+Vec4 lerp(Vec4 a, Vec4 b, float t)
+{
+	Vec4 result = (b - a) * t + a;
+	return result;
+}
 
 Vector2 lerp(Vector2&, Vector2&, float);
 

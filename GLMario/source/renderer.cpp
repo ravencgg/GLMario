@@ -19,7 +19,7 @@ glm::mat4 Renderer::proj_matrix;
 glm::mat4 Renderer::view_matrix;
 glm::mat4 Renderer::vp_matrix;
 
-Renderer::Renderer(Window* w, Vector4 clear_color)
+Renderer::Renderer(Window* w, Vec4 clear_color)
 : draw_window(w)
 {
 	glewExperimental = GL_TRUE;
@@ -71,9 +71,10 @@ void Renderer::begin_frame()
 	float width = main_camera->viewport_size.x;
 	float height = main_camera->viewport_size.y;
 
-	proj_matrix = glm::ortho(-width / 2, width / 2, -height / 2, height / 2, 0.1f, 10.f);
+	float depth = (float) DrawLayer::LAYER_COUNT + 1.f;
+	proj_matrix = glm::ortho(-width / 2, width / 2, -height / 2, height / 2, 0.1f, depth); 
 
-	Vector3 cp = main_camera->transform.position;
+	Vec3 cp = vec3(main_camera->transform.position, -1.0f);
 	glm::vec3 look = glm::vec3(cp.x, cp.y, -1.0f);
 	view_matrix = glm::lookAt(glm::vec3(cp.x, cp.y, 1.0f),
 		look,
@@ -82,7 +83,7 @@ void Renderer::begin_frame()
 	vp_matrix = proj_matrix * view_matrix;
 }
 
-void Renderer::set_clear_color(Vector4 color)
+void Renderer::set_clear_color(Vec4 color)
 {
 	glClearColor(color.x, color.y, color.z, color.w);
 }
@@ -96,6 +97,10 @@ void Renderer::end_frame()
 {
 	render_draw_buffer();
 	draw_window->swap_buffer();
+	for(uint32 i = 0; i < (uint32)DrawLayer::LAYER_COUNT; ++i)
+	{
+		draw_buffer[i].clear();
+	}
 }
 
 Dimension Renderer::get_resolution()
@@ -195,19 +200,18 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 	shaders[(uint32)location].shader_handle = program;
 }
 
-void Renderer::draw_sprite(Sprite* sprite, Vector2 position)
+void Renderer::draw_sprite(Sprite* sprite, Vec2 position)
 {
 	DrawCall draw_info;
 	draw_info.image = sprite->image_file;
 	draw_info.shader = sprite->shader_type;
-	draw_info.tex_rect = sprite->tex_rect;
-	draw_info.world_size = sprite->world_size;
-	draw_info.world_position = Vector3(position, 0);
-	draw_info.draw_angle = sprite->angle;
-	draw_info.color_mod = sprite->color_mod;
+	draw_info.sd.tex_rect = sprite->tex_rect;
+	draw_info.sd.world_size = sprite->world_size;
+	draw_info.sd.world_position = position;
+	draw_info.sd.draw_angle = sprite->angle;
+	draw_info.sd.color_mod = sprite->color_mod;
 	// draw_info.camera_position = draw_position;
 	// draw_info.camera_size = screen_dim;
-
 	draw_buffer[(uint32)sprite->layer].add(draw_info); 
 }
 
@@ -229,7 +233,7 @@ void Renderer::draw_character(char c, uint32 x, uint32 y)
 	// NOTE(chris): Layer is ignored until sorting is implemented;
 	//TODO(chris): still need some conversion from pixels to world space
 
-	Vector3 new_position((float) x, (float) y, 0);
+	Vec3 new_position = { (float)x, (float)y, 0 };
 	glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
 	glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
 	glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
@@ -253,10 +257,10 @@ void Renderer::draw_character(char c, uint32 x, uint32 y)
 	float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
 	float top = (float)(th - char_pos.y) / th;
 
-	draw_object.tex_coords[0] = Vector2(left, top);
-	draw_object.tex_coords[1] = Vector2(right, top);
-	draw_object.tex_coords[2] = Vector2(right, bot);
-	draw_object.tex_coords[3] = Vector2(left, bot);
+	draw_object.tex_coords[0] = vec2(left, top);
+	draw_object.tex_coords[1] = vec2(right, top);
+	draw_object.tex_coords[2] = vec2(right, bot);
+	draw_object.tex_coords[3] = vec2(left, bot);
 
 	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
@@ -324,17 +328,18 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 
 void Renderer::render_draw_buffer()
 {
-	//TODO(chris): sort draw calls;
-
 	for (uint32 layer = 0; layer < (uint32)DrawLayer::LAYER_COUNT; ++layer)
 	{
 		for (uint32 i = 0; i < draw_buffer[layer].size(); ++i)
 		{
 			draw_call(draw_buffer[layer][i]);
 		}
-		draw_buffer[layer].clear();
 	}
-	// Clear it for the next frame;
+}
+
+void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
+{
+	draw_buffer[(uint32) layer].add(draw_call);
 }
 
 void Renderer::draw_call(DrawCall data)
@@ -353,55 +358,84 @@ void Renderer::draw_call(DrawCall data)
 			glBindTexture(GL_TEXTURE_2D, textures[(uint32)data.image].texture_handle);
 		}
 	}
-	
-	// NOTE(chris): Layer is ignored until sorting is implemented;
-	// TODO(chris): still need some conversion from pixels to world space
-	// TODO(cgenova): handle rotated scaling;
- 	Vector3 scale_vec(data.world_size.x * 800 * bo_scale, data.world_size.y * 600 * bo_scale, 1.0f);
 
- 	Vector3 new_position(data.world_position.x, // * main_camera->viewport_size.x, 
- 						 data.world_position.y, // * main_camera->viewport_size.y,
- 						 0);
+	switch(data.draw_type)
+	{
+		case DrawType::SINGLE_SPRITE:
+		{
+			// NOTE(chris): Layer is ignored until sorting is implemented;
+			// TODO(chris): still need some conversion from pixels to world space
+			// TODO(cgenova): handle rotated scaling;
+		 	// Vec3 scale_vec(data.world_size.x * 800 * bo_scale, data.world_size.y * 600 * bo_scale, 1.0f);
 
-	glm::mat4 model_matrix = glm::mat4(1.0f);
-	glm::mat4 scale = glm::scale(glm::vec3(data.world_size.x * bo_scale, data.world_size.y * bo_scale, 1.0f));
-	glm::mat4 rot = glm::rotate(glm::radians(data.draw_angle), glm::vec3(0, 0, 1.0f));
-	glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
+		 	Vec3 new_position = {data.sd.world_position.x, // * main_camera->viewport_size.x, 
+		 						 data.sd.world_position.y, // * main_camera->viewport_size.y,
+		 						 0};
 
-	//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
-	glm::mat4 mvp = vp_matrix * trans * rot * scale;
+			glm::mat4 model_matrix = glm::mat4(1.0f);
+			glm::mat4 scale = glm::scale(glm::vec3(data.sd.world_size.x * bo_scale, data.sd.world_size.y * bo_scale, 1.0f));
+			glm::mat4 rot = glm::rotate(glm::radians(data.sd.draw_angle), glm::vec3(0, 0, 1.0f));
+			glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.sprite_data.world_position.x, data.sprite_data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
 
-	int32 tw = textures[(uint32)data.image].w;
-	int32 th = textures[(uint32)data.image].h;
+			//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
+			glm::mat4 mvp = vp_matrix * trans * rot * scale;
 
- 	float left  = (float)data.tex_rect.left / tw;
- 	float right = (float)(data.tex_rect.left + data.tex_rect.width) / tw;
- 	float bot   = (float)(th - (data.tex_rect.top + data.tex_rect.height)) / th; 
- 	float top   = (float)(th - data.tex_rect.top) / th;
+			int32 tw = textures[(uint32)data.image].w;
+			int32 th = textures[(uint32)data.image].h;
 
-	draw_object.tex_coords[0] = Vector2(left, top);
-	draw_object.tex_coords[1] = Vector2(right, top);
-	draw_object.tex_coords[2] = Vector2(right, bot);
-	draw_object.tex_coords[3] = Vector2(left, bot);
+		 	float left  = (float)data.sd.tex_rect.left / tw;
+		 	float right = (float)(data.sd.tex_rect.left + data.sd.tex_rect.width) / tw;
+		 	float bot   = (float)(th - (data.sd.tex_rect.top + data.sd.tex_rect.height)) / th; 
+		 	float top   = (float)(th - data.sd.tex_rect.top) / th;
 
-	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-	glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
-	glBindVertexArray(draw_object.vao);
+			draw_object.tex_coords[0] = vec2(left, top);
+			draw_object.tex_coords[1] = vec2(right, top);
+			draw_object.tex_coords[2] = vec2(right, bot);
+			draw_object.tex_coords[3] = vec2(left, bot);
 
-	// NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call	
-	float time = 1.f;
-	GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
-	glUniform1f(time_loc, time);
+			glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
+			glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
+			glBindVertexArray(draw_object.vao);
+
+			// NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call	
+			float time = 1.f;
+			GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
+			glUniform1f(time_loc, time);
 
 
-	GLint color_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "color_in");
-	glUniform4f(color_loc, data.color_mod.x, data.color_mod.y, data.color_mod.z, data.color_mod.w);
+			GLint color_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "color_in");
+			glUniform4f(color_loc, data.sd.color_mod.x, data.sd.color_mod.y, data.sd.color_mod.z, data.sd.color_mod.w);
 
-	GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
-	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
+			GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
+			glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);	
+
+		}break;
+		case DrawType::PARTICLE_ARRAY_BUFFER:
+		{
+			glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+			glEnable(GL_POINT_SPRITE);
+
+			glBindBuffer(GL_ARRAY_BUFFER, data.pbd.vbo);
+			glBindVertexArray(data.pbd.vao);
+
+			GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
+			glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&Renderer::vp_matrix);
+
+			float world_scale = viewport_width();
+			GLint scl_loc = glGetUniformLocation(shaders[(uint32)ShaderTypes::PARTICLE_SHADER].shader_handle, "w_scale");
+			glUniform1f(scl_loc, world_scale);
+
+			glDrawArrays(data.pbd.draw_method, 0, data.pbd.num_vertices);
+
+		}break;
+		default:
+			assert(0);
+			break;
+	}
+
 }
 
 void Renderer::build_buffer_object()
@@ -414,19 +448,19 @@ void Renderer::build_buffer_object()
 
 	uint8* mem_loc = draw_object.memory;
 
-	draw_object.vert_positions = (Vector3*) mem_loc;
+	draw_object.vert_positions = (Vec3*) mem_loc;
 	mem_loc += sizeof(*draw_object.vert_positions) * num_vertices;
-	draw_object.tex_coords = (Vector2*) mem_loc;
+	draw_object.tex_coords = (Vec2*) mem_loc;
 
-	draw_object.vert_positions[0] = Vector3(-1, 1, -1);//Vector3(-0.5f, 0.5f, 0.0f);
-	draw_object.vert_positions[1] = Vector3(1, 1, -1);//Vector3(0.5f, 0.5f, 0.0f); 
-	draw_object.vert_positions[2] = Vector3(1, -1, -1);//Vector3(0.5f, -0.5f, 0.0f);
-	draw_object.vert_positions[3] = Vector3(-1, -1, -1);//Vector3(-0.5f, -0.5f, 0.0f); 
+	draw_object.vert_positions[0] = vec3(-1, 1, -1);//Vec3(-0.5f, 0.5f, 0.0f);
+	draw_object.vert_positions[1] = vec3(1, 1, -1);//Vec3(0.5f, 0.5f, 0.0f); 
+	draw_object.vert_positions[2] = vec3(1, -1, -1);//Vec3(0.5f, -0.5f, 0.0f);
+	draw_object.vert_positions[3] = vec3(-1, -1, -1);//Vec3(-0.5f, -0.5f, 0.0f); 
 
-	draw_object.tex_coords[0] = Vector2(0.0f, 1.0f);
-	draw_object.tex_coords[1] = Vector2(1.0f, 1.0f);
-	draw_object.tex_coords[2] = Vector2(1.0f, 0.0f);
-	draw_object.tex_coords[3] = Vector2(0.0f, 0.0f);
+	draw_object.tex_coords[0] = vec2(0.0f, 1.0f);
+	draw_object.tex_coords[1] = vec2(1.0f, 1.0f);
+	draw_object.tex_coords[2] = vec2(1.0f, 0.0f);
+	draw_object.tex_coords[3] = vec2(0.0f, 0.0f);
 
 	GLuint indices[] = {
 		0, 1, 2,
@@ -456,6 +490,3 @@ void Renderer::draw_animation(Animation* animation, Transform* t, float time)
 {
 	assert(animation && t && time > 1);
 }
-
-
-

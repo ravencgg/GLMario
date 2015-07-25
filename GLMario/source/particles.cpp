@@ -1,10 +1,11 @@
 #include "particles.h"
 
 
-ParticleSystem::ParticleSystem(uint32 max)
+ParticleSystem::ParticleSystem(uint32 max, DrawLayer dl) 
 	: max_particles(max),
 	  active_particles(0),
-	  burst_particles(0) 
+	  burst_particles(0),
+	  draw_layer(dl) 
 {
 	time = Time::get();
 	ren = Renderer::get();
@@ -19,6 +20,25 @@ void ParticleSystem::allocate()
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(ParticleVertexData) * max_particles, particles.pvd, GL_DYNAMIC_DRAW);
 	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+	// Position
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)0);
+	// Color
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)(2 * sizeof(float)));
+	// Scale
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)(6 * sizeof(float)));
+	glBindVertexArray(0);
+}
+ 
+ParticleSystem::~ParticleSystem()
+{
+	glDeleteBuffers(1, &vbo);
+	glDeleteVertexArrays(1, &vao);
+	particles.destroy(); 
 }
 
 void ParticleSystem::init_random(uint32 count)
@@ -28,8 +48,8 @@ void ParticleSystem::init_random(uint32 count)
 
 	for(uint32 i = 0; i < active_particles; ++i)
 	{
-		particles.pvd[i].position = Vector2(random_float(-10.f, 10.f), random_float(-10.f, 10.f));
-		particles.pvd[i].color = Vector4(random_float(0, 1.f), random_float(0, 1.f), random_float(0, 1.f), random_float(0, 1.f));
+		particles.pvd[i].position = vec2(random_float(-10.f, 10.f), random_float(-10.f, 10.f));
+		particles.pvd[i].color = vec4(random_float(0, 1.f), random_float(0, 1.f), random_float(0, 1.f), random_float(0, 1.f));
 		particles.pvd[i].scale = 1.0f;
 
 		particles.pfd[i].lifetime = random_float(0.5f, 3.0f);
@@ -53,14 +73,14 @@ void ParticleSystem::create_particle_burst(uint32 num_particles)
 	// }
 }
 
-void ParticleSystem::update(Vector2 new_position)
+void ParticleSystem::update(Vec2 new_position)
 {
 	uint64 cycle_start = __rdtsc();
 	static uint64 avg_cycles = 0;
 
 	float current_time = (float)time->current_time;
 	float dt = (float)time->delta_time;
-	Vector2 frame_gravity = ptd.gravity * dt;
+	Vec2 frame_gravity = ptd.gravity * dt;
 	uint32 new_particles = (uint32)((float)ped.spawn_rate * dt);
 	new_particles = max(new_particles + burst_particles, (uint32)1);
 	burst_particles = 0;
@@ -69,7 +89,7 @@ void ParticleSystem::update(Vector2 new_position)
 	std::string new_particle_str("New Particles: " + std::to_string(new_particles));
 	Console::get()->log_message(new_particle_str);
 
-	Vector2 delta_p = ptd.world_position - ptd.last_world_position;
+	Vec2 delta_p = ptd.world_position - ptd.last_world_position;
 	ptd.last_world_position = ptd.world_position;
 
 	static Input* input = Input::get();
@@ -219,7 +239,7 @@ else
 	// Console::get()->log_message(long_message);
 }
 
-inline void ParticleSystem::update_particle(ParticleVertexData& pvd, ParticleFrameData& pfd, Vector2& frame_gravity, float dt, float current_time, Vector2& delta_p)
+inline void ParticleSystem::update_particle(ParticleVertexData& pvd, ParticleFrameData& pfd, Vec2& frame_gravity, float dt, float current_time, Vec2& delta_p)
 {
 	pfd.velocity += frame_gravity;
 
@@ -235,7 +255,7 @@ inline void ParticleSystem::update_particle(ParticleVertexData& pvd, ParticleFra
 }
 
 #ifdef UPDATE_PARTICLE_WIDE
-void ParticleSystem::update_particle_wide(uint32 s_index, Vector2& frame_gravity, float dt, float current_time, Vector2& delta_p, uint32 count)
+void ParticleSystem::update_particle_wide(uint32 s_index, Vec2& frame_gravity, float dt, float current_time, Vec2& delta_p, uint32 count)
 {
 	__m128 x_gravity = _mm_set1_ps(frame_gravity.x);
 	__m128 y_gravity = _mm_set1_ps(frame_gravity.y);
@@ -252,6 +272,7 @@ void ParticleSystem::update_particle_wide(uint32 s_index, Vector2& frame_gravity
 	};
 	__m128 lerp_t = _mm_setr_ps(*(float *)&times[0], *(float *)&times[1], *(float *)&times[2], *(float *)&times[3]);
 
+// Start Colors
 	__m128 r_scol = _mm_setr_ps(*(float *) &particles.pfd[s_index].start_color.r,
 								*(float *) &particles.pfd[s_index + 1].start_color.r,
 								*(float *) &particles.pfd[s_index + 2].start_color.r,
@@ -338,7 +359,7 @@ void ParticleSystem::update_particle_wide(uint32 s_index, Vector2& frame_gravity
 	__m128 a_col  = lerp(a_scol, a_ecol, lerp_t); 
 
 
-// NOTE(chris): This would all be faster in SOA instead of Vector2s 
+// NOTE(chris): This would all be faster in SOA instead of Vec2s 
 	uint32 p;
 	for(uint32 i = 0; i < count; ++i)
 	{
@@ -369,8 +390,8 @@ void ParticleSystem::update_particle_wide(uint32 s_index, Vector2& frame_gravity
 
 void ParticleSystem::create_particle(ParticleVertexData& pvd, ParticleFrameData& pfd, float start_time)
 {
-	pvd.position.x = ptd.world_position.x + ped.spawn_position.x + random_float(-ped.spawn_size.x, ped.spawn_size.x);
-	pvd.position.y = ptd.world_position.y + ped.spawn_position.y + random_float(-ped.spawn_size.y, ped.spawn_size.y);
+	pvd.position.x = ptd.world_position.x + ped.spawn_position.x + random_float(-ped.spawn_size.x / 2.f, ped.spawn_size.x / 2.f);
+	pvd.position.y = ptd.world_position.y + ped.spawn_position.y + random_float(-ped.spawn_size.y / 2.f, ped.spawn_size.y / 2.f);
 	pvd.color = ped.start_color;
 	pvd.scale = random_float(ped.start_size.min, ped.start_size.max);
 
@@ -385,11 +406,22 @@ void ParticleSystem::create_particle(ParticleVertexData& pvd, ParticleFrameData&
 
 void ParticleSystem::render()
 {
-	// Renderer::DrawCall draw_call = {};
+#if 1
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleVertexData) * active_particles, particles.pvd);
 
-	// draw_call.image = ImageFiles::PARTICLE_IMAGE; 
-	// draw_call.shader = ShaderTypes::PARTICLE_SHADER;
-	// draw_call.options |= WHOLE_TEXTURE; 
+	DrawCall draw_call = {};
+	draw_call.draw_type = DrawType::PARTICLE_ARRAY_BUFFER;
+	draw_call.image = ImageFiles::PARTICLE_IMAGE; 
+	draw_call.shader = ShaderTypes::PARTICLE_SHADER;
+	draw_call.options |= DrawOptions::WHOLE_TEXTURE; //TODO(cgenova): support animated textures
+	draw_call.pbd.vao = vao;
+	draw_call.pbd.vbo = vbo;
+	draw_call.pbd.draw_method = GL_POINTS;
+	draw_call.pbd.num_vertices = active_particles;
+
+	ren->push_draw_call(draw_call, draw_layer);
+#else
 	ren->activate_texture(ImageFiles::PARTICLE_IMAGE);
 	ren->activate_shader(ShaderTypes::PARTICLE_SHADER);
 
@@ -398,15 +430,17 @@ void ParticleSystem::render()
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleVertexData) * active_particles, particles.pvd);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(ParticleVertexData) * max_particles, particles.pvd, GL_STREAM_DRAW);
 
 	glBindVertexArray(vao);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 
+	// Position
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)0);
+	// Color
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)(2 * sizeof(float)));
+	// Scale
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)(6 * sizeof(float)));
 
 	GLint mat_loc = glGetUniformLocation(ren->shaders[(uint32)ShaderTypes::PARTICLE_SHADER].shader_handle, "mvp");
@@ -417,6 +451,7 @@ void ParticleSystem::render()
 	glUniform1f(scl_loc, world_scale);
 
 	glDrawArrays(GL_POINTS, 0, active_particles);
+#endif	
 }
 
 float ParticleSystem::random_float(float x_min, float x_max)
