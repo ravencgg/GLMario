@@ -17,8 +17,14 @@
 
 enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT }; 
 enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
-enum class DrawLayer   : uint32 { BACKGROUND, PRE_TILEMAP, TILEMAP, AFTER_TILEMAP, FOREGROUND, UI, LAYER_COUNT };
+enum class DrawLayer   : uint32 { BACKGROUND, PRE_TILEMAP, TILEMAP, POST_TILEMAP, PLAYER, FOREGROUND, UI, LAYER_COUNT };
 
+enum class SpriteRect  : uint32 { UNINITIALIZED, STONE, BRICK, MARIO, RECT_COUNT };
+
+Rect sprite_rects[];
+
+void initialize_sprite_rects();
+Rect get_sprite_rect(SpriteRect);
 
 namespace DrawOptions
 {
@@ -120,7 +126,7 @@ public:
 	float viewport_width();
 
 	void render_draw_buffer();
-	void draw_sprite(Sprite*, Vec2);
+	// void draw_sprite(Sprite*, Vec2);
 	void draw_animation(Animation*, Transform*, float time);
 
 	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }

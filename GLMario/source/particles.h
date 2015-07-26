@@ -57,18 +57,23 @@ struct ParticleData
 	uint32 last_active_index;
 
 	~ParticleData() { destroy(); }
-	void destroy() { if (memory) delete[] memory; memory = nullptr; }
+	void destroy() 
+	{ 
+		if (memory) delete[] memory; 
+		memory = nullptr; 
+	}
 	void init(int32 count)
 	{
 		if (memory) delete[] memory;
 		uint32 alignment = 16; // 16 byte align data for SIMD.
 		size_t mem_size = count * (sizeof(ParticleVertexData) + sizeof(ParticleFrameData)) + alignment;
 		memory = new uint8[mem_size];
-		memory = (uint8*)(((uint32)memory + (alignment - 1)) & ~(alignment - 1));
-		assert(((size_t)memory & 0xF) == 0);
+		uint8* mp = memory;
+		mp = (uint8*)(((uint32)memory + (alignment - 1)) & ~(alignment - 1));
+		assert(((size_t)mp & 0xF) == 0);
 		memset(memory, 0, mem_size);
-		this->pvd = (ParticleVertexData*) memory;
-		this->pfd = (ParticleFrameData*)(memory + (count * sizeof(ParticleVertexData)));
+		this->pvd = (ParticleVertexData*) mp;
+		this->pfd = (ParticleFrameData*) (mp + (count * sizeof(ParticleVertexData)));
 		last_active_index = 0;
 	}
 private:
@@ -98,28 +103,32 @@ struct ParticleTransformData
 	uint32 options = ParticleOptions::NONE;
 };
 
-class ParticleSystem
+class ParticleSystem : public GameObject
 {
 public:
+	ParticleSystem();
 	ParticleSystem(uint32 max, DrawLayer dl = DrawLayer::FOREGROUND);
 	~ParticleSystem();
 
 	uint32 max_particles;
 	uint32 active_particles;
 	uint32 burst_particles;
+	bool32 initialized;
 
 	ParticleData particles;
 	ParticleTransformData ptd;
 	ParticleEmissionData ped;
 	DrawLayer draw_layer;
 	
+	void initialize(uint32 max, DrawLayer dl);
 	void init_random(uint32);
 	void update(Vec2 p = vec2(0, 0));
 	void render();
 
 	void create_particle(ParticleVertexData&, ParticleFrameData&, float);
 	void create_particle_burst(uint32);
-	void pack_particles();
+
+    virtual void update_and_draw() override;
 
 private:
 	void allocate();

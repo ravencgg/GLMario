@@ -5,12 +5,11 @@ Camera::Camera()
 	viewport_size.x = 16;
 	viewport_size.y = 9;
 
-	transform.position.x = 0; //viewport_size.x / 2;
-	transform.position.y = 0; //viewport_size.y / 2;
-	//transform.position.z = -1.0f;
+	transform.position.x = 0;
+	transform.position.y = 0; 
 }
 
-void Camera::update()
+void Camera::update_and_draw()
 {
 	static Input* input = Input::get();
 
@@ -35,14 +34,4 @@ void Camera::update()
 		// transform.position.y -= 0.1f;
 		viewport_size *= 0.9f;
 	}
-}
-
-void Camera::paused_update()
-{
-
-}
-
-void Camera::draw(IDrawer*)
-{
-	
 }

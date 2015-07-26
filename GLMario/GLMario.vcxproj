@@ -80,11 +80,13 @@
   <ItemGroup>
     <ClCompile Include="source\camera.cpp" />
     <ClCompile Include="source\console.cpp" />
+    <ClCompile Include="source\entity.cpp" />
     <ClCompile Include="source\helper.cpp" />
     <ClCompile Include="source\input.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\mathops.cpp" />
     <ClCompile Include="source\particles.cpp" />
+    <ClCompile Include="source\physics.cpp" />
     <ClCompile Include="source\player.cpp" />
     <ClCompile Include="source\renderer.cpp" />
     <ClCompile Include="source\scene_manager.cpp" />
@@ -137,12 +139,14 @@
     <ClInclude Include="source\camera.h" />
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\dynamic_array.h" />
+    <ClInclude Include="source\entity.h" />
     <ClInclude Include="source\game_object.h" />
     <ClInclude Include="source\helper.h" />
     <ClInclude Include="source\IDrawer.h" />
     <ClInclude Include="source\input.h" />
     <ClInclude Include="source\mathops.h" />
     <ClInclude Include="source\particles.h" />
+    <ClInclude Include="source\physics.h" />
     <ClInclude Include="source\player.h" />
     <ClInclude Include="source\renderer.h" />
     <ClInclude Include="source\scene_manager.h" />

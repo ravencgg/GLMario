@@ -15,6 +15,10 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 
+typedef int8_t bool8;
+typedef int16_t bool16;
+typedef int32_t bool32;
+
 // Unused:
 typedef void (*fPointer)();
 
@@ -57,3 +61,39 @@ struct Rect
 		int32 E[4];
 	};
 };
+
+struct Rectf
+{
+	union
+	{
+		struct
+		{
+			float x, y, w, h;
+		};
+		struct
+		{
+			float left, top, width, height;
+		};
+		float E[4];
+	};	
+};
+
+inline Rect rect(int32 x, int32 y, int32 w, int32 h)
+{
+	Rect result = {};
+	result.x = x;
+	result.y = y;
+	result.w = w;
+	result.h = h;
+	return result;
+}
+
+inline Rectf rect(float x, float y, float w, float h)
+{
+	Rectf result = {};
+	result.x = x;
+	result.y = y;
+	result.w = w;
+	result.h = h;
+	return result;
+}

@@ -1,8 +1,9 @@
 #include "player.h"
+#if 1
 
 Player::Player()
 	: input(Input::get()),
-	  ps(ParticleSystem(20000)),
+	  ps(ParticleSystem(2000)),
 	  ren(Renderer::get())
 {
 	memset(attached_objects, 0, sizeof(attached_objects));
@@ -17,9 +18,9 @@ Player::Player()
 	ps.ped.end_color = vec4(0.8f, 0.8f, 0.0f, 0.1f);
 	ps.ped.spawn_rate = 100;
 	ps.ptd.gravity = vec2(0, -0.8f);
-	ps.ptd.options |= ParticleOptions::LOCAL_SIM;
-	ps.draw_layer = DrawLayer::PRE_TILEMAP;
-	// ps.ptd.options |= ParticleOptions::NONE;
+	// ps.ptd.options |= ParticleOptions::LOCAL_SIM;
+	ps.draw_layer = DrawLayer::POST_TILEMAP;
+	ps.ptd.options = ParticleOptions::NONE;
 
 	draw_call = {};
 	draw_call.draw_type = DrawType::SINGLE_SPRITE;
@@ -120,8 +121,8 @@ void Player::update_and_draw()
 		velocity.x = 0;
 	}
 
-	std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
-	Console::get()->log_message(p_info);
+	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
+	//Console::get()->log_message(p_info);
 	// sprite.angle += 0.1f;
 	transform.position += velocity;
 	update_attached_objects();
@@ -139,12 +140,14 @@ void Player::update_and_draw()
 	if(draw_player)
 	{
 		draw_call.sd.world_position = transform.position;
-		ren->push_draw_call(draw_call, DrawLayer::TILEMAP);
+		ren->push_draw_call(draw_call, DrawLayer::PLAYER);
 		// ren->draw_sprite(&sprite, transform.position);
 	}
 }
 
 void Player::paused_update_and_draw()
 {
-	ren->draw_sprite(&sprite, transform.position);
+	assert(0);	
+	// ren->draw_sprite(&sprite, transform.position);
 } // Allows things to happen while the game is paused
+#endif

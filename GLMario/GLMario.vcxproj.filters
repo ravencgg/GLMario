@@ -14,6 +14,8 @@
     <ClCompile Include="source\console.cpp" />
     <ClCompile Include="source\particles.cpp" />
     <ClCompile Include="source\time.cpp" />
+    <ClCompile Include="source\entity.cpp" />
+    <ClCompile Include="source\physics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\mathops.h" />
@@ -155,6 +157,8 @@
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\particles.h" />
     <ClInclude Include="source\time.h" />
+    <ClInclude Include="source\entity.h" />
+    <ClInclude Include="source\physics.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="GLM">

@@ -4,12 +4,6 @@
 #include "renderer.h"
 using std::string;
 
-//void example()
-//{
-//	console.log_message(std::string);
-//}
-
-
 // Immediate mode console/ per frame rendering
 class Console
 {
@@ -17,7 +11,6 @@ public:
 	static const uint32 max_stored_lines = 250;
 
 	string lines[max_stored_lines];
-//	string input; // TODO(cgenova): For writing things into the console
 	uint32 count;
 
 	Vec2 screen_start = vec2( 0.01f, 0.975f );

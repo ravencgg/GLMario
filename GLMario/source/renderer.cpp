@@ -13,6 +13,22 @@ char* Renderer::text_image = "..\\res\\charmap.png";
 char* Renderer::particle_image = "..\\res\\particle.png";
 const uint32 Renderer::pixels_to_meters = 16;
 
+
+Rect sprite_rects[(uint32) SpriteRect::RECT_COUNT] = {};
+
+void initialize_sprite_rects()
+{
+	sprite_rects[(uint32) SpriteRect::BRICK] = rect( 85, 0, 16, 16 ); 
+	sprite_rects[(uint32) SpriteRect::STONE] = { 0, 0, 16, 16 }; 
+}
+
+Rect get_sprite_rect(SpriteRect r)
+{
+	assert((uint32) r < (uint32) SpriteRect::RECT_COUNT);
+	Rect result = sprite_rects[(uint32)r];
+	return result;
+}
+
 Renderer* Renderer::s_instance = nullptr;
 
 glm::mat4 Renderer::proj_matrix;
@@ -47,6 +63,7 @@ Renderer::Renderer(Window* w, Vec4 clear_color)
 void Renderer::create_instance(Window* w)
 {
 	if(s_instance) return;
+	initialize_sprite_rects();
 	s_instance = new Renderer(w);
 }
 
@@ -200,20 +217,20 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 	shaders[(uint32)location].shader_handle = program;
 }
 
-void Renderer::draw_sprite(Sprite* sprite, Vec2 position)
-{
-	DrawCall draw_info;
-	draw_info.image = sprite->image_file;
-	draw_info.shader = sprite->shader_type;
-	draw_info.sd.tex_rect = sprite->tex_rect;
-	draw_info.sd.world_size = sprite->world_size;
-	draw_info.sd.world_position = position;
-	draw_info.sd.draw_angle = sprite->angle;
-	draw_info.sd.color_mod = sprite->color_mod;
-	// draw_info.camera_position = draw_position;
-	// draw_info.camera_size = screen_dim;
-	draw_buffer[(uint32)sprite->layer].add(draw_info); 
-}
+// void Renderer::draw_sprite(Sprite* sprite, Vec2 position)
+// {
+// 	DrawCall draw_info;
+// 	draw_info.image = sprite->image_file;
+// 	draw_info.shader = sprite->shader_type;
+// 	draw_info.sd.tex_rect = sprite->tex_rect;
+// 	draw_info.sd.world_size = sprite->world_size;
+// 	draw_info.sd.world_position = position;
+// 	draw_info.sd.draw_angle = sprite->angle;
+// 	draw_info.sd.color_mod = sprite->color_mod;
+// 	// draw_info.camera_position = draw_position;
+// 	// draw_info.camera_size = screen_dim;
+// 	draw_buffer[(uint32)sprite->layer].add(draw_info); 
+// }
 
 void Renderer::draw_character(char c, uint32 x, uint32 y)
 {

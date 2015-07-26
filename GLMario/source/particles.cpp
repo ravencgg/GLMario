@@ -1,17 +1,37 @@
 #include "particles.h"
 
 
-ParticleSystem::ParticleSystem(uint32 max, DrawLayer dl) 
-	: max_particles(max),
-	  active_particles(0),
-	  burst_particles(0),
-	  draw_layer(dl) 
+ParticleSystem::ParticleSystem()
+    : max_particles(0),
+      active_particles(0),
+      burst_particles(0),
+      draw_layer((DrawLayer)0),
+	  initialized(false)
 {
+
+}
+
+ParticleSystem::ParticleSystem(uint32 max, DrawLayer dl) 
+    : max_particles(max),
+      active_particles(0),
+      burst_particles(0),
+      draw_layer(dl),
+	  initialized(false)
+{
+	initialize(max, dl);
+}
+
+void ParticleSystem::initialize(uint32 max_particles, DrawLayer layer)
+{
+	assert(!initialized);
+	if (initialized) return;
+	this->max_particles = max_particles;
+	draw_layer = layer;
+
 	time = Time::get();
 	ren = Renderer::get();
-	particles.init(max);
+	particles.init(max_particles);
 	allocate();
-	// init_random(max_particles);
 }
 
 void ParticleSystem::allocate()
@@ -38,6 +58,8 @@ ParticleSystem::~ParticleSystem()
 {
 	glDeleteBuffers(1, &vbo);
 	glDeleteVertexArrays(1, &vao);
+
+	int i = 0;
 	particles.destroy(); 
 }
 
@@ -93,7 +115,7 @@ void ParticleSystem::update(Vec2 new_position)
 	ptd.last_world_position = ptd.world_position;
 
 	static Input* input = Input::get();
-if(input->is_down(SDLK_m)) // Hold m for SIMD, currently not optimized
+if(input->is_down(SDLK_l)) // Hold l for SIMD, currently ~ %10 faster than not doing wide 
 {
 // #ifdef UPDATE_PARTICLE_WIDE
 
@@ -452,6 +474,12 @@ void ParticleSystem::render()
 
 	glDrawArrays(GL_POINTS, 0, active_particles);
 #endif	
+}
+
+void ParticleSystem::update_and_draw()
+{
+    update(this->transform.position);
+    render();
 }
 
 float ParticleSystem::random_float(float x_min, float x_max)

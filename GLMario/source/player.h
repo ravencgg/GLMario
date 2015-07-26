@@ -9,7 +9,6 @@
 class Player : public GameObject
 {
 public:
-
 	Vec2 velocity;
 	
 	Player();

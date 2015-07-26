@@ -10,8 +10,10 @@ class Tilemap
 {
 public:
 	Tilemap();
-	Tilemap(uint32, uint32);
+	Tilemap(int32, int32);
 	~Tilemap();
+
+	DrawCall draw_call;
 
 	enum TileType { EMPTY, BRICK, COUNT };
 
@@ -22,6 +24,7 @@ public:
 	};
 
 	void fill_checkerboard();
+	void fill_walled_room();
 
 	void update();
 	void draw();
@@ -31,8 +34,8 @@ private:
 	uint32 array_loc(uint32, uint32);
 
 	Tile* tiles = nullptr;
-	uint32 width, height;
-	uint32 tile_width, tile_height;
+	int32 width, height;
+	int32 tile_width, tile_height;
 
 	Renderer* ren;
 };

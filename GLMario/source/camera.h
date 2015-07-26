@@ -6,24 +6,20 @@
 #include "mat4x4.hpp"
 #include "gtc/matrix_transform.hpp" 
 
+class GameObject;
+
 class Camera : public GameObject
 {
 public:
-
 	Camera();
+	virtual ~Camera() {}
 	
 	Vec2 viewport_size;
-
-	//Mat4 cached_projection_matrix;
-	//Mat4 cached_view_matrix;
 
 	glm::mat4x4 cached_projection_matrix;
 	glm::mat4x4 cached_view_matrix;
 
-	virtual void update();
-	virtual void paused_update();
-	virtual void draw(IDrawer*);
-
+	virtual void update_and_draw();
 	void update_matrices();
 
 private:

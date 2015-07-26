@@ -105,10 +105,10 @@ int main(int argc, char* argv[])
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
-		main_camera.update();
+		main_camera.update_and_draw();
 		scene.update_scene();
 		
-		renderer->render_draw_buffer();
+		//renderer->render_draw_buffer();
 		
 		Console::get()->draw();
 		renderer->end_frame();
@@ -118,10 +118,10 @@ int main(int argc, char* argv[])
 		// TODO(cgenova): High granularity sleep function! 
 		uint32 delay_time = time->ticks_for_frame_cap();
 		if(delay_time > 5) {
-			std::cout << "Delaying: " << delay_time << " ms" << std::endl;
+			//std::cout << "Delaying: " << delay_time << " ms" << std::endl;
 			SDL_Delay(delay_time);
 		}
-		std::cout << "Delta T : " << delay_time << " ms" << std::endl;
+		//std::cout << "Delta T : " << delay_time << " ms" << std::endl;
 
 	}// End main loop	
 
