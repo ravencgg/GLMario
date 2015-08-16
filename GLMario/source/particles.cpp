@@ -108,8 +108,10 @@ void ParticleSystem::update(Vec2 new_position)
 	burst_particles = 0;
 	ptd.world_position = new_position;
 
+#if 0
 	std::string new_particle_str("New Particles: " + std::to_string(new_particles));
 	Console::get()->log_message(new_particle_str);
+#endif
 
 	Vec2 delta_p = ptd.world_position - ptd.last_world_position;
 	ptd.last_world_position = ptd.world_position;
@@ -154,16 +156,24 @@ if(input->is_down(SDLK_l)) // Hold l for SIMD, currently ~ %10 faster than not d
 						valid_particle = false;
 						break;
 					}
+
 					while (!particles.pfd[particles.last_active_index].is_active(current_time) && particles.last_active_index > i)
 					{
 						--particles.last_active_index;
 					}
-					if (particles.last_active_index <= i) valid_particle = false;
-					assert(particles.pfd[particles.last_active_index].is_active(current_time));
-					pvd = particles.pvd[particles.last_active_index];
-					pfd = particles.pfd[particles.last_active_index];
-					particles.pfd[particles.last_active_index].lifetime = 0;
-					--particles.last_active_index;
+
+					if (particles.last_active_index <= i)
+					{
+						valid_particle = false; // If this is false then all particles have been updated, no need to copy, continue on non-wide path
+					}
+					else
+					{
+						assert(particles.pfd[particles.last_active_index].is_active(current_time));
+						pvd = particles.pvd[particles.last_active_index];
+						pfd = particles.pfd[particles.last_active_index];
+						particles.pfd[particles.last_active_index].lifetime = 0;
+						--particles.last_active_index;
+					}
 				}
 			}
 
@@ -246,19 +256,16 @@ else
 // #endif
 }
 
-
+#if 0
 	uint64 cycle_end = __rdtsc();
 	uint64 cycle_count = cycle_end - cycle_start;
 	avg_cycles += cycle_count;
 	avg_cycles = avg_cycles >> 1;
 	std::string perf_message("Cycle count: " + std::to_string(cycle_count / max(active_particles, (uint32)1)));
 	Console::get()->log_message(perf_message);
-
 	std::string message("Particle count: " + std::to_string(active_particles));
 	Console::get()->log_message(message);
-
-	// std::string long_message("\nThis is a very long message that has no chance of fitting on a single line in the program, \n\tand as such will have to wrap around \tor face many consequences of its actions.\n\t\tThat is final. I have nothing else to say on the matter.");
-	// Console::get()->log_message(long_message);
+#endif
 }
 
 inline void ParticleSystem::update_particle(ParticleVertexData& pvd, ParticleFrameData& pfd, Vec2& frame_gravity, float dt, float current_time, Vec2& delta_p)
@@ -437,10 +444,10 @@ void ParticleSystem::render()
 	draw_call.image = ImageFiles::PARTICLE_IMAGE; 
 	draw_call.shader = ShaderTypes::PARTICLE_SHADER;
 	draw_call.options |= DrawOptions::WHOLE_TEXTURE; //TODO(cgenova): support animated textures
-	draw_call.pbd.vao = vao;
-	draw_call.pbd.vbo = vbo;
-	draw_call.pbd.draw_method = GL_POINTS;
-	draw_call.pbd.num_vertices = active_particles;
+	draw_call.abd.vao = vao;
+	draw_call.abd.vbo = vbo;
+	draw_call.abd.draw_method = GL_POINTS;
+	draw_call.abd.num_vertices = active_particles;
 
 	ren->push_draw_call(draw_call, draw_layer);
 #else
@@ -476,7 +483,7 @@ void ParticleSystem::render()
 #endif	
 }
 
-void ParticleSystem::update_and_draw()
+void ParticleSystem::Tick(float dt)
 {
     update(this->transform.position);
     render();

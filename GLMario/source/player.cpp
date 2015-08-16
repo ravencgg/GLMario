@@ -1,13 +1,11 @@
+#include "scene_manager.h"
+
 #include "player.h"
 #if 1
 
 Player::Player()
-	: input(Input::get()),
-	  ps(ParticleSystem(2000)),
-	  ren(Renderer::get())
+	: ps(ParticleSystem(2000))
 {
-	memset(attached_objects, 0, sizeof(attached_objects));
-
 	ps.ped.spawn_position = vec2(0.f, 0.f);
 	ps.ped.spawn_size = vec2(1.f, 1.5f);
 	ps.ped.start_size = FRange(1.f, 4.f);
@@ -34,98 +32,46 @@ Player::Player()
 	draw_call.sd.world_size = vec2(1.0f, 1.5f);
 	draw_call.sd.world_position = transform.position;
 	draw_call.sd.draw_angle = 0;
-
-	// sprite.image_file = ImageFiles::MARIO_IMAGE;
-	// sprite.shader_type = ShaderTypes::DEFAULT_SHADER;
-	// sprite.layer = DrawLayer::FOREGROUND;
-	// sprite.world_size = vec2(1.0f, 1.5f);
-	// // sprite.world_size = Vec2(25.6f, 16.f);
-	// sprite.angle = 0;
-	// sprite.tex_rect.top = 903;
-	// sprite.tex_rect.left = 17;
-	// sprite.tex_rect.width = 34;
-	// sprite.tex_rect.height = 34;
-	// // sprite.tex_rect.top = 0;
-	// // sprite.tex_rect.left = 0;
-	// // sprite.tex_rect.width = 2560;
-	// // sprite.tex_rect.height = 1600;
-	// sprite.color_mod = vec4(1, 1, 1, 1);
 }
 
-void Player::attach_object(Transform* t)
+void Player::Tick(float dt)
 {
-	int32 empty_loc = -1;
-	for (int i = 0; i < Player::max_attached_objects; ++i)
-	{
-		if (t == attached_objects[i]) return;
-		else if (empty_loc < 0 && attached_objects[i] == nullptr) empty_loc = i;
-	}
-
-	if (empty_loc >= 0) attached_objects[empty_loc] = t;
-}
-
-void Player::detach_object(Transform* t)
-{
-	for (int i = 0; i < Player::max_attached_objects; ++i)
-	{
-		if (t == attached_objects[i])
-		{
-			attached_objects[i] = nullptr;
-		}
-	}
-}
-
-void Player::update_attached_objects()
-{
-	for (int i = 0; i < Player::max_attached_objects; ++i)
-	{
-		if (attached_objects[i])
-			attached_objects[i]->position = transform.position;
-	}
-}
-
-void Player::update_and_draw()
-{
+	const float gravity = -9.8f;
 	static uint32 count = 0;
-	if (input)
-	{	
-		if (input->on_down(SDLK_f))
-		{
-			delete_this_frame = true;
-		}
-	}
+	Input* input = Input::get();
 
-	if(input->is_down(SDLK_w))
+	this->velocity.y += gravity * dt;
+	if(input->is_down(SDLK_SPACE))
 	{
-		velocity.y = 0.1f;
+		velocity.y = 5.f;
 	}	
-	else if(input->is_down(SDLK_s))
-	{
-		velocity.y = -0.1f;
-	}
-	else
-	{
-		velocity.y = 0;
-	}
 
 	if(input->is_down(SDLK_d))
 	{
-		velocity.x = 0.1f;
+		velocity.x += 10.f * dt;
 	}	
-	else if(input->is_down(SDLK_a))
+	else if(input->on_down(SDLK_a))
 	{
-		velocity.x = -0.1f;
+		velocity.x += -10.f * dt;
+		//transform.position.x -= 1.f;
 	}
 	else
 	{
 		velocity.x = 0;
 	}
 
+	velocity = this->active_scene->process_motion(transform.position,
+													make_rect(transform.position, vec2(1.f, 1.5f)),
+													velocity);
+
+	std::string conOut("Player velocity: " + ::to_string(velocity));
+	Console::get()->log_message(conOut);
+
+
 	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
 	//Console::get()->log_message(p_info);
 	// sprite.angle += 0.1f;
-	transform.position += velocity;
-	update_attached_objects();
+	//transform.position += velocity;
 
 	//TODO(cgenova): get rid of this, but maybe add it in for real? use a separate particle system for bursts and have the particles subject to high amounts of gravity or something.
 	static bool draw_player = true;
@@ -139,15 +85,11 @@ void Player::update_and_draw()
 	//sprite.color_mod.w = 0.5f;
 	if(draw_player)
 	{
+		Renderer* ren = Renderer::get();
 		draw_call.sd.world_position = transform.position;
 		ren->push_draw_call(draw_call, DrawLayer::PLAYER);
 		// ren->draw_sprite(&sprite, transform.position);
 	}
 }
 
-void Player::paused_update_and_draw()
-{
-	assert(0);	
-	// ren->draw_sprite(&sprite, transform.position);
-} // Allows things to happen while the game is paused
 #endif

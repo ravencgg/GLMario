@@ -66,6 +66,7 @@ inline float min(float a, float b)
 inline float clamp01(float f)
 {
 	float result = min(max(f, 0.f), 1.f);
+    return result;
 }
 
 union Vec2 
@@ -192,7 +193,7 @@ operator-(Vec2 A, Vec2 B)
 }
 
 inline Vec2
-Hadamard(Vec2 A, Vec2 B)
+hadamard(Vec2 A, Vec2 B)
 {
     Vec2 result = {A.x*B.x, A.y*B.y};
 
@@ -200,7 +201,7 @@ Hadamard(Vec2 A, Vec2 B)
 }
 
 inline float
-Inner(Vec2 A, Vec2 B)
+dot(Vec2 A, Vec2 B)
 {
     float result = A.x*B.x + A.y*B.y;
 
@@ -208,22 +209,22 @@ Inner(Vec2 A, Vec2 B)
 }
 
 inline float
-LengthSq(Vec2 A)
+length_sq(Vec2 A)
 {
-    float result = Inner(A, A);
+    float result = dot(A, A);
 
     return result;
 }
 
 inline float
-Length(Vec2 A)
+length(Vec2 A)
 {
-    float result = sqrt(LengthSq(A));
+    float result = sqrt(length_sq(A));
     return result;
 }
 
 inline Vec2
-Clamp01(Vec2 Value)
+clamp01(Vec2 Value)
 {
     Vec2 result;
 
@@ -231,6 +232,15 @@ Clamp01(Vec2 Value)
     result.y = clamp01(Value.y);
 
     return result;
+}
+
+inline
+std::string to_string(Vec2 v)
+{
+	std::string x_str = std::to_string(v.x);
+	std::string y_str = std::to_string(v.y);
+	std::string result = "(" + x_str + ", " + y_str + ")";
+	return result;
 }
 
 //
@@ -318,7 +328,7 @@ Hadamard(Vec3 A, Vec3 B)
 }
 
 inline float
-Inner(Vec3 A, Vec3 B)
+dot(Vec3 A, Vec3 B)
 {
     float result = A.x*B.x + A.y*B.y + A.z*B.z;
 
@@ -328,7 +338,7 @@ Inner(Vec3 A, Vec3 B)
 inline float
 LengthSq(Vec3 A)
 {
-    float result = Inner(A, A);
+    float result = dot(A, A);
 
     return result;
 }
@@ -457,7 +467,7 @@ Hadamard(Vec4 A, Vec4 B)
 }
 
 inline float
-Inner(Vec4 A, Vec4 B)
+dot(Vec4 A, Vec4 B)
 {
     float result = A.x*B.x + A.y*B.y + A.z*B.z + A.w*B.w;
 
@@ -467,7 +477,7 @@ Inner(Vec4 A, Vec4 B)
 inline float
 LengthSq(Vec4 A)
 {
-    float result = Inner(A, A);
+    float result = dot(A, A);
 
     return result;
 }

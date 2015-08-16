@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 #include "glew.h"
 #include "types.h"
@@ -6,7 +7,6 @@
 #include "window.h"
 #include "IDrawer.h"
 #include "helper.h"
-#include "camera.h"
 #include "dynamic_array.h"
 
 // GLM includes
@@ -14,6 +14,8 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <glm/gtx/transform.hpp>
 #include "glm/mat4x4.hpp"
+
+class Camera;
 
 enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT }; 
 enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
@@ -36,7 +38,7 @@ namespace DrawOptions
  
 namespace DrawType
 {
-	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
+	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
 }
 
 struct SpriteData 
@@ -48,13 +50,21 @@ struct SpriteData
 	float draw_angle;
 };
 
-struct ParticleBufferData 
+struct ArrayBufferData 
 {
 	GLuint vao;
 	GLuint vbo;
 	GLuint draw_method;
 	uint32 num_vertices;
 };
+//
+//struct ArrayBufferData
+//{
+//	GLuint vao;
+//	GLuint vbo;
+//	GLuint draw_method;
+//	uint32 num_vertices;
+//};
 
 struct DrawCall// Used for drawing to the screen.
 {
@@ -67,7 +77,7 @@ struct DrawCall// Used for drawing to the screen.
 	union 
 	{
 		SpriteData sd;
-		ParticleBufferData pbd;
+		ArrayBufferData abd;
 	};
 };
 
@@ -132,7 +142,7 @@ public:
 	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }
 	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
 
-	void draw_character(char, uint32, uint32);
+	void draw_character(char, uint32, uint32, glm::mat4&, glm::mat4&);
 	TextDrawResult draw_string(std::string, uint32 x, uint32 y);
 
 	static char* default_frag_shader;
@@ -166,6 +176,9 @@ public:
 
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
+	void draw_line(std::vector<Vec2> points, DrawLayer layer);
+	void draw_line(Vec2&, Vec2&, DrawLayer dl = DrawLayer::UI);
+	void draw_rect(Rectf&, DrawLayer dl = DrawLayer::UI);
 private:
 	struct DrawObject
 	{

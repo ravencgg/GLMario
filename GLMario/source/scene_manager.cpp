@@ -7,126 +7,70 @@ SceneManager::SceneManager(Camera* cam)
 	 tilemap(16, 9),
 	 input(Input::get())
 {
-	allocate_entity_array(MAX_ENTITIES);
-
 	//tilemap.fill_checkerboard();
 	tilemap.fill_walled_room();
 
-	Entity* e = add_entity(EntityType::PLAYER, vec2(5.f, 5.f));
-	e->pe.draw_call.draw_type = DrawType::SINGLE_SPRITE;
-	e->pe.draw_call.image = ImageFiles::MARIO_IMAGE;
-	e->pe.draw_call.shader = ShaderTypes::DEFAULT_SHADER;
-	e->pe.draw_call.options = DrawOptions::TEXTURE_RECT;
-	e->pe.draw_call.sd.tex_rect.top = 903;
-	e->pe.draw_call.sd.tex_rect.left = 17;
-	e->pe.draw_call.sd.tex_rect.width = 34;
-	e->pe.draw_call.sd.tex_rect.height = 34;
-	e->pe.draw_call.sd.world_size = vec2(1.0f, 1.5f);
-	e->pe.draw_call.sd.draw_angle = 0;
+	//Entity* e = add_entity(EntityType::PLAYER, vec2(5.f, 5.f));
+	//e->pe.draw_call.draw_type = DrawType::SINGLE_SPRITE;
+	//e->pe.draw_call.image = ImageFiles::MARIO_IMAGE;
+	//e->pe.draw_call.shader = ShaderTypes::DEFAULT_SHADER;
+	//e->pe.draw_call.options = DrawOptions::TEXTURE_RECT;
+	//e->pe.draw_call.sd.tex_rect.top = 903;
+	//e->pe.draw_call.sd.tex_rect.left = 17;
+	//e->pe.draw_call.sd.tex_rect.width = 34;
+	//e->pe.draw_call.sd.tex_rect.height = 34;
+	//e->pe.draw_call.sd.world_size = vec2(1.0f, 1.5f);
+	//e->pe.draw_call.sd.draw_angle = 0;
 
 
     /*std::shared_ptr<GameObject> p = std::make_shared<Player>();
 	objects.push_back(p);
 	objects.push_back(std::make_shared<Enemy>());
 */
-    std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>();
-	ps->initialize(100000, DrawLayer::FOREGROUND);
-	ps->ped.spawn_rate = 100000;
-	ps->ped.lifetime = FRange(1.5f, 10.f);
-	objects.push_back(std::move(ps));
+     std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>();
+	 ps->initialize(1000, DrawLayer::FOREGROUND);
+	 ps->ped.spawn_rate = 100;
+	 ps->ped.spawn_size = vec2(20.f, 20.f);
+	 ps->ped.lifetime = FRange(1.5f, 10.f);
+	 objects.push_back(std::move(ps));
 }
 
 SceneManager::~SceneManager()
 {
-	if(ea.memory) delete[] ea.memory;
 }
 
-void SceneManager::allocate_entity_array(uint32 max_entities)
+// Returns the post-move velocity
+// Put this into the physics system instead of having it here.
+Vec2 SceneManager::process_motion(Vec2& position, Rectf object, Vec2 velocity)
 {
-	ea.memory_size = sizeof(Entity) * max_entities;
-	ea.memory = new uint8[ea.memory_size];
-	ea.entities = (Entity*)ea.memory;	
-}
+	Vec2 result = velocity;
+	int32 check_size = 50;// max(2, (int32)(length(velocity) * 2.f));
 
-// Just create the basic entity in here, then the creator can modify with the returned pointer
-Entity* SceneManager::add_entity(EntityType::Type t, Vec2 pos, uint32 pid)
-{
-	bool32 valid = false;
-	Entity* result = nullptr;
-	Entity new_entity = {};
+	PhysicsRect pObj = {};
+	pObj.col_rect = object;
 
-	//NOTE(cgenova); no entity has id = 0
-	new_entity.eid = ++last_assigned_id;
-	new_entity.type = t;
-	new_entity.parent_eid = pid;
-	new_entity.position = pos;
+	Point2 start = { (int32)position.x - check_size, (int32)position.y - check_size };
+	Point2 end   = { (int32)position.x + check_size, (int32)position.y + check_size };
 
-	switch(t)
+	TileBlock tiles = tilemap.get_tile_block(start, end);
+	CollisionData cData = {};
+
+	bool collided = false;
+
+	for (uint32 i = 0; i < tiles.tile_info.size(); ++i)
 	{
-		case EntityType::PLAYER:
+		if (check_collision(pObj, velocity, tiles.tile_info[i], cData))
 		{
-			valid = true;
-			new_entity.pe.acceleration = 2.0f;
-			new_entity.pe.max_hor_vel = 3.0f;
-			new_entity.pe.max_ver_vel = vec2(5.0f, 10.0f);
-		} break;
-		case EntityType::TILE:
-		{
-			valid = true;
-
-
-		}break;
-		case EntityType::PARTICLE_SYSTEM:
-		{
-			valid = true;
-
-
-		}break;
-		case EntityType::TILEMAP:
-		default:
-		{
-			assert(0);
-		}break;
-	}
-
-	if(valid)
-	{
-		result = ea.entities + active_entities++;
-		*result = new_entity;
-	}
-	return result; 
-}
-
-Entity* SceneManager::find_entity(uint32 eid)
-{
-	Entity* result = nullptr;
-	for(uint32 i = 0; i < active_entities; ++i)
-	{
-		if(eid == ea.entities[i].eid)	
-		{
-			result = ea.entities + i;
-			break;
-		}
-	}	
-	return result;
-}
-
-bool32 SceneManager::delete_entity(uint32 eid)
-{
-	bool32 result = false;
-
-	for(uint32 i = 0; i < active_entities; ++i)
-	{
-		if(eid == ea.entities[i].eid)	
-		{
-			ea.entities[i] = ea.entities[active_entities - 1];
-			ea.entities[active_entities - 1].type = EntityType::UNKNOWN;	
-			--active_entities;
-			result = true;
+			collided = true;
 			break;
 		}
 	}
+	
 
+	if (!collided)
+	{
+		position += velocity * (float)Time::get()->delta_time;
+	}
 	return result;
 }
 
@@ -192,11 +136,6 @@ void SceneManager::update_scene()
 {
 	tilemap.draw();
 	//render_random_particles();
-	
-	for(uint32 i = 0; i < active_entities; ++i)
-	{
-		entity_update(ea.entities[i], (float)Time::get()->delta_time);
-	}
 
 	if (input->on_down(SDLK_n))
 	{
@@ -204,16 +143,20 @@ void SceneManager::update_scene()
 	}
 	if (input->on_down(SDLK_m))
 	{
-		objects.push_back(std::make_shared<Player>());
+		std::shared_ptr<Player> p = std::make_shared<Player>();
+		p->active_scene = this;
+		objects.push_back(std::move(p));
+		objects.back()->transform.position = vec2(5.1f, 5.2f);
 	}
 
 	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.size())));
+    Time* time = Time::get();
 
 	bool deleting = objects.size() > 10;
 
 	for (auto it = objects.begin(); it != objects.end(); ++it)
 	{
-		(*it)->update_and_draw();
+		(*it)->Tick((float)time->delta_time);
 
 		if ((*it)->delete_this_frame)
 		{
@@ -224,7 +167,7 @@ void SceneManager::update_scene()
 
 		if (deleting)
 		{
-			GameObject* go = dynamic_cast<GameObject*>(it->get());
+			Entity* go = dynamic_cast<Entity*>(it->get());
 			Enemy* enemy = dynamic_cast<Enemy*>(&(*it->get()));
 			if (enemy && rand() % 2 == 0)
 			{

@@ -1,32 +1,23 @@
 #pragma once
 
-#include "game_object.h"
+#include "entity.h"
 #include "input.h"
 #include "renderer.h"
 #include "console.h"
 #include "particles.h"
+#include "physics.h"
 
-class Player : public GameObject
+class SceneManager;
+
+class Player : public Actor
 {
 public:
-	Vec2 velocity;
+	SceneManager* active_scene;
 	
 	Player();
 
-	Input* input;
-	Renderer* ren;
-	Sprite sprite;
 	DrawCall draw_call;
-
 	ParticleSystem ps;
 
-	static const uint32 max_attached_objects = 10;
-	Transform* attached_objects[10];
-	void attach_object(Transform*);
-	void detach_object(Transform*);
-	void update_attached_objects();
-
-	virtual void update_and_draw();
-	virtual void paused_update_and_draw(); // Allows things to happen while the game is paused
-
+    void Tick(float) override;
 };

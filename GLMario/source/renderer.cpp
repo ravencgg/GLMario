@@ -1,5 +1,7 @@
 #include "renderer.h"
 
+#include "camera.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "..\Dependencies\stb_image.h"
 
@@ -19,7 +21,7 @@ Rect sprite_rects[(uint32) SpriteRect::RECT_COUNT] = {};
 void initialize_sprite_rects()
 {
 	sprite_rects[(uint32) SpriteRect::BRICK] = rect( 85, 0, 16, 16 ); 
-	sprite_rects[(uint32) SpriteRect::STONE] = { 0, 0, 16, 16 }; 
+	sprite_rects[(uint32) SpriteRect::STONE] = rect( 0, 0, 16, 16 ); 
 }
 
 Rect get_sprite_rect(SpriteRect r)
@@ -232,27 +234,18 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 // 	draw_buffer[(uint32)sprite->layer].add(draw_info); 
 // }
 
-void Renderer::draw_character(char c, uint32 x, uint32 y)
+void Renderer::draw_character(char c, uint32 x, uint32 y, glm::mat4& proj, glm::mat4& scale)
 {
 	const float bo_scale = 0.9f;
 
 	uint32 tshader = (uint32) ShaderTypes::DEFAULT_SHADER;
-	glUseProgram(shaders[tshader].shader_handle);
-	{ // TODO(cgenova): convert to function and pull this and the one in draw_call out
-		GLint active_tex = 0;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
 
-		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
-		{
-			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
-		}
-	}
 	// NOTE(chris): Layer is ignored until sorting is implemented;
 	//TODO(chris): still need some conversion from pixels to world space
 
 	Vec3 new_position = { (float)x, (float)y, 0 };
-	glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
-	glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
+	//glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
+	//glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
 	glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
 
 	//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
@@ -279,9 +272,10 @@ void Renderer::draw_character(char c, uint32 x, uint32 y)
 	draw_object.tex_coords[2] = vec2(right, bot);
 	draw_object.tex_coords[3] = vec2(left, bot);
 
-	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-	glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
-	glBindVertexArray(draw_object.vao);
+	//glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
+	//glBindVertexArray(draw_object.vao);	
+	//glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, draw_object.memory_size, draw_object.memory);
 
 	GLint mat_loc = glGetUniformLocation(shaders[tshader].shader_handle, "mvp");
 	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
@@ -314,6 +308,24 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 		x = start_x;
 	};
 
+	glUseProgram(shaders[(uint32) ShaderTypes::DEFAULT_SHADER].shader_handle);
+	{ // TODO(cgenova): convert to function and pull this and the one in draw_call out
+		GLint active_tex = 0;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
+
+		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
+		{
+			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
+	glBindVertexArray(draw_object.vao);
+
+	float bo_scale = 0.9f;
+	glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
+	glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
+
 	for (uint32 i = 0; i < s.length(); ++i)
 	{
 		if(s[i] == '\n')
@@ -331,7 +343,7 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 			new_line();
 			ld++;
 		}		
-		draw_character(s[i], x, y);
+		draw_character(s[i], x, y, proj, scale);
 		x += (uint32)(text_data.char_size.width * 1.2f);
 	}
 
@@ -435,8 +447,8 @@ void Renderer::draw_call(DrawCall data)
 			glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 			glEnable(GL_POINT_SPRITE);
 
-			glBindBuffer(GL_ARRAY_BUFFER, data.pbd.vbo);
-			glBindVertexArray(data.pbd.vao);
+			glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
+			glBindVertexArray(data.abd.vao);
 
 			GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
 			glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&Renderer::vp_matrix);
@@ -445,13 +457,32 @@ void Renderer::draw_call(DrawCall data)
 			GLint scl_loc = glGetUniformLocation(shaders[(uint32)ShaderTypes::PARTICLE_SHADER].shader_handle, "w_scale");
 			glUniform1f(scl_loc, world_scale);
 
-			glDrawArrays(data.pbd.draw_method, 0, data.pbd.num_vertices);
+			//glDrawArrays(data.pbd.draw_method, 0, data.pbd.num_vertices);
+			//glDrawArrays(GL_TRIANGLE_FAN, 0, data.pbd.num_vertices);
+			glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
 
 		}break;
 		default:
 			assert(0);
 			break;
 	}
+
+}
+
+void draw_line(std::vector<Vec2> points, DrawLayer layer)
+{
+	DrawCall dc = {};
+	dc.draw_type = DrawType::ARRAY_BUFFER;
+}
+
+void draw_line(Vec2& a, Vec2& b, DrawLayer layer)
+{
+
+
+}
+
+void draw_rect(Rectf& rect, DrawLayer layer)
+{
 
 }
 

@@ -1,5 +1,5 @@
 #include "entity.h"
-
+#if 0
 void entity_update(Entity& e, float delta_time)
 {
 	static Input* input = Input::get();
@@ -74,3 +74,5 @@ void simulate_physics(EntityPhysics ep)
 {
 
 }
+
+#endif

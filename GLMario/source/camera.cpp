@@ -9,7 +9,7 @@ Camera::Camera()
 	transform.position.y = 0; 
 }
 
-void Camera::update_and_draw()
+void Camera::Tick(float dt)
 {
 	static Input* input = Input::get();
 

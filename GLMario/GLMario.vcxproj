@@ -140,7 +140,6 @@
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\dynamic_array.h" />
     <ClInclude Include="source\entity.h" />
-    <ClInclude Include="source\game_object.h" />
     <ClInclude Include="source\helper.h" />
     <ClInclude Include="source\IDrawer.h" />
     <ClInclude Include="source\input.h" />

@@ -19,11 +19,16 @@ Tilemap::Tilemap(int32 w, int32 h)
 
 Tilemap::~Tilemap()
 {
-	if(tiles) delete[] tiles;
+	if (tiles)
+	{
+		delete[] tiles;
+		tiles = nullptr;
+	}
 }
 
 void Tilemap::fill_checkerboard()
 {
+    assert(!"Create colliders here!");
 	for(int32 y = 0; y < height; ++y)
 	{
 		for(int32 x = 0; x < width; ++x)
@@ -46,6 +51,7 @@ void Tilemap::fill_checkerboard()
 
 void Tilemap::fill_walled_room()
 {
+//    assert(!"Create colliders here!");
 	for (int32 y = 0; y < height; ++y)
 	{
 		for (int32 x = 0; x < width; ++x)
@@ -68,12 +74,61 @@ void Tilemap::fill_walled_room()
 	}
 }
 
+TileBlock Tilemap::get_tile_block(Point2 start, Point2 end)
+{
+	assert(end.x > start.x && end.y > start.y);
+	TileBlock result;
+	if (start.x < 0) start.x = 0;
+	if (start.y < 0) start.y = 0;
+	if (end.y < 0) end.y = 0;
+
+	result.width = min(start.x + end.x, width) - start.x;
+	result.height = min(start.y + end.y, height) - start.y;
+
+	result.tile_info.reserve(result.width * result.height);
+
+	int32 counter = 0;
+	for (int y = start.y; y < result.height; ++y)
+	{
+		for (int x = start.x; x < result.width; ++x)
+		{
+			int32 loc = array_loc(x, y);
+			//result.tile_info[counter] = tiles[loc].collider;
+			assert(!"Collision?!?");
+		}
+	}
+
+	return result;
+}
+
 void Tilemap::update()
 {
 }
 
 void Tilemap::draw()
 {
+	//std::string col_string;
+
+	//PhysicsRect p0;
+	//PhysicsRect p1;
+	//p0.col_rect = make_rect(vec2(1, 0), vec2(1, 1));
+	//Vec2 velocity = { 3, 0 };
+
+	//p1.col_rect = make_rect(vec2(3, 0), vec2(1, 1));
+
+	//CollisionData cd = {};
+	//if (check_collision(p0, velocity, p1, cd))
+	//{
+	//	col_string = "Collided: True\tDistance: " + std::to_string(cd.distance) + "\tPoint: " + to_string(cd.point);
+	//}
+	//else
+	//{
+	//	col_string = "No collision";
+	//}
+
+	//Console::get()->log_message(col_string);
+	//
+
 	static Rect brick_rect = { 85, 0, tile_width, tile_height };
 	static Rect ground_rect = { 0, 0, tile_width, tile_height }; 
 

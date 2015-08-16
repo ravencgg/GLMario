@@ -333,6 +333,7 @@ Vector3 Vector3::cross_product(const Vector3 &rhs) const
 	result.y = this->z * rhs.x - this->x * rhs.z;
 	result.z = this->x * rhs.y - this->y * rhs.x;
 
+	assert(!"Check this for accuracy");
 	result.x = -result.x;
 	result.y = -result.y;
 	result.z = -result.z;

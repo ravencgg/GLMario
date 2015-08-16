@@ -2,6 +2,7 @@
 #include <random>
 // #include "glew.h"
 
+#include "entity.h"
 #include "types.h"
 #include "mathops.h"
 #include "renderer.h"
@@ -103,7 +104,7 @@ struct ParticleTransformData
 	uint32 options = ParticleOptions::NONE;
 };
 
-class ParticleSystem : public GameObject
+class ParticleSystem : public Entity 
 {
 public:
 	ParticleSystem();
@@ -128,7 +129,7 @@ public:
 	void create_particle(ParticleVertexData&, ParticleFrameData&, float);
 	void create_particle_burst(uint32);
 
-    virtual void update_and_draw() override;
+    virtual void Tick(float) override;
 
 private:
 	void allocate();

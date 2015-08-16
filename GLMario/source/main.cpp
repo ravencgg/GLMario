@@ -104,15 +104,15 @@ int main(int argc, char* argv[])
 		Console::get()->log_message(std::string("Frames:\t" + std::to_string(time->frame_count)));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
-		renderer->begin_frame();
-		main_camera.update_and_draw();
-		scene.update_scene();
+		 renderer->begin_frame();
+		 main_camera.Tick((float)time->delta_time);
+		 scene.update_scene();
 		
-		//renderer->render_draw_buffer();
+		 //renderer->render_draw_buffer();
 		
-		Console::get()->draw();
-		renderer->end_frame();
-		// End rendering
+		 Console::get()->draw();
+		 renderer->end_frame();
+		 // End rendering
 
 
 		// TODO(cgenova): High granularity sleep function! 

@@ -1,14 +1,13 @@
 #pragma once
 
-#include "game_object.h"
+#include "entity.h"
 #include "mathops.h"
 #include "input.h"
 #include "mat4x4.hpp"
 #include "gtc/matrix_transform.hpp" 
 
-class GameObject;
 
-class Camera : public GameObject
+class Camera : public Entity 
 {
 public:
 	Camera();
@@ -19,7 +18,7 @@ public:
 	glm::mat4x4 cached_projection_matrix;
 	glm::mat4x4 cached_view_matrix;
 
-	virtual void update_and_draw();
+	virtual void Tick(float dt) override;
 	void update_matrices();
 
 private:
