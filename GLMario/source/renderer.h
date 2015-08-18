@@ -18,7 +18,7 @@
 class Camera;
 
 enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT }; 
-enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
+enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, LINE_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
 enum class DrawLayer   : uint32 { BACKGROUND, PRE_TILEMAP, TILEMAP, POST_TILEMAP, PLAYER, FOREGROUND, UI, LAYER_COUNT };
 
 enum class SpriteRect  : uint32 { UNINITIALIZED, STONE, BRICK, MARIO, RECT_COUNT };
@@ -38,8 +38,21 @@ namespace DrawOptions
  
 namespace DrawType
 {
-	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
+	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, LINE_BUFFER, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
 }
+
+struct Vertex
+{
+    Vec2 position;
+    Vec2 uv;
+    Vec4 color;
+};
+
+struct SimpleVertex
+{
+    Vec2 position;
+    Vec4 color;
+};
 
 struct SpriteData 
 {
@@ -176,9 +189,9 @@ public:
 
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
-	void draw_line(std::vector<Vec2> points, DrawLayer layer);
-	void draw_line(Vec2&, Vec2&, DrawLayer dl = DrawLayer::UI);
+    void draw_line(std::vector<SimpleVertex> vertices, DrawLayer dl);
 	void draw_rect(Rectf&, DrawLayer dl = DrawLayer::UI);
+
 private:
 	struct DrawObject
 	{
@@ -199,6 +212,8 @@ private:
 
 	TextData text_data;
 
+    uint32 array_buffer_loc = 0;
+    std::vector<ArrayBufferData> array_buffer;
 	DynamicArray<DrawCall> draw_buffer[(uint32)DrawLayer::LAYER_COUNT];
 	DrawObject draw_object;
 

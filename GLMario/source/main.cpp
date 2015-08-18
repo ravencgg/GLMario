@@ -107,7 +107,28 @@ int main(int argc, char* argv[])
 		 renderer->begin_frame();
 		 main_camera.Tick((float)time->delta_time);
 		 scene.update_scene();
-		
+    	
+        static std::vector<SimpleVertex> v;
+        static bool initialized = false;
+        if(!initialized)
+        {
+            initialized = true;
+            for(uint32 i = 0; i < 200; ++i)
+            {
+                SimpleVertex verts = {};
+                verts.position = vec2((float) (i / 50.f) - 2.f, (float) i);
+                verts.color = vec4(1, 1, 0, 1.f);
+                v.push_back(verts);
+            }
+        }
+        else
+        {
+            for(uint32 i = 0; i < v.size(); ++i)
+            {
+				v[i].position.y = sin((float)time->current_time + i / (PI * 20));
+            }
+        }
+        renderer->draw_line(v, DrawLayer::UI);	
 		 //renderer->render_draw_buffer();
 		
 		 Console::get()->draw();

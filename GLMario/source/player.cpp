@@ -68,6 +68,10 @@ void Player::Tick(float dt)
 	Console::get()->log_message(conOut);
 
 
+
+    Renderer* ren = Renderer::get();
+
+
 	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
 	//Console::get()->log_message(p_info);
 	// sprite.angle += 0.1f;
@@ -85,7 +89,6 @@ void Player::Tick(float dt)
 	//sprite.color_mod.w = 0.5f;
 	if(draw_player)
 	{
-		Renderer* ren = Renderer::get();
 		draw_call.sd.world_position = transform.position;
 		ren->push_draw_call(draw_call, DrawLayer::PLAYER);
 		// ren->draw_sprite(&sprite, transform.position);

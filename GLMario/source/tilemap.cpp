@@ -94,7 +94,7 @@ TileBlock Tilemap::get_tile_block(Point2 start, Point2 end)
 		{
 			int32 loc = array_loc(x, y);
 			//result.tile_info[counter] = tiles[loc].collider;
-			assert(!"Collision?!?");
+//			assert(!"Collision?!?");
 		}
 	}
 

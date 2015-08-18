@@ -6,6 +6,7 @@ uniform sampler2D ourTexture;
 
 void main()
 {
+    //color = vec4(1,1,1,1);
 	color = texture(ourTexture, frag_tex_coord);// + vec4(1.0f, 1.0f, 0f, 0f);// * ((sin(time) + 1) / 2
         // TODO(cgenova): color modification;
     // color *= color_modifier;

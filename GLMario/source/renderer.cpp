@@ -55,6 +55,7 @@ Renderer::Renderer(Window* w, Vec4 clear_color)
 	load_image(Renderer::particle_image, ImageFiles::PARTICLE_IMAGE);
 	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, ShaderTypes::DEFAULT_SHADER);
 	load_shader(Renderer::particle_vert_shader, Renderer::particle_frag_shader, ShaderTypes::PARTICLE_SHADER);
+    load_shader("..\\res\\line_vert.glsl", "..\\res\\line_frag.glsl", ShaderTypes::LINE_SHADER);
 
 	text_data.chars_per_line = 18;
 	text_data.char_size = { 7, 9 };
@@ -86,6 +87,7 @@ void Renderer::begin_frame()
 	glViewport(0, 0, frame_resolution.width, frame_resolution.height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //TODO(cgenova): disable depth buffer for better 2d rendering simulation
 
+	array_buffer_loc = 0;
 
 	float width = main_camera->viewport_size.x;
 	float height = main_camera->viewport_size.y;
@@ -442,6 +444,20 @@ void Renderer::draw_call(DrawCall data)
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);	
 
 		}break;
+        case DrawType::ARRAY_BUFFER:
+        {
+			glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
+			glBindVertexArray(data.abd.vao);
+			glEnableVertexAttribArray(0);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
+			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
+
+			GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
+			glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&Renderer::vp_matrix);
+
+			glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
+        }break;
 		case DrawType::PARTICLE_ARRAY_BUFFER:
 		{
 			glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
@@ -469,19 +485,41 @@ void Renderer::draw_call(DrawCall data)
 
 }
 
-void draw_line(std::vector<Vec2> points, DrawLayer layer)
+void Renderer::draw_line(std::vector<SimpleVertex> vertices, DrawLayer dl)
 {
 	DrawCall dc = {};
 	dc.draw_type = DrawType::ARRAY_BUFFER;
+    dc.shader = ShaderTypes::LINE_SHADER;
+
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);    
+
+
+    if(array_buffer_loc == array_buffer.size())
+    {
+		ArrayBufferData a = {};
+		glGenBuffers(1, &a.vbo);
+		glGenVertexArrays(1, &a.vao);
+		glBindVertexArray(a.vao);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
+
+        array_buffer.push_back(a);
+    }
+
+    ArrayBufferData* abd = &array_buffer[array_buffer_loc++];
+    abd->num_vertices = vertices.size();
+    abd->draw_method = GL_LINE_STRIP;
+
+    glBindBuffer(GL_ARRAY_BUFFER, abd->vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(SimpleVertex), &vertices[0], GL_STREAM_DRAW);
+    dc.abd = *abd;
+    push_draw_call(dc, dl);
 }
 
-void draw_line(Vec2& a, Vec2& b, DrawLayer layer)
-{
-
-
-}
-
-void draw_rect(Rectf& rect, DrawLayer layer)
+void Renderer::draw_rect(Rectf& rect, DrawLayer layer)
 {
 
 }
@@ -519,7 +557,7 @@ void Renderer::build_buffer_object()
 	glBindVertexArray(draw_object.vao);
 
 	glGenBuffers(1, &draw_object.vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	glBufferData(GL_ARRAY_BUFFER, memory_size, draw_object.memory, GL_STREAM_DRAW);
 
 	glEnableVertexAttribArray(0);

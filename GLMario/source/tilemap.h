@@ -34,9 +34,6 @@ public:
 
 	void fill_checkerboard();
 	void fill_walled_room();
-
-	void try_move(Rectf, Vec2);
-
 	void update();
 	void draw();
 

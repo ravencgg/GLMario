@@ -90,6 +90,14 @@ void Physics::RemoveDynamicCollider(RDynamicCollider col)
     }
 }
 
+void Physics::Step(float dt)
+{
+	// NOTE(cgenova): Bubble sort would be faster here.
+	std::sort(active_dynamics.begin(), active_dynamics.end());
+
+	assert(!"Not physics stepping!");
+}
+
 // TODO(cgenova): move into the Physics class and call during Step()
 bool check_collision(PhysicsRect& m, Vec2& velocity, PhysicsRect& other, CollisionData& out)
 {

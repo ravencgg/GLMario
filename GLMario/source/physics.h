@@ -3,6 +3,7 @@
 #include "types.h"
 #include "mathops.h"
 #include <vector>
+#include <algorithm>
 
 #define Max_Static_Colliders 2048
 #define Max_Dynamic_Colliders 2048
