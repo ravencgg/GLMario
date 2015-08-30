@@ -4,11 +4,12 @@
 SceneManager::SceneManager(Camera* cam)
 	:renderer(Renderer::get()),
 	 main_camera(cam),
-	 tilemap(16, 9),
+	 physics(new Physics()),
+	 tilemap(physics),
 	 input(Input::get())
 {
 	//tilemap.fill_checkerboard();
-	tilemap.fill_walled_room();
+	tilemap.MakeWalledRoom(rect(0, 0, 10, 10));
 
 	//Entity* e = add_entity(EntityType::PLAYER, vec2(5.f, 5.f));
 	//e->pe.draw_call.draw_type = DrawType::SINGLE_SPRITE;
@@ -37,40 +38,46 @@ SceneManager::SceneManager(Camera* cam)
 
 SceneManager::~SceneManager()
 {
+	if (physics)
+	{
+		delete physics;
+		physics = nullptr;
+	}
 }
 
 // Returns the post-move velocity
 // Put this into the physics system instead of having it here.
 Vec2 SceneManager::process_motion(Vec2& position, Rectf object, Vec2 velocity)
 {
-	Vec2 result = velocity;
-	int32 check_size = 50;// max(2, (int32)(length(velocity) * 2.f));
+	//Vec2 result = velocity;
+	//int32 check_size = 50;// max(2, (int32)(length(velocity) * 2.f));
 
-	PhysicsRect pObj = {};
-	pObj.col_rect = object;
+	//PhysicsRect pObj = {};
+	//pObj.col_rect = object;
 
-	Point2 start = { (int32)position.x - check_size, (int32)position.y - check_size };
-	Point2 end   = { (int32)position.x + check_size, (int32)position.y + check_size };
+	//Point2 start = { (int32)position.x - check_size, (int32)position.y - check_size };
+	//Point2 end   = { (int32)position.x + check_size, (int32)position.y + check_size };
 
-	TileBlock tiles = tilemap.get_tile_block(start, end);
-	CollisionData cData = {};
+	//TileBlock tiles = tilemap.get_tile_block(start, end);
+	//CollisionData cData = {};
 
-	bool collided = false;
+	//bool collided = false;
 
-	for (uint32 i = 0; i < tiles.tile_info.size(); ++i)
-	{
-		if (check_collision(pObj, velocity, tiles.tile_info[i], cData))
-		{
-			collided = true;
-			break;
-		}
-	}
-	
+	//for (uint32 i = 0; i < tiles.tile_info.size(); ++i)
+	//{
+	//	if (check_collision(pObj, velocity, tiles.tile_info[i], cData))
+	//	{
+	//		collided = true;
+	//		break;
+	//	}
+	//}
+	//
 
-	if (!collided)
-	{
-		position += velocity * (float)Time::get()->delta_time;
-	}
+	//if (!collided)
+	//{
+	//	position += velocity * (float)Time::get()->delta_time;
+	//}
+	Vec2 result = {};
 	return result;
 }
 
@@ -177,5 +184,7 @@ void SceneManager::update_scene()
 			}
 		}
 	}
+
+	physics->DebugDraw();
 }
 

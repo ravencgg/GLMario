@@ -189,8 +189,8 @@ public:
 
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
-    void draw_line(std::vector<SimpleVertex> vertices, DrawLayer dl);
-	void draw_rect(Rectf&, DrawLayer dl = DrawLayer::UI);
+    void DrawLine(std::vector<SimpleVertex> vertices, DrawLayer dl);
+	void DrawRect(Rectf&, DrawLayer dl = DrawLayer::UI, Vec4 color = vec4(1, 1, 1, 1));
 
 private:
 	struct DrawObject

@@ -29,6 +29,7 @@ private:
 	Renderer* renderer;
 	Input* input;
 	Camera* main_camera;
+    Physics* physics;
 
 	Tilemap tilemap;
 	// Use resize() not clear() to "empty" vectors

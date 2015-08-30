@@ -37,6 +37,17 @@ int main(int argc, char* argv[])
 	uint32 fps = 0;
 	double last_fps_time = 0;
 
+	double i = 2;
+
+	if (i == 3)
+	{
+		i = 5;
+	}
+	else
+	{
+		i = 4; 
+	}
+
 	SDL_Event e;
 	bool running = true;
 	while(running)
@@ -128,12 +139,15 @@ int main(int argc, char* argv[])
 				v[i].position.y = sin((float)time->current_time + i / (PI * 20));
             }
         }
-        renderer->draw_line(v, DrawLayer::UI);	
+        renderer->DrawLine(v, DrawLayer::UI);	
 		 //renderer->render_draw_buffer();
+
+		static Rectf rect = { 0, 0, 1, 1 };
+		renderer->DrawRect(rect);
 		
-		 Console::get()->draw();
-		 renderer->end_frame();
-		 // End rendering
+		Console::get()->draw();
+		renderer->end_frame();
+		// End rendering
 
 
 		// TODO(cgenova): High granularity sleep function! 

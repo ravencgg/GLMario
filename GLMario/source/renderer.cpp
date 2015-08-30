@@ -485,7 +485,7 @@ void Renderer::draw_call(DrawCall data)
 
 }
 
-void Renderer::draw_line(std::vector<SimpleVertex> vertices, DrawLayer dl)
+void Renderer::DrawLine(std::vector<SimpleVertex> vertices, DrawLayer dl)
 {
 	DrawCall dc = {};
 	dc.draw_type = DrawType::ARRAY_BUFFER;
@@ -519,9 +519,29 @@ void Renderer::draw_line(std::vector<SimpleVertex> vertices, DrawLayer dl)
     push_draw_call(dc, dl);
 }
 
-void Renderer::draw_rect(Rectf& rect, DrawLayer layer)
+void Renderer::DrawRect(Rectf& rect, DrawLayer layer, Vec4 color)
 {
+    std::vector<SimpleVertex> verts;
+    verts.reserve(5);
 
+    SimpleVertex v;
+	v.color = color;
+	v.position = vec2(rect.left, rect.top);
+    verts.push_back(v);
+
+	v.position = vec2(rect.left + rect.width, rect.top);
+	verts.push_back(v);
+	
+	v.position = vec2(rect.left + rect.width, rect.top + rect.height);
+	verts.push_back(v);
+
+	v.position = vec2(rect.left, rect.top + rect.height);
+	verts.push_back(v);
+
+	v.position = vec2(rect.left, rect.top);
+	verts.push_back(v);
+
+	DrawLine(verts, layer);
 }
 
 void Renderer::build_buffer_object()

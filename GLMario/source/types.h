@@ -88,7 +88,7 @@ inline Rect rect(int32 x, int32 y, int32 w, int32 h)
 	return result;
 }
 
-inline Rectf rect(float x, float y, float w, float h)
+inline Rectf rectf(float x, float y, float w, float h)
 {
 	Rectf result = {};
 	result.x = x;

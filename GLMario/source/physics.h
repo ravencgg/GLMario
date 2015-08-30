@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include "mathops.h"
+#include "renderer.h"
 #include <vector>
 #include <algorithm>
 
@@ -40,13 +41,16 @@ struct TStaticCollider
 struct TDynamicCollider
 {
     bool32 active;
-    Vector2 position;
+    Rectf rect;
+    Vector2 position; // Do you get a position and a rect?
     Vector2 velocity;
 
     std::vector<CollisionInfo> collisions;
 
     Actor* parent;
 };
+
+Rectf DynamicColliderCanonicalRect(TDynamicCollider*);
 
 class Physics
 {
@@ -56,7 +60,6 @@ class Physics
     std::vector<uint32> active_statics;
     std::vector<uint32> active_dynamics;
 
-// TODO(cgenova): sorting!
     std::vector<uint32> inactive_statics;
     std::vector<uint32> inactive_dynamics;
 
@@ -69,6 +72,8 @@ public:
 
     RStaticCollider AddStaticCollider(TStaticCollider);
     RDynamicCollider AddDynamicCollider(TDynamicCollider);
+
+    RStaticCollider AddStaticCollider(Rectf);
 
     void RemoveDynamicCollider(RDynamicCollider);
 

@@ -1,6 +1,17 @@
 #include "physics.h"
 
 
+Rectf DynamicColliderCanonicalRect(TDynamicCollider* col)
+{
+    Rectf result = {};
+    result.x = col->position.x + col->rect.x;
+    result.y = col->position.y + col->rect.y;
+    result.w = col->rect.w;
+    result.h = col->rect.h;
+
+    return result;
+}
+
 Physics::Physics()
 {
 	statics = new TStaticCollider[Max_Static_Colliders];
@@ -24,8 +35,25 @@ Physics::Physics()
 
 Physics::~Physics()
 {
-    if(statics) delete[] statics;
-    if(dynamics) delete[] dynamics;
+    if(statics) 
+    {
+        delete[] statics;
+        statics = nullptr;
+    }
+    if(dynamics) 
+    {
+        delete[] dynamics;
+        dynamics = nullptr;
+    }
+}
+
+RStaticCollider Physics::AddStaticCollider(Rectf r)
+{
+    TStaticCollider col;
+    col.active = true;
+    col.rect = r;
+
+    return AddStaticCollider(col);
 }
 
 RStaticCollider Physics::AddStaticCollider(TStaticCollider col)
@@ -97,6 +125,23 @@ void Physics::Step(float dt)
 
 	assert(!"Not physics stepping!");
 }
+
+void Physics::DebugDraw()
+{
+    Renderer* ren = Renderer::get();
+    DrawLayer dl = DrawLayer::UI;
+    // call this after collision so that it is already a sorted list
+    for(uint32 i = 0; i < active_statics.size(); ++i)
+    {
+        ren->DrawRect(statics[i].rect, dl);
+    }
+
+    for(uint32 i = 0; i < active_dynamics.size(); ++i)
+    {
+        ren->DrawRect(DynamicColliderCanonicalRect(&dynamics[i]), dl);
+    }
+}
+
 
 // TODO(cgenova): move into the Physics class and call during Step()
 bool check_collision(PhysicsRect& m, Vec2& velocity, PhysicsRect& other, CollisionData& out)
