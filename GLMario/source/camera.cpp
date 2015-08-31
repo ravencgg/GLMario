@@ -1,6 +1,7 @@
 #include "camera.h"
 
-Camera::Camera()
+Camera::Camera(SceneManager* sm)
+	: Entity(sm)
 {
 	viewport_size.x = 16;
 	viewport_size.y = 9;

@@ -12,6 +12,8 @@
 #include "SDL.h"
 #include "input.h" // REMOVE Me
 
+class SceneManager;
+
 
 namespace ParticleOptions
 {
@@ -107,8 +109,8 @@ struct ParticleTransformData
 class ParticleSystem : public Entity 
 {
 public:
-	ParticleSystem();
-	ParticleSystem(uint32 max, DrawLayer dl = DrawLayer::FOREGROUND);
+	ParticleSystem(SceneManager*);
+	ParticleSystem(SceneManager*, uint32 max, DrawLayer dl = DrawLayer::FOREGROUND);
 	~ParticleSystem();
 
 	uint32 max_particles;

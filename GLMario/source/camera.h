@@ -10,7 +10,7 @@
 class Camera : public Entity 
 {
 public:
-	Camera();
+	Camera(SceneManager*);
 	virtual ~Camera() {}
 	
 	Vec2 viewport_size;

@@ -493,6 +493,7 @@ void Renderer::DrawLine(std::vector<SimpleVertex> vertices, DrawLayer dl)
 
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);    
+    glLineWidth(4.f);
 
 
     if(array_buffer_loc == array_buffer.size())

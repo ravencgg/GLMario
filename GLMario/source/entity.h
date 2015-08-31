@@ -5,6 +5,8 @@
 #include "types.h"
 #include "physics.h"
 
+class SceneManager;
+
 struct Transform
 {
     Vec2 position;
@@ -17,28 +19,32 @@ class Entity
 public:
     Transform transform;
     bool delete_this_frame = false;
+    SceneManager* parent_scene;
 
-    Entity() {}
+    Entity(SceneManager* sm) { parent_scene = sm; }
     virtual ~Entity() {}
     
     virtual void Tick(float) {}
+    virtual void Draw() {}
+    virtual void SetPosition(Vec2 pos) { transform.position = pos; }
 };
 
 class Actor : public Entity
 {
 public:
-    Actor() {}
+    Actor(SceneManager* sm) : Entity(sm) {}
     //virtual ~Actor() {if(collider.data} Physics::);
 
+    void SetPosition(Vec2 pos) override { ::SetPosition(collider, pos); }
+
     RDynamicCollider collider;
-    Vec2 velocity;
 };
 
 
 class Enemy : public Actor 
 {
 public:
-    Enemy() : Actor() {}
+    Enemy(SceneManager* sm) : Actor(sm) {}
     virtual ~Enemy() {}
 
     virtual void Tick(float) override

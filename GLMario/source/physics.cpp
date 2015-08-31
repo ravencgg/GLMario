@@ -1,7 +1,7 @@
 #include "physics.h"
 
 
-Rectf DynamicColliderCanonicalRect(TDynamicCollider* col)
+Rectf CanonicalRect(TDynamicCollider* col)
 {
     Rectf result = {};
     result.x = col->position.x + col->rect.x;
@@ -9,6 +9,18 @@ Rectf DynamicColliderCanonicalRect(TDynamicCollider* col)
     result.w = col->rect.w;
     result.h = col->rect.h;
 
+    return result;
+}
+
+void SetPosition(RDynamicCollider col, Vec2 position)
+{
+    TDynamicCollider* c = col.data;
+    c->position = position;
+}
+
+Vec2 GetPosition(RDynamicCollider col)
+{
+    Vec2 result = col.data->position;
     return result;
 }
 
@@ -123,41 +135,77 @@ void Physics::Step(float dt)
 	// NOTE(cgenova): Bubble sort would be faster here.
 	std::sort(active_dynamics.begin(), active_dynamics.end());
 
-	assert(!"Not physics stepping!");
+    for(uint32 i = 0; i < active_dynamics.size(); ++i)
+    {
+        TDynamicCollider& col = dynamics[active_dynamics[i]];
+        col.collisions.resize(0);
+
+        for(uint32 j = 0; j < active_statics.size(); ++j)
+        {
+            TStaticCollider& scol = statics[active_statics[j]];
+
+            CollisionInfo ci;
+			if (CheckCollision(col.rect, col.velocity, scol.rect, ci))
+            {
+                col.collisions.push_back(ci);
+            }
+        }
+    }
 }
 
 void Physics::DebugDraw()
 {
+    // call this after "step" so that the arrays are already sorted 
     Renderer* ren = Renderer::get();
     DrawLayer dl = DrawLayer::UI;
-    // call this after collision so that it is already a sorted list
+
+    Vec4 s_active = vec4(1, 0, 0, 1);
+    Vec4 s_inactive = s_active;
+    s_inactive.a = 0.5f;
+    Vec4 d_active = vec4(0.3f, 0.3f, 1, 1);
+    Vec4 d_inactive = d_active;
+    d_inactive.a = 0.5f;
+
     for(uint32 i = 0; i < active_statics.size(); ++i)
     {
-        ren->DrawRect(statics[i].rect, dl);
+        uint32 loc = active_statics[i];
+        ren->DrawRect(statics[loc].rect, dl, statics[loc].active ? s_active : s_inactive);
     }
 
     for(uint32 i = 0; i < active_dynamics.size(); ++i)
     {
-        ren->DrawRect(DynamicColliderCanonicalRect(&dynamics[i]), dl);
+        uint32 loc = active_dynamics[i];
+        ren->DrawRect(CanonicalRect(&dynamics[loc]), dl, dynamics[loc].active ? d_active : d_inactive);
+
+        std::vector<SimpleVertex> verts;
+        SimpleVertex v = {};
+        v.position = dynamics[loc].position;
+        v.color    = vec4(1, 0, 0, 1);
+        verts.push_back(v);
+        v.position = dynamics[loc].position + dynamics[loc].velocity;
+        v.color    = vec4(1, 1, 0, 1);
+        verts.push_back(v);
+
+        ren->DrawLine(verts, DrawLayer::UI);
     }
 }
 
 
 // TODO(cgenova): move into the Physics class and call during Step()
-bool check_collision(PhysicsRect& m, Vec2& velocity, PhysicsRect& other, CollisionData& out)
+bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
 {
 	bool result = false;
-	Vec2 o = { m.col_rect.x + m.col_rect.w / 2.f, m.col_rect.y + m.col_rect.h / 2.f };
+	Vec2 o = { m.x + m.w / 2.f, m.y + m.h / 2.f };
 
 	Ray motion = { { o.x , o.y }, 
 					{ o.x + velocity.x, o.y + velocity.y } };
 	
 	// Do the Minkowski sum
-	Vec2 center = rect_center(other.col_rect);
-	Rectf mSum = { other.col_rect.x - m.col_rect.w / 2.f,
-					other.col_rect.y - m.col_rect.h / 2.f,
-					m.col_rect.w + other.col_rect.w,
-					m.col_rect.h + other.col_rect.h };
+	Vec2 center = rect_center(other);
+	Rectf mSum = { other.x - m.w / 2.f,
+					other.y - m.h / 2.f,
+					m.w + other.w,
+					m.h + other.h };
 
 	Ray mRays[4] = {};
 	Vec2 p[4] = { { mSum.x, mSum.y },

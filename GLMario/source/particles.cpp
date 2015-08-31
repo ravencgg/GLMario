@@ -1,8 +1,10 @@
 #include "particles.h"
 
+#include "scene_manager.h"
 
-ParticleSystem::ParticleSystem()
-    : max_particles(0),
+ParticleSystem::ParticleSystem(SceneManager* sm)
+    : Entity(sm),
+	  max_particles(0),
       active_particles(0),
       burst_particles(0),
       draw_layer((DrawLayer)0),
@@ -11,8 +13,9 @@ ParticleSystem::ParticleSystem()
 
 }
 
-ParticleSystem::ParticleSystem(uint32 max, DrawLayer dl) 
-    : max_particles(max),
+ParticleSystem::ParticleSystem(SceneManager* sm, uint32 max, DrawLayer dl) 
+    : Entity(sm),
+	  max_particles(max),
       active_particles(0),
       burst_particles(0),
       draw_layer(dl),

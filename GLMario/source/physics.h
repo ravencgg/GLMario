@@ -28,6 +28,8 @@ struct RDynamicCollider
 struct CollisionInfo
 {
     // NOTE(cgenova): only generating collision info for the dynamic colliders right now
+    float distance;
+    Vec2 point;
     RDynamicCollider other;
 };
 
@@ -42,15 +44,18 @@ struct TDynamicCollider
 {
     bool32 active;
     Rectf rect;
-    Vector2 position; // Do you get a position and a rect?
-    Vector2 velocity;
+    Vec2 position; // Allows for non-centered colliders 
+    Vec2 velocity;
 
     std::vector<CollisionInfo> collisions;
 
     Actor* parent;
 };
 
-Rectf DynamicColliderCanonicalRect(TDynamicCollider*);
+void SetPosition(RDynamicCollider, Vec2 position);
+Vec2 GetPosition(RDynamicCollider col);
+
+Rectf CanonicalRect(TDynamicCollider*);
 
 class Physics
 {
@@ -62,8 +67,6 @@ class Physics
 
     std::vector<uint32> inactive_statics;
     std::vector<uint32> inactive_dynamics;
-
-    static Physics* s_physics;
 
 public:
 
@@ -80,9 +83,6 @@ public:
     void Step(float);
 
     void DebugDraw();
-
-	// Singleton style for physics? would it be better to use this class as a zone for optimization?
-    static void Get();
 };
 
 struct Ray
@@ -104,12 +104,6 @@ Vec2 rect_center(Rectf r)
 	Vec2 result = { r.x + r.w / 2.f, r.y + r.h / 2.f };
 	return result;
 }
-
-struct CollisionData
-{
-	float distance;
-	Vec2 point;
-};
 
 namespace ColliderType
 {
@@ -147,4 +141,4 @@ PhysicsCircle make_physics_circle(Vec2 pos, float size)
     return result;
 }
 
-bool check_collision(PhysicsRect&, Vec2& velocity, PhysicsRect&, CollisionData&);
+bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out);

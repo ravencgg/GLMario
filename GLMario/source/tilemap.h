@@ -13,10 +13,13 @@ enum TileType { EMPTY, BRICK, COUNT };
 
 struct Tile 
 {
-    Rectf position;
+    Vec2 position;
+    Vec2 size;
 	TileType tile_type;
     RStaticCollider collider;
 };
+
+Tile MakeTile(Physics* physics, Vec2 position, Vec2 size, TileType tile_type = BRICK);
 
 class Tilemap
 {

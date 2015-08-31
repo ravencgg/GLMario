@@ -16,23 +16,27 @@
 class SceneManager
 {
 public:
-	SceneManager(Camera*);
+    Renderer* renderer;
+    Input* input;
+    Camera* main_camera;
+    Physics* physics;
+
+    Tilemap tilemap;
+    // Use resize() not clear() to "empty" vectors
+    // std::vector<GameObject*> objects;
+    std::vector<std::shared_ptr<Entity>> objects;
+
+
+
+	SceneManager();
 	~SceneManager();
 
 	void update_scene();
+	void SetMainCamera(Camera*);
 
 	Vec2 process_motion(Vec2&, Rectf, Vec2);
-
-	Tilemap* get_tilemap() { return &tilemap; }
-private:
-
-	Renderer* renderer;
-	Input* input;
-	Camera* main_camera;
-    Physics* physics;
-
-	Tilemap tilemap;
-	// Use resize() not clear() to "empty" vectors
-	// std::vector<GameObject*> objects;
-    std::vector<std::shared_ptr<Entity>> objects;
+	void render_random_particles();
+	
+	Tilemap* GetTilemap() { return &tilemap; }
+    Physics* GetPhysics() { return physics; }
 };

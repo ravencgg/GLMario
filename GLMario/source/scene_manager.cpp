@@ -1,96 +1,21 @@
 #include "scene_manager.h"
 
-
-SceneManager::SceneManager(Camera* cam)
-	:renderer(Renderer::get()),
-	 main_camera(cam),
-	 physics(new Physics()),
-	 tilemap(physics),
-	 input(Input::get())
+void SceneManager::SetMainCamera(Camera* camera)
 {
-	//tilemap.fill_checkerboard();
-	tilemap.MakeWalledRoom(rect(0, 0, 10, 10));
-
-	//Entity* e = add_entity(EntityType::PLAYER, vec2(5.f, 5.f));
-	//e->pe.draw_call.draw_type = DrawType::SINGLE_SPRITE;
-	//e->pe.draw_call.image = ImageFiles::MARIO_IMAGE;
-	//e->pe.draw_call.shader = ShaderTypes::DEFAULT_SHADER;
-	//e->pe.draw_call.options = DrawOptions::TEXTURE_RECT;
-	//e->pe.draw_call.sd.tex_rect.top = 903;
-	//e->pe.draw_call.sd.tex_rect.left = 17;
-	//e->pe.draw_call.sd.tex_rect.width = 34;
-	//e->pe.draw_call.sd.tex_rect.height = 34;
-	//e->pe.draw_call.sd.world_size = vec2(1.0f, 1.5f);
-	//e->pe.draw_call.sd.draw_angle = 0;
-
-
-    /*std::shared_ptr<GameObject> p = std::make_shared<Player>();
-	objects.push_back(p);
-	objects.push_back(std::make_shared<Enemy>());
-*/
-     std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>();
-	 ps->initialize(1000, DrawLayer::FOREGROUND);
-	 ps->ped.spawn_rate = 100;
-	 ps->ped.spawn_size = vec2(20.f, 20.f);
-	 ps->ped.lifetime = FRange(1.5f, 10.f);
-	 objects.push_back(std::move(ps));
+	this->main_camera = camera;
 }
 
-SceneManager::~SceneManager()
+void SceneManager::render_random_particles()
 {
-	if (physics)
-	{
-		delete physics;
-		physics = nullptr;
-	}
-}
-
-// Returns the post-move velocity
-// Put this into the physics system instead of having it here.
-Vec2 SceneManager::process_motion(Vec2& position, Rectf object, Vec2 velocity)
-{
-	//Vec2 result = velocity;
-	//int32 check_size = 50;// max(2, (int32)(length(velocity) * 2.f));
-
-	//PhysicsRect pObj = {};
-	//pObj.col_rect = object;
-
-	//Point2 start = { (int32)position.x - check_size, (int32)position.y - check_size };
-	//Point2 end   = { (int32)position.x + check_size, (int32)position.y + check_size };
-
-	//TileBlock tiles = tilemap.get_tile_block(start, end);
-	//CollisionData cData = {};
-
-	//bool collided = false;
-
-	//for (uint32 i = 0; i < tiles.tile_info.size(); ++i)
-	//{
-	//	if (check_collision(pObj, velocity, tiles.tile_info[i], cData))
-	//	{
-	//		collided = true;
-	//		break;
-	//	}
-	//}
-	//
-
-	//if (!collided)
-	//{
-	//	position += velocity * (float)Time::get()->delta_time;
-	//}
-	Vec2 result = {};
-	return result;
-}
-
-void render_random_particles()
-{
-#if 0	
+#if 1	
 	static Time* time = Time::get();
-	static ParticleSystem ps1(10000);
+	static ParticleSystem ps1(this, 10000);
 	ps1.draw_layer = DrawLayer::PRE_TILEMAP;
+	//ps1.draw_layer = DrawLayer::POST_TILEMAP;
 	static ParticleEmissionData data[2];
 	static uint32 active_data = 0;
 	
-	static ParticleSystem ps2(7500);
+	static ParticleSystem ps2(this, 7500);
 	ps2.draw_layer = DrawLayer::PRE_TILEMAP;
 	static bool setup = false;
 	if(!setup)
@@ -139,21 +64,102 @@ void render_random_particles()
 #endif
 }
 
+SceneManager::SceneManager()
+	:renderer(Renderer::get()),
+	 physics(new Physics()),
+	 tilemap(physics),
+	 input(Input::get())
+{
+	//tilemap.fill_checkerboard();
+	tilemap.MakeWalledRoom(rect(0, 0, 10, 10));
+
+	//Entity* e = add_entity(EntityType::PLAYER, vec2(5.f, 5.f));
+	//e->pe.draw_call.draw_type = DrawType::SINGLE_SPRITE;
+	//e->pe.draw_call.image = ImageFiles::MARIO_IMAGE;
+	//e->pe.draw_call.shader = ShaderTypes::DEFAULT_SHADER;
+	//e->pe.draw_call.options = DrawOptions::TEXTURE_RECT;
+	//e->pe.draw_call.sd.tex_rect.top = 903;
+	//e->pe.draw_call.sd.tex_rect.left = 17;
+	//e->pe.draw_call.sd.tex_rect.width = 34;
+	//e->pe.draw_call.sd.tex_rect.height = 34;
+	//e->pe.draw_call.sd.world_size = vec2(1.0f, 1.5f);
+	//e->pe.draw_call.sd.draw_angle = 0;
+
+
+    /*std::shared_ptr<GameObject> p = std::make_shared<Player>();
+	objects.push_back(p);
+	objects.push_back(std::make_shared<Enemy>());
+*/
+     std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
+	 ps->initialize(1000, DrawLayer::FOREGROUND);
+	 ps->ped.spawn_rate = 100;
+	 ps->ped.spawn_size = vec2(20.f, 20.f);
+	 ps->ped.lifetime = FRange(1.5f, 10.f);
+	 objects.push_back(std::move(ps));
+}
+
+SceneManager::~SceneManager()
+{
+	if (physics)
+	{
+		delete physics;
+		physics = nullptr;
+	}
+}
+
+// Returns the post-move velocity
+// Put this into the physics system instead of having it here.
+Vec2 SceneManager::process_motion(Vec2& position, Rectf object, Vec2 velocity)
+{
+	//Vec2 result = velocity;
+	//int32 check_size = 50;// max(2, (int32)(length(velocity) * 2.f));
+
+	//PhysicsRect pObj = {};
+	//pObj.col_rect = object;
+
+	//Point2 start = { (int32)position.x - check_size, (int32)position.y - check_size };
+	//Point2 end   = { (int32)position.x + check_size, (int32)position.y + check_size };
+
+	//TileBlock tiles = tilemap.get_tile_block(start, end);
+	//CollisionData cData = {};
+
+	//bool collided = false;
+
+	//for (uint32 i = 0; i < tiles.tile_info.size(); ++i)
+	//{
+	//	if (check_collision(pObj, velocity, tiles.tile_info[i], cData))
+	//	{
+	//		collided = true;
+	//		break;
+	//	}
+	//}
+	//
+
+	//if (!collided)
+	//{
+	//	position += velocity * (float)Time::get()->delta_time;
+	//}
+
+	Vec2 result = {};
+	return result;
+}
+
+
 void SceneManager::update_scene()
 {
 	tilemap.draw();
-	//render_random_particles();
+	render_random_particles();
 
 	if (input->on_down(SDLK_n))
 	{
-		objects.push_back(std::make_shared<Enemy>());
+		objects.push_back(std::make_shared<Enemy>(this));
 	}
 	if (input->on_down(SDLK_m))
 	{
-		std::shared_ptr<Player> p = std::make_shared<Player>();
-		p->active_scene = this;
+		std::shared_ptr<Player> p = std::make_shared<Player>(this);
+		p->parent_scene = this;
 		objects.push_back(std::move(p));
-		objects.back()->transform.position = vec2(5.1f, 5.2f);
+        objects.back()->SetPosition(vec2(5.1f, 5.2f));
 	}
 
 	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.size())));
@@ -185,6 +191,18 @@ void SceneManager::update_scene()
 		}
 	}
 
-	physics->DebugDraw();
+    for (auto it = objects.begin(); it != objects.end(); ++it)
+    {
+        (*it)->Draw();
+    }
+
+    static bool draw_colliders = true;
+
+    if(input->on_down(SDLK_b)) draw_colliders = !draw_colliders;
+
+    if(draw_colliders)
+    {
+        physics->DebugDraw();
+    }
 }
 

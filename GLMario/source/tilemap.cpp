@@ -1,6 +1,19 @@
 #include "tilemap.h"
 #include "physics.h"
 
+Tile MakeTile(Physics* physics, Vec2 position, Vec2 size, TileType tile_type)
+{
+    assert(physics);
+    Tile result = {};
+    result.position = position;
+    result.size = size; 
+    result.tile_type = tile_type;
+
+    Rectf collider = { (float) position.x - size.x / 2.f, (float) position.y - size.y / 2.f, size.x, size.y };
+    result.collider = physics->AddStaticCollider(collider);
+    return result;
+}
+
 Tilemap::Tilemap(Physics* p)
 {
     physics = p;
@@ -21,24 +34,18 @@ void Tilemap::MakeCheckerboard(Rect r)
 			{
 				if(!(x & 1)) 
                 {
-                    Rectf position = { (float) r.left + x, (float) r.top + y, 1, 1 };
-                    Tile tile = {};
-                    tile.position = position; 
-                    tile.tile_type = BRICK;
-                    tile.collider = physics->AddStaticCollider(position);
-                    tiles.push_back(tile);
+                    Vec2 p = vec2((float) x, (float) y);
+                    Vec2 s = vec2(1, 1);
+                    tiles.push_back(MakeTile(physics, p, s));
                 }
 			}	
 			else
 			{
 				if (x & 1)
 				{
-                    Rectf position = { (float) r.left + x, (float) r.top + y, 1, 1 };
-                    Tile tile = {};
-                    tile.position = position; 
-                    tile.tile_type = BRICK;
-                    tile.collider = physics->AddStaticCollider(position);
-                    tiles.push_back(tile);
+                    Vec2 p = vec2((float) x, (float) y);
+                    Vec2 s = vec2(1, 1);
+                    tiles.push_back(MakeTile(physics, p, s));
 				}
 			}
 		}
@@ -53,21 +60,16 @@ void Tilemap::MakeWalledRoom(Rect r)
 		{
 			if(y == 0 || y == (r.height - 1))
 			{
-                Rectf position = { (float)r.left + x, (float)r.top + y, 1, 1 };
-                Tile tile = {};
-                tile.position = position; 
-                tile.tile_type = BRICK;
-                tile.collider = physics->AddStaticCollider(position);
-                tiles.push_back(tile);
+                Vec2 p = vec2((float) x, (float) y);
+                Vec2 s = vec2(1, 1);
+                tiles.push_back(MakeTile(physics, p, s));
 			}
 			else if(x == 0 || x == (r.width - 1))
 			{
-                Rectf position = { (float) r.left + x, (float) r.top + y, 1, 1 };
-                Tile tile = {};
-                tile.position = position; 
-                tile.tile_type = BRICK;
-                tile.collider = physics->AddStaticCollider(position);
-                tiles.push_back(tile);
+                Vec2 p = vec2((float) x, (float) y);
+                Vec2 s = vec2(1, 1);
+                tiles.push_back(MakeTile(physics, p, s));
+				tiles.back().collider.data->active = false;
 			}
 		}
 	}
@@ -84,7 +86,8 @@ void Tilemap::draw()
 
     for(uint32 i = 0; i < tiles.size(); ++i)
     {
-        draw_call.sd.world_position = { tiles[i].position.x, tiles[i].position.y };
+        draw_call.sd.world_position = tiles[i].position;
+        draw_call.sd.world_size = tiles[i].size;
         ren->push_draw_call(draw_call, DrawLayer::TILEMAP);
     }
 }

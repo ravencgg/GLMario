@@ -12,12 +12,11 @@ class SceneManager;
 class Player : public Actor
 {
 public:
-	SceneManager* active_scene;
-	
-	Player();
+	Player(SceneManager* sm);
 
 	DrawCall draw_call;
 	ParticleSystem ps;
 
     void Tick(float) override;
+    void Draw() override;
 };

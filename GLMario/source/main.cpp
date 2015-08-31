@@ -22,16 +22,19 @@ int main(int argc, char* argv[])
 
 	Time* time = Time::get(); // Initialize the static time object
 
-	Camera main_camera;
 	// main_camera.viewport_size = Vec2(16.f, 9.f);
 
 	Renderer::create_instance(&window);
 	Renderer* renderer = Renderer::get();
-	renderer->set_camera(&main_camera);
 
 	Input* input = Input::get();
 
-	SceneManager scene(&main_camera);
+	SceneManager scene;
+
+	Camera main_camera(&scene);
+
+	scene.SetMainCamera(&main_camera);
+	renderer->set_camera(&main_camera);
 
 	uint32 frame_count = 0;
 	uint32 fps = 0;
