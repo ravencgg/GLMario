@@ -122,7 +122,7 @@ public:
 	ParticleTransformData ptd;
 	ParticleEmissionData ped;
 	DrawLayer draw_layer;
-	
+
 	void initialize(uint32 max, DrawLayer dl);
 	void init_random(uint32);
 	void update(Vec2 p = vec2(0, 0));

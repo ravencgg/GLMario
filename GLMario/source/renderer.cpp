@@ -485,7 +485,7 @@ void Renderer::draw_call(DrawCall data)
 
 }
 
-void Renderer::DrawLine(std::vector<SimpleVertex> vertices, DrawLayer dl)
+void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl)
 {
 	DrawCall dc = {};
 	dc.draw_type = DrawType::ARRAY_BUFFER;

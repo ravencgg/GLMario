@@ -5,7 +5,6 @@
 #include "types.h"
 #include "mathops.h"
 #include "window.h"
-#include "IDrawer.h"
 #include "helper.h"
 #include "dynamic_array.h"
 
@@ -16,6 +15,10 @@
 #include "glm/mat4x4.hpp"
 
 class Camera;
+struct Sprite;
+struct Animation;
+struct Transform;
+
 
 enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT }; 
 enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, LINE_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
@@ -52,6 +55,9 @@ struct SimpleVertex
 {
     Vec2 position;
     Vec4 color;
+
+    SimpleVertex() {};
+    SimpleVertex(Vec2 p, Vec4 c) : position(p), color(c) {}
 };
 
 struct SpriteData 
@@ -189,7 +195,7 @@ public:
 
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
-    void DrawLine(std::vector<SimpleVertex> vertices, DrawLayer dl);
+    void DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl);
 	void DrawRect(Rectf&, DrawLayer dl = DrawLayer::UI, Vec4 color = vec4(1, 1, 1, 1));
 
 private:

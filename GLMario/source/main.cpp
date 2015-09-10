@@ -1,6 +1,6 @@
 #include "SDL.h"
 
-#include "stdio.h"
+#include <stdio.h>
 
 #include "window.h"
 #include "renderer.h"
@@ -39,18 +39,7 @@ int main(int argc, char* argv[])
 	uint32 frame_count = 0;
 	uint32 fps = 0;
 	double last_fps_time = 0;
-
-	double i = 2;
-
-	if (i == 3)
-	{
-		i = 5;
-	}
-	else
-	{
-		i = 4; 
-	}
-
+    
 	SDL_Event e;
 	bool running = true;
 	while(running)
@@ -118,10 +107,10 @@ int main(int argc, char* argv[])
 		Console::get()->log_message(std::string("Frames:\t" + std::to_string(time->frame_count)));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
-		 renderer->begin_frame();
-		 main_camera.Tick((float)time->delta_time);
-		 scene.update_scene();
-    	
+		renderer->begin_frame();
+		main_camera.Tick((float)time->delta_time);
+		scene.update_scene();
+
         static std::vector<SimpleVertex> v;
         static bool initialized = false;
         if(!initialized)

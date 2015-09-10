@@ -191,6 +191,41 @@ void SceneManager::update_scene()
 		}
 	}
 
+	static Vec2 start = { -3.f, 0 };
+    static Vec2 velocity = { -1.f, 0 };
+
+	//static Vec2 start = { 0, 0 };
+ //   static Vec2 velocity = { 1, 1 };
+
+	if (input->is_down(SDLK_v))
+	{
+		velocity.y -= (float)time->delta_time;
+	}
+
+    float outDistance = 0;
+    std::vector<SimpleVertex> line;
+
+	Vec4 red = vec4(1, 0, 0, 1);
+	Vec4 green = vec4(0, 1, 0, 1);
+
+	if (physics->RaycastStatics(start, velocity, outDistance, false))
+	{
+		Console::get()->log_message(std::string("Raycast hit at distance: ") + std::to_string(outDistance));
+		line.push_back(SimpleVertex(start, red));
+		Vec2 end = start + (Normalize(velocity) * outDistance);
+		line.push_back(SimpleVertex(end, red));
+	}
+	else
+	{
+		line.push_back(SimpleVertex(start, green));
+		line.push_back(SimpleVertex(start + velocity, green));
+	}
+
+
+	renderer->DrawLine(line, DrawLayer::UI);
+	
+    //physics->Step((float)time->delta_time);
+
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
         (*it)->Draw();

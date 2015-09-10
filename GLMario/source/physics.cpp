@@ -190,8 +190,35 @@ void Physics::DebugDraw()
     }
 }
 
+bool Physics::RaycastStatics(Vec2 start, Vec2 cast, float& outHit, bool draw)
+{
+    bool result = false;
+    float closest = length(cast);
 
-// TODO(cgenova): move into the Physics class and call during Step()
+    Rectf rect = { 0 };
+    rect.top = start.y;
+    rect.left = start.x;
+    rect.width = 0;
+    rect.height = 0;
+
+    for(uint32 i = 0; i < active_statics.size(); ++i)
+    {
+        TStaticCollider& scol = statics[active_statics[i]];
+
+        CollisionInfo ci;
+        if (CheckCollision(rect, cast, scol.rect, ci))
+        {
+            result = true;
+            if(ci.distance < closest)
+            {
+                closest = ci.distance;
+            }
+        }
+    }
+
+    return result;
+}
+
 bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
 {
 	bool result = false;
@@ -220,7 +247,7 @@ bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
 
 	for (int i = 0; i < 4; ++i)
 	{
-		Vec2 e = motion.v1 - motion.v0;
+		Vec2 e = motion.v1 - motion.v0; 
 		Vec2 f = mRays[i].v1 - mRays[i].v0;
 
 		Vec2 p = { -e.y, e.x };
@@ -231,7 +258,7 @@ bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
 		{
 			float h = (dot(motion.v0 - mRays[i].v0, p) / dot(f, p));
 
-			Vec2 impact = mRays[i].v0 + f * h;
+			Vec2 impact = mRays[i].v0 + f * h; 
 
 			// TODO(cgenova): clean up this loop
 			if (h > 0 && h < 1 && !result)

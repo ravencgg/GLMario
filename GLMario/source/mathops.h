@@ -234,6 +234,13 @@ clamp01(Vec2 Value)
     return result;
 }
 
+inline Vec2
+Normalize(Vec2 A)
+{
+    Vec2 result = A * (1.0f / length(A));
+    return result;
+}
+
 inline
 std::string to_string(Vec2 v)
 {

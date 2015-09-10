@@ -52,6 +52,12 @@ struct TDynamicCollider
     Actor* parent;
 };
 
+struct Ray
+{
+    Vec2 v0;
+    Vec2 v1;
+};
+
 void SetPosition(RDynamicCollider, Vec2 position);
 Vec2 GetPosition(RDynamicCollider col);
 
@@ -83,14 +89,10 @@ public:
     void Step(float);
 
     void DebugDraw();
-};
 
-struct Ray
-{
-	Vec2 v0;
-	Vec2 v1;
+    // Returns true if hits
+    bool RaycastStatics(Vec2, Vec2, float&, bool draw = false);
 };
-
 inline
 Ray make_ray(Vec2 a, Vec2 b)
 {
