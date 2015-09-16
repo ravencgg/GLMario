@@ -71,7 +71,9 @@ SceneManager::SceneManager()
 	 input(Input::get())
 {
 	//tilemap.fill_checkerboard();
-	tilemap.MakeWalledRoom(rect(0, 0, 10, 10));
+	// tilemap.MakeWalledRoom(rect(0, 0, 10, 10));
+
+    tilemap.AddTile(2, 0);
 
 	//Entity* e = add_entity(EntityType::PLAYER, vec2(5.f, 5.f));
 	//e->pe.draw_call.draw_type = DrawType::SINGLE_SPRITE;
@@ -201,6 +203,11 @@ void SceneManager::update_scene()
 	{
 		velocity.y -= (float)time->delta_time;
 	}
+	if (input->is_down(SDLK_g))
+	{
+		velocity.x += (float)time->delta_time;
+	}
+
 
     float outDistance = 0;
     std::vector<SimpleVertex> line;

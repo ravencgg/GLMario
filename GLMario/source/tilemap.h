@@ -29,6 +29,7 @@ public:
 
 	void MakeCheckerboard(Rect);
 	void MakeWalledRoom(Rect);
+    void AddTile(float, float);
 	void update();
 	void draw();
 

@@ -216,9 +216,32 @@ bool Physics::RaycastStatics(Vec2 start, Vec2 cast, float& outHit, bool draw)
         }
     }
 
+	outHit = closest;
     return result;
 }
 
+bool LineSegmentIntersection(Vec2 r0, Vec2 r1, Vec2 a, Vec2 b, Vec2& result)
+{
+    Vec2 s1, s2;
+    s1 = r1 - r0; 
+    s2 = b - a;
+
+    float s, t;
+    s = (-s1.y * (r0.x - a.x) + s1.x * (r0.y - a.y)) / (-s2.x * s1.y + s1.x * s2.y);
+    t = (s2.x * (r0.y - a.y) - s2.y * (r0.x - a.x)) / (-s2.x * s1.y + s1.x * s2.y);
+
+    if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+    {
+        // Collision detected
+        // Return the point of intersection
+        result = vec2(r0.x + (t * s1.x), r0.y + (t * s1.y));
+        return true;
+    }
+
+    return false; // No collision
+}
+
+// NOTE(cgenova): Look up "Vector Projection" to shoot the ray along the wall after a collision
 bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
 {
 	bool result = false;
@@ -245,38 +268,55 @@ bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
 	mRays[2] = make_ray(p[2], p[3]);
 	mRays[3] = make_ray(p[3], p[0]);
 
+
+    float closest = -1.f;
+
 	for (int i = 0; i < 4; ++i)
 	{
-		Vec2 e = motion.v1 - motion.v0; 
-		Vec2 f = mRays[i].v1 - mRays[i].v0;
+        Vec2 intersection;
+        if(LineSegmentIntersection(motion.v0, motion.v1, mRays[i].v0, mRays[i].v1, intersection))
+        {
+            float distance = length(intersection - motion.v0);
+                
+            if(!result || distance < closest)
+            {
+                result = true;
+                closest = distance; 
+				out.distance = distance;
+                out.point = intersection;
+            }
+        }
 
-		Vec2 p = { -e.y, e.x };
+		// Vec2 e = motion.v1 - motion.v0; 
+		// Vec2 f = mRays[i].v1 - mRays[i].v0;
 
-		float dfp = dot(f, p);
+		// Vec2 p = { -e.y, e.x };
 
-		if (dfp > 0)
-		{
-			float h = (dot(motion.v0 - mRays[i].v0, p) / dot(f, p));
+		// float dfp = dot(f, p);
 
-			Vec2 impact = mRays[i].v0 + f * h; 
+		// if (dfp > 0)
+		// {
+		// 	float h = (dot(motion.v0 - mRays[i].v0, p) / dot(f, p));
 
-			// TODO(cgenova): clean up this loop
-			if (h > 0 && h < 1 && !result)
-			{
-				result = true;
-				out.distance = length(impact - o);
-				out.point = impact;
-			}
-			else if (h > 0 && h < 1)
-			{
-				float l = length(impact - o);
-				if (out.distance > l)
-				{
-					out.distance = l;
-					out.point = impact;
-				}
-			}
-		}
+		// 	Vec2 impact = mRays[i].v0 + f * h; 
+
+		// 	// TODO(cgenova): clean up this loop
+		// 	if (h > 0 && h < 1 && !result)
+		// 	{
+		// 		result = true;
+		// 		out.distance = length(impact - o);
+		// 		out.point = impact;
+		// 	}
+		// 	else if (h > 0 && h < 1)
+		// 	{
+		// 		float l = length(impact - o);
+		// 		if (out.distance > l)
+		// 		{
+		// 			out.distance = l;
+		// 			out.point = impact;
+		// 		}
+		// 	}
+		// }
 	}
 	return result;
 }
