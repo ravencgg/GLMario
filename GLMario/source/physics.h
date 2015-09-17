@@ -9,6 +9,7 @@
 #define Max_Static_Colliders 2048
 #define Max_Dynamic_Colliders 2048
 
+
 class Actor;
 struct TStaticCollider;
 struct TDynamicCollider;
@@ -80,19 +81,25 @@ public:
     ~Physics();
 
     RStaticCollider AddStaticCollider(TStaticCollider);
+    RStaticCollider AddStaticCollider(Rectf);
     RDynamicCollider AddDynamicCollider(TDynamicCollider);
 
-    RStaticCollider AddStaticCollider(Rectf);
-
     void RemoveDynamicCollider(RDynamicCollider);
-
-    void Step(float);
-
+    void StepDynamicColliders(float);
     void DebugDraw();
 
     // Returns true if hits
     bool RaycastStatics(Vec2, Vec2, float&, bool draw = false);
+	
+
+#ifdef DEBUG
+	static std::vector<Rectf> minkowski_rects;
+#endif
+	static void AddMinkowskiDebugRect(Rectf);
+
+
 };
+
 inline
 Ray make_ray(Vec2 a, Vec2 b)
 {

@@ -71,9 +71,9 @@ SceneManager::SceneManager()
 	 input(Input::get())
 {
 	//tilemap.fill_checkerboard();
-	// tilemap.MakeWalledRoom(rect(0, 0, 10, 10));
+	tilemap.MakeWalledRoom(rect(0, 0, 10, 10));
 
-    tilemap.AddTile(2, 0);
+    tilemap.AddTile(2, 2);
 
 	//Entity* e = add_entity(EntityType::PLAYER, vec2(5.f, 5.f));
 	//e->pe.draw_call.draw_type = DrawType::SINGLE_SPRITE;
@@ -207,6 +207,10 @@ void SceneManager::update_scene()
 	{
 		velocity.x += (float)time->delta_time;
 	}
+	if (input->is_down(SDLK_y))
+	{
+		velocity.y += (float)time->delta_time;
+	}
 
 
     float outDistance = 0;
@@ -231,7 +235,7 @@ void SceneManager::update_scene()
 
 	renderer->DrawLine(line, DrawLayer::UI);
 	
-    //physics->Step((float)time->delta_time);
+    physics->StepDynamicColliders((float)time->delta_time);
 
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {

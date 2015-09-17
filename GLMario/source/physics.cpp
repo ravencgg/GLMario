@@ -12,6 +12,8 @@ Rectf CanonicalRect(TDynamicCollider* col)
     return result;
 }
 
+std::vector<Rectf> Physics::minkowski_rects;
+
 void SetPosition(RDynamicCollider col, Vec2 position)
 {
     TDynamicCollider* c = col.data;
@@ -128,29 +130,12 @@ void Physics::RemoveDynamicCollider(RDynamicCollider col)
         std::swap(it, active_dynamics.back());
         active_dynamics.pop_back();
     }
+
 }
 
-void Physics::Step(float dt)
+void Physics::AddMinkowskiDebugRect(Rectf rect)
 {
-	// NOTE(cgenova): Bubble sort would be faster here.
-	std::sort(active_dynamics.begin(), active_dynamics.end());
-
-    for(uint32 i = 0; i < active_dynamics.size(); ++i)
-    {
-        TDynamicCollider& col = dynamics[active_dynamics[i]];
-        col.collisions.resize(0);
-
-        for(uint32 j = 0; j < active_statics.size(); ++j)
-        {
-            TStaticCollider& scol = statics[active_statics[j]];
-
-            CollisionInfo ci;
-			if (CheckCollision(col.rect, col.velocity, scol.rect, ci))
-            {
-                col.collisions.push_back(ci);
-            }
-        }
-    }
+	Physics::minkowski_rects.push_back(rect);
 }
 
 void Physics::DebugDraw()
@@ -188,6 +173,14 @@ void Physics::DebugDraw()
 
         ren->DrawLine(verts, DrawLayer::UI);
     }
+
+#ifdef DEBUG
+	for (uint32 i = 0; i < Physics::minkowski_rects.size(); ++i)
+    {
+		ren->DrawRect(Physics::minkowski_rects[i], dl, { 0, 1, 0, 1 });
+    }
+	Physics::minkowski_rects.clear();
+#endif
 }
 
 bool Physics::RaycastStatics(Vec2 start, Vec2 cast, float& outHit, bool draw)
@@ -205,6 +198,8 @@ bool Physics::RaycastStatics(Vec2 start, Vec2 cast, float& outHit, bool draw)
     {
         TStaticCollider& scol = statics[active_statics[i]];
 
+		if (!scol.active) continue;
+
         CollisionInfo ci;
         if (CheckCollision(rect, cast, scol.rect, ci))
         {
@@ -218,6 +213,49 @@ bool Physics::RaycastStatics(Vec2 start, Vec2 cast, float& outHit, bool draw)
 
 	outHit = closest;
     return result;
+}
+
+void Physics::StepDynamicColliders(float dt)
+{
+	// NOTE(cgenova): Bubble sort would be faster here.
+	std::sort(active_dynamics.begin(), active_dynamics.end());
+
+	for (uint32 i = 0; i < active_dynamics.size(); ++i)
+	{
+		TDynamicCollider& col = dynamics[active_dynamics[i]];
+		col.collisions.resize(0);
+
+		Vec2 remainingVelocity = col.velocity;
+		CollisionInfo closestCollisionInfo = {};
+		float closestCollision = length(remainingVelocity);
+		bool collided = false;
+
+        for(uint32 j = 0; j < active_statics.size(); ++j)
+        {
+            TStaticCollider& scol = statics[active_statics[j]];
+			if (!scol.active) continue;
+
+            CollisionInfo ci;
+
+			// TODO(cgenova): redo this loop while remainingVelocity is > 0, limited by iteration count.
+			if (CheckCollision(col.rect, remainingVelocity, scol.rect, ci))
+            {
+				// This isn't right, this should only be for motion right now.
+				collided = true;
+
+				if (closestCollision > ci.distance)
+				{
+					closestCollision = ci.distance;
+					closestCollisionInfo = ci;
+				}
+            }
+        }
+		if (collided)
+		{
+			col.collisions.push_back(closestCollisionInfo);
+			col.position = closestCollisionInfo.point;
+		}
+    }
 }
 
 bool LineSegmentIntersection(Vec2 r0, Vec2 r1, Vec2 a, Vec2 b, Vec2& result)
@@ -256,6 +294,12 @@ bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
 					other.y - m.h / 2.f,
 					m.w + other.w,
 					m.h + other.h };
+
+#ifdef DEBUG
+
+	Physics::AddMinkowskiDebugRect(mSum);
+	
+#endif
 
 	Ray mRays[4] = {};
 	Vec2 p[4] = { { mSum.x, mSum.y },

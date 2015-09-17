@@ -80,7 +80,7 @@ void Player::Tick(float dt)
 	std::string conOut("Player collider.data->velocity: " + ::to_string(collider.data->velocity));
 	Console::get()->log_message(conOut);
 
-    Renderer* ren = Renderer::get();
+    //Renderer* ren = Renderer::get();
 	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
 	//Console::get()->log_message(p_info);
 	// sprite.angle += 0.1f;
