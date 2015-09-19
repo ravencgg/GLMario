@@ -134,8 +134,6 @@ int main(int argc, char* argv[])
         renderer->DrawLine(v, DrawLayer::UI);	
 		 //renderer->render_draw_buffer();
 
-		static Rectf rect = { 0, 0, 1, 1 };
-		renderer->DrawRect(rect);
 		
 		Console::get()->draw();
 		renderer->end_frame();

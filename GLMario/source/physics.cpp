@@ -1,6 +1,5 @@
 #include "physics.h"
 
-
 Rectf CanonicalRect(TDynamicCollider* col)
 {
     Rectf result = {};
@@ -14,13 +13,13 @@ Rectf CanonicalRect(TDynamicCollider* col)
 
 std::vector<Rectf> Physics::minkowski_rects;
 
-void SetPosition(RDynamicCollider col, Vec2 position)
+void ColliderSetPosition(RDynamicCollider col, Vec2 position)
 {
     TDynamicCollider* c = col.data;
     c->position = position;
 }
 
-Vec2 GetPosition(RDynamicCollider col)
+Vec2 ColliderGetPosition(RDynamicCollider col)
 {
     Vec2 result = col.data->position;
     return result;
@@ -28,20 +27,20 @@ Vec2 GetPosition(RDynamicCollider col)
 
 Physics::Physics()
 {
-	statics = new TStaticCollider[Max_Static_Colliders];
-    dynamics = new TDynamicCollider[Max_Dynamic_Colliders];
+	statics = new TStaticCollider[MAX_STATIC_COLLIDERS];
+    dynamics = new TDynamicCollider[MAX_DYNAMIC_COLLIDERS];
 
-    active_statics.reserve(Max_Static_Colliders);
-    active_dynamics.reserve(Max_Static_Colliders);
+    active_statics.reserve(MAX_STATIC_COLLIDERS);
+    active_dynamics.reserve(MAX_DYNAMIC_COLLIDERS);
 
-    inactive_statics.reserve(Max_Static_Colliders);
-    inactive_dynamics.reserve(Max_Static_Colliders);
+    inactive_statics.reserve(MAX_STATIC_COLLIDERS);
+    inactive_dynamics.reserve(MAX_DYNAMIC_COLLIDERS);
 
-    for(int i = Max_Static_Colliders - 1; i >= 0; --i) 
+    for(int i = MAX_STATIC_COLLIDERS - 1; i >= 0; --i) 
     {
         inactive_dynamics.push_back(i);
     }
-    for(int i = Max_Dynamic_Colliders - 1; i >= 0; --i) 
+    for(int i = MAX_DYNAMIC_COLLIDERS - 1; i >= 0; --i) 
     {
         inactive_statics.push_back(i);
     }
@@ -106,7 +105,7 @@ RDynamicCollider Physics::AddDynamicCollider(TDynamicCollider col)
 void Physics::RemoveDynamicCollider(RDynamicCollider col)
 {
 #ifdef _DEBUG
-    assert(col.array_index < Max_Dynamic_Colliders);
+    assert(col.array_index < MAX_DYNAMIC_COLLIDERS);
     memset(dynamics[col.array_index], 0xBD, sizeof(TStaticCollider));
 #endif
 
@@ -161,17 +160,6 @@ void Physics::DebugDraw()
     {
         uint32 loc = active_dynamics[i];
         ren->DrawRect(CanonicalRect(&dynamics[loc]), dl, dynamics[loc].active ? d_active : d_inactive);
-
-        std::vector<SimpleVertex> verts;
-        SimpleVertex v = {};
-        v.position = dynamics[loc].position;
-        v.color    = vec4(1, 0, 0, 1);
-        verts.push_back(v);
-        v.position = dynamics[loc].position + dynamics[loc].velocity;
-        v.color    = vec4(1, 1, 0, 1);
-        verts.push_back(v);
-
-        ren->DrawLine(verts, DrawLayer::UI);
     }
 
 #ifdef DEBUG
@@ -183,7 +171,7 @@ void Physics::DebugDraw()
 #endif
 }
 
-bool Physics::RaycastStatics(Vec2 start, Vec2 cast, float& outHit, bool draw)
+bool Physics::RaycastStatics(Vec2 start, Vec2 cast, CollisionInfo& outHit, bool draw)
 {
     bool result = false;
     float closest = length(cast);
@@ -207,14 +195,20 @@ bool Physics::RaycastStatics(Vec2 start, Vec2 cast, float& outHit, bool draw)
             if(ci.distance < closest)
             {
                 closest = ci.distance;
+
+                outHit.normal = ci.normal;
+                outHit.projection = ci.projection;
+				outHit.distance = closest;
+				outHit.point = ci.point;
             }
         }
     }
 
-	outHit = closest;
     return result;
 }
 
+
+#if 0
 void Physics::StepDynamicColliders(float dt)
 {
 	// NOTE(cgenova): Bubble sort would be faster here.
@@ -257,6 +251,142 @@ void Physics::StepDynamicColliders(float dt)
 		}
     }
 }
+#endif
+
+// Move to mathops.h
+float MaxSigned(float in, float maxValue)
+{
+	float result = sign(in) * max(abs(in), abs(maxValue));
+	return result;
+}
+
+float MinSigned(float in, float minValue)
+{
+	float result = sign(in) * min(abs(in), abs(minValue));
+	return result;
+}
+
+bool Contains(Rectf rect, Vec2 point)
+{
+	if (point.x < rect.x + rect.w && point.x > rect.x
+		&& point.y > rect.y && point.y < rect.y + rect.h)
+	{
+		return true;
+	}
+	return false;
+}
+
+Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float dt)
+{
+    TDynamicCollider& col = dynamics[refCollider.array_index];
+    col.collisions.resize(0);
+
+    Vec2 startPosition = col.position;
+
+    Vec2 remainingVelocity = velocity * dt;
+    CollisionInfo closestCollisionInfo = {};
+	closestCollisionInfo.distance = length(remainingVelocity);
+    float closestCollision = length(remainingVelocity);
+    bool collided = false;
+
+    CollisionInfo ci;
+    const int maxIterations = 5;
+    int iterations = 0;
+
+    float maxX = 0;
+    float maxY = 0;
+
+	std::vector<CollisionInfo> collisions;
+	bool valid = true;
+
+    do
+    {
+        collided = false;
+        memset(&ci, 0, sizeof(CollisionInfo));
+
+        for(uint32 j = 0; j < active_statics.size(); ++j)
+        {
+            TStaticCollider& scol = statics[active_statics[j]];
+            if (!scol.active) continue;
+
+			if (CheckCollision(CanonicalRect(&col), remainingVelocity, scol.rect, ci))
+			{
+				valid = true;
+
+				for (auto it : collisions)
+				{
+					if (Contains(it.mSumOther, ci.point))
+					{
+						valid = false;
+						break;
+					}
+				}
+
+                Rectf curRect = CanonicalRect(&col);
+                for(uint32 k = 0; k < active_statics.size(); ++k)
+                {
+                    if(!statics[active_statics[k]].active) continue;
+                    
+					Rectf& other = statics[active_statics[k]].rect;
+
+                    Rectf mSum = { other.x - curRect.w / 2.f,
+                            other.y - curRect.h / 2.f,
+                            curRect.w + other.w,
+                            curRect.h + other.h };
+
+                    if(Contains(mSum, ci.point))
+                    {
+                        valid = false;
+                        break;
+                    }
+                }
+
+				if (valid)
+				{
+					collisions.push_back(ci);
+					collided = true;
+
+					if (closestCollision > ci.distance)
+					{
+						remainingVelocity = ci.projection;
+						closestCollision = ci.distance;
+						//maxX = MinSigned(maxX, ci.point.x - col.position.x);
+						//maxY = MinSigned(maxY, ci.point.y - col.position.y);
+						closestCollisionInfo = ci;
+
+					}
+                }
+            }
+        }
+        if (collided)
+        {
+            col.collisions.push_back(closestCollisionInfo);
+            col.position = closestCollisionInfo.point;//  + ci.projection;
+
+            remainingVelocity = ci.projection;
+
+			float rh = 0.2f;
+			float rw = rh * 2.f;
+			Renderer::get()->DrawRect(rectf(ci.point.x + ci.projection.x - rh, ci.point.y + ci.projection.y - rh, rw, rw), DrawLayer::UI, vec4(1, 1, 0, 1));
+
+            // col.position.x = MinSigned(col.position.x, maxX);
+            // col.position.y = MinSigned(col.position.y, maxY);
+        }
+		else if (valid)
+        {
+            col.position += remainingVelocity;
+        }
+		else
+		{
+
+		}
+
+    }while(iterations++ < maxIterations && collided && length(remainingVelocity) > COLLISION_EPSILON);
+    
+    velocity = col.position - startPosition;
+
+    return col.position;
+}
 
 bool LineSegmentIntersection(Vec2 r0, Vec2 r1, Vec2 a, Vec2 b, Vec2& result)
 {
@@ -275,12 +405,11 @@ bool LineSegmentIntersection(Vec2 r0, Vec2 r1, Vec2 a, Vec2 b, Vec2& result)
         result = vec2(r0.x + (t * s1.x), r0.y + (t * s1.y));
         return true;
     }
-
     return false; // No collision
 }
 
 // NOTE(cgenova): Look up "Vector Projection" to shoot the ray along the wall after a collision
-bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
+bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 {
 	bool result = false;
 	Vec2 o = { m.x + m.w / 2.f, m.y + m.h / 2.f };
@@ -295,23 +424,24 @@ bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
 					m.w + other.w,
 					m.h + other.h };
 
-#ifdef DEBUG
+    out.mSumOther = mSum;
 
+#ifdef DEBUG
 	Physics::AddMinkowskiDebugRect(mSum);
-	
 #endif
 
 	Ray mRays[4] = {};
 	Vec2 p[4] = { { mSum.x, mSum.y },
-						{ mSum.x, mSum.y + mSum.h },
-						{ mSum.x + mSum.w, mSum.y + mSum.h },
-						{ mSum.x + mSum.w, mSum.y} };
+                  { mSum.x, mSum.y + mSum.h },
+                  { mSum.x + mSum.w, mSum.y + mSum.h },
+                  { mSum.x + mSum.w, mSum.y} };
+
+//	assert(!Contains(mSum, o));
 
 	mRays[0] = make_ray(p[0], p[1]);
 	mRays[1] = make_ray(p[1], p[2]);
 	mRays[2] = make_ray(p[2], p[3]);
 	mRays[3] = make_ray(p[3], p[0]);
-
 
     float closest = -1.f;
 
@@ -326,41 +456,43 @@ bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out)
             {
                 result = true;
                 closest = distance; 
-				out.distance = distance;
-                out.point = intersection;
+                out.distance = distance;
+
+
+                // Magnitude of projection vector
+                float remainingDistanceToTravel = length(velocity) - distance;
+
+                Vec2 b = mRays[i].v1 - mRays[i].v0;
+                Vec2 n = Normalize(vec2(-b.y, b.x));
+                Vec2 d = motion.v1 - motion.v0;
+                Vec2 r = d - (2.f * dot(d, n) * n);
+
+                r = Normalize(r);
+                r *= remainingDistanceToTravel;
+
+                out.projection = (dot(r, b) / dot(b, b)) * b;
+
+                Vec2 geometryOffset = n * COLLISION_EPSILON;
+
+                out.projection += geometryOffset * 1.1f; 
+                out.normal = n;
+                // out.projection = r;
+
+                // out.projection *= remainingDistanceToTravel;
+
+                // out.projection.x = abs(out.projection.x) * sign(velocity.x);
+                // out.projection.y = abs(out.projection.y) * sign(velocity.y);
+                if(distance > COLLISION_EPSILON)
+                {
+                    // out.point = lerp(o, intersection, 0.9f);
+                    out.point = intersection + geometryOffset; 
+                }
+                else
+                {
+                    out.point = o; 
+                }
             }
         }
-
-		// Vec2 e = motion.v1 - motion.v0; 
-		// Vec2 f = mRays[i].v1 - mRays[i].v0;
-
-		// Vec2 p = { -e.y, e.x };
-
-		// float dfp = dot(f, p);
-
-		// if (dfp > 0)
-		// {
-		// 	float h = (dot(motion.v0 - mRays[i].v0, p) / dot(f, p));
-
-		// 	Vec2 impact = mRays[i].v0 + f * h; 
-
-		// 	// TODO(cgenova): clean up this loop
-		// 	if (h > 0 && h < 1 && !result)
-		// 	{
-		// 		result = true;
-		// 		out.distance = length(impact - o);
-		// 		out.point = impact;
-		// 	}
-		// 	else if (h > 0 && h < 1)
-		// 	{
-		// 		float l = length(impact - o);
-		// 		if (out.distance > l)
-		// 		{
-		// 			out.distance = l;
-		// 			out.point = impact;
-		// 		}
-		// 	}
-		// }
 	}
 	return result;
 }

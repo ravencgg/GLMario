@@ -485,6 +485,18 @@ void Renderer::draw_call(DrawCall data)
 
 }
 
+void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, DrawLayer dl)
+{
+    std::vector<SimpleVertex> v;
+    SimpleVertex s;
+    s.position = start;
+    s.color = color;
+    v.push_back(s);
+    s.position = end;
+    v.push_back(s);
+    DrawLine(v, dl);
+}
+
 void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl)
 {
 	DrawCall dc = {};

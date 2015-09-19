@@ -6,9 +6,10 @@
 #include <vector>
 #include <algorithm>
 
-#define Max_Static_Colliders 2048
-#define Max_Dynamic_Colliders 2048
+#define MAX_STATIC_COLLIDERS 2048
+#define MAX_DYNAMIC_COLLIDERS 2048
 
+#define COLLISION_EPSILON 0.0001f
 
 class Actor;
 struct TStaticCollider;
@@ -31,7 +32,13 @@ struct CollisionInfo
     // NOTE(cgenova): only generating collision info for the dynamic colliders right now
     float distance;
     Vec2 point;
-    RDynamicCollider other;
+    Vec2 projection;
+    Vec2 normal;
+
+    // TEMPORARY:
+    Rectf mSumOther;
+
+    // RDynamicCollider other;
 };
 
 // Should these get collision messages? They would need a parent pointer!
@@ -46,7 +53,6 @@ struct TDynamicCollider
     bool32 active;
     Rectf rect;
     Vec2 position; // Allows for non-centered colliders 
-    Vec2 velocity;
 
     std::vector<CollisionInfo> collisions;
 
@@ -59,8 +65,8 @@ struct Ray
     Vec2 v1;
 };
 
-void SetPosition(RDynamicCollider, Vec2 position);
-Vec2 GetPosition(RDynamicCollider col);
+void ColliderSetPosition(RDynamicCollider, Vec2 position);
+Vec2 ColliderGetPosition(RDynamicCollider col);
 
 Rectf CanonicalRect(TDynamicCollider*);
 
@@ -74,6 +80,7 @@ class Physics
 
     std::vector<uint32> inactive_statics;
     std::vector<uint32> inactive_dynamics;
+
 
 public:
 
@@ -89,15 +96,16 @@ public:
     void DebugDraw();
 
     // Returns true if hits
-    bool RaycastStatics(Vec2, Vec2, float&, bool draw = false);
+    bool RaycastStatics(Vec2, Vec2, CollisionInfo&, bool draw = false);
+
+    // Returns final collider position 
+    Vec2 StepCollider(RDynamicCollider collider, Vec2& velocity, float dt);
 	
 
 #ifdef DEBUG
 	static std::vector<Rectf> minkowski_rects;
 #endif
 	static void AddMinkowskiDebugRect(Rectf);
-
-
 };
 
 inline
@@ -150,4 +158,4 @@ PhysicsCircle make_physics_circle(Vec2 pos, float size)
     return result;
 }
 
-bool CheckCollision(Rectf& m, Vec2& velocity, Rectf& other, CollisionInfo& out);
+bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out);

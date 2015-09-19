@@ -69,6 +69,13 @@ inline float clamp01(float f)
     return result;
 }
 
+inline float sign(float x)
+{
+   int result = (x > 0) - (x < 0);
+
+   return (float)result;
+}
+
 union Vec2 
 {
 	struct { float x, y; };

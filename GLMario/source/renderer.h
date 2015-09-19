@@ -195,6 +195,7 @@ public:
 
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
+    void DrawLine(Vec2, Vec2, Vec4, DrawLayer dl = DrawLayer::UI);
     void DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl);
 	void DrawRect(Rectf&, DrawLayer dl = DrawLayer::UI, Vec4 color = vec4(1, 1, 1, 1));
 

@@ -9,13 +9,16 @@
 
 class SceneManager;
 
-class Player : public Actor
+class Player : public Actor 
 {
 public:
-	Player(SceneManager* sm);
 
 	DrawCall draw_call;
+    Vec2 velocity;
+
 	ParticleSystem ps;
+
+    Player(SceneManager* sm);
 
     void Tick(float) override;
     void Draw() override;

@@ -40,56 +40,72 @@ Player::Player(SceneManager* sm)
                  -size.y / 2.f, 
                  size.x,
                  size.y };
-    col.velocity = vec2(0, 0);
     col.parent = this;
 
     collider = parent_scene->physics->AddDynamicCollider(col);
-    ::SetPosition(collider, transform.position);
+    ColliderSetPosition(collider, transform.position);
 }
 
 void Player::Tick(float dt)
 {
-	const float gravity = -9.8f;
+	const float gravity = -20.f;
 	static uint32 count = 0;
 	Input* input = Input::get();
 
-	this->collider.data->velocity.y += gravity * dt;
 	if(input->is_down(SDLK_SPACE))
 	{
-		collider.data->velocity.y = 5.f;
+		velocity.y = 10.f;
 	}	
+    else
+    {
+        velocity.y += gravity * dt;
+        velocity.y = max(velocity.y, -100.0f);
+    }
 
 	if(input->is_down(SDLK_d))
 	{
-		collider.data->velocity.x += 10.f * dt;
+		velocity.x += 50.f * dt;
+        velocity.x = min(velocity.x, 5.0f);
 	}	
-	else if(input->on_down(SDLK_a))
+	else if(input->is_down(SDLK_a))
 	{
-		collider.data->velocity.x += -10.f * dt;
-		//transform.position.x -= 1.f;
+		velocity.x -= 50.f * dt;
+        velocity.x = max(velocity.x, -5.0f);
 	}
 	else
 	{
-		collider.data->velocity.x = 0;
+		velocity.x = 0;
 	}
 
-	// collider.data->velocity = this->parent_scene->process_motion(transform.position,
-	// 												make_rect(transform.position, vec2(1.f, 1.5f)),
-	// 												collider.data->velocity);
-
-	std::string conOut("Player collider.data->velocity: " + ::to_string(collider.data->velocity));
+	std::string conOut("Player collider.data->velocity: " + ::to_string(velocity));
 	Console::get()->log_message(conOut);
 
-    //Renderer* ren = Renderer::get();
+    std::string posOut("Player position: " + ::to_string(transform.position));
+    Console::get()->log_message(posOut);
+
+
+    Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1));
+
+    Vec2 startVelocity = velocity;
+
+    transform.position = parent_scene->physics->StepCollider(collider, velocity, dt);
+    velocity.x /= dt;
+    velocity.y /= dt;
+
+    velocity.x = sign(velocity.x) * min(abs(velocity.x), abs(startVelocity.x));
+    velocity.y = sign(velocity.y) * min(abs(velocity.y), abs(startVelocity.y));
+
+    std::string postPosOut("Player position: " + ::to_string(transform.position));
+    Console::get()->log_message(postPosOut);
+
+    ps.update(this->transform.position);
 	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
 	//Console::get()->log_message(p_info);
 	// sprite.angle += 0.1f;
-	//transform.position += collider.data->velocity;
 }
 
 void Player::Draw()
 {
-    transform.position = GetPosition(collider);
     static bool draw_player = true;
     if(Input::get()->on_down(SDLK_p))
     {
@@ -97,7 +113,6 @@ void Player::Draw()
         ps.create_particle_burst(500);
     }    
 
-    ps.update(this->transform.position);
     ps.render();
 
     if(draw_player)

@@ -54,22 +54,24 @@ void Tilemap::MakeCheckerboard(Rect r)
 
 void Tilemap::MakeWalledRoom(Rect r)
 {
-	for (int32 y = 0; y < r.height; ++y)
+
+
+	for (int32 y = r.y, j = 0; j < r.height; ++y, ++j)
 	{
-		for (int32 x = 0; x < r.width; ++x)
+		for (int32 x = r.x, i = 0; i < r.width; ++x, ++i)
 		{
-			if(y == 0 || y == (r.height - 1))
+			if(y == r.y || j == (r.height - 1))
 			{
                 Vec2 p = vec2((float) x, (float) y);
                 Vec2 s = vec2(1, 1);
                 tiles.push_back(MakeTile(physics, p, s));
 			}
-			else if(x == 0 || x == (r.width - 1))
+			else if(x == r.x || i == (r.width - 1))
 			{
                 Vec2 p = vec2((float) x, (float) y);
                 Vec2 s = vec2(1, 1);
                 tiles.push_back(MakeTile(physics, p, s));
-				tiles.back().collider.data->active = false;
+				// tiles.back().collider.data->active = false;
 			}
 		}
 	}

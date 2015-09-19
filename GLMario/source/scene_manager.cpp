@@ -71,27 +71,13 @@ SceneManager::SceneManager()
 	 input(Input::get())
 {
 	//tilemap.fill_checkerboard();
-	tilemap.MakeWalledRoom(rect(0, 0, 10, 10));
+	tilemap.MakeWalledRoom(rect(-50, -20, 50, 50));
+    tilemap.MakeWalledRoom(rect(-5, -20, 30, 3));
+    tilemap.MakeWalledRoom(rect(-25, -10, 5, 10));
+    tilemap.MakeWalledRoom(rect(20, 20, 10, 10));
 
     tilemap.AddTile(2, 2);
 
-	//Entity* e = add_entity(EntityType::PLAYER, vec2(5.f, 5.f));
-	//e->pe.draw_call.draw_type = DrawType::SINGLE_SPRITE;
-	//e->pe.draw_call.image = ImageFiles::MARIO_IMAGE;
-	//e->pe.draw_call.shader = ShaderTypes::DEFAULT_SHADER;
-	//e->pe.draw_call.options = DrawOptions::TEXTURE_RECT;
-	//e->pe.draw_call.sd.tex_rect.top = 903;
-	//e->pe.draw_call.sd.tex_rect.left = 17;
-	//e->pe.draw_call.sd.tex_rect.width = 34;
-	//e->pe.draw_call.sd.tex_rect.height = 34;
-	//e->pe.draw_call.sd.world_size = vec2(1.0f, 1.5f);
-	//e->pe.draw_call.sd.draw_angle = 0;
-
-
-    /*std::shared_ptr<GameObject> p = std::make_shared<Player>();
-	objects.push_back(p);
-	objects.push_back(std::make_shared<Enemy>());
-*/
      std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
 	 ps->initialize(1000, DrawLayer::FOREGROUND);
 	 ps->ped.spawn_rate = 100;
@@ -146,7 +132,6 @@ Vec2 SceneManager::process_motion(Vec2& position, Rectf object, Vec2 velocity)
 	return result;
 }
 
-
 void SceneManager::update_scene()
 {
 	tilemap.draw();
@@ -161,7 +146,7 @@ void SceneManager::update_scene()
 		std::shared_ptr<Player> p = std::make_shared<Player>(this);
 		p->parent_scene = this;
 		objects.push_back(std::move(p));
-        objects.back()->SetPosition(vec2(5.1f, 5.2f));
+        objects.back()->SetPosition(vec2(0, 4.f));
 	}
 
 	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.size())));
@@ -182,8 +167,8 @@ void SceneManager::update_scene()
 
 		if (deleting)
 		{
-			Entity* go = dynamic_cast<Entity*>(it->get());
-			Enemy* enemy = dynamic_cast<Enemy*>(&(*it->get()));
+			 Entity* go = dynamic_cast<Entity*>(it->get());
+			 Enemy* enemy = dynamic_cast<Enemy*>(&(*it->get()));
 			if (enemy && rand() % 2 == 0)
 			{
 				std::swap(*it, objects.back());
@@ -193,38 +178,49 @@ void SceneManager::update_scene()
 		}
 	}
 
-	static Vec2 start = { -3.f, 0 };
-    static Vec2 velocity = { -1.f, 0 };
+	static Vec2 start = { -3.5f, 4.0f };
+    static Vec2 velocity = { 0, -1.f };
 
-	//static Vec2 start = { 0, 0 };
- //   static Vec2 velocity = { 1, 1 };
-
-	if (input->is_down(SDLK_v))
+	if (input->is_down(SDLK_k))
 	{
 		velocity.y -= (float)time->delta_time;
 	}
-	if (input->is_down(SDLK_g))
+    if (input->is_down(SDLK_i))
+    {
+        velocity.y += (float)time->delta_time;
+    }
+    if (input->is_down(SDLK_j))
+    {
+        velocity.x -= (float)time->delta_time;
+    }
+	if (input->is_down(SDLK_l))
 	{
 		velocity.x += (float)time->delta_time;
 	}
-	if (input->is_down(SDLK_y))
-	{
-		velocity.y += (float)time->delta_time;
-	}
-
 
     float outDistance = 0;
     std::vector<SimpleVertex> line;
 
 	Vec4 red = vec4(1, 0, 0, 1);
 	Vec4 green = vec4(0, 1, 0, 1);
+    Vec4 yellow = vec4(1, 1, 0, 1);
+    Vec4 magenta = vec4(1, 0, 1, 1);
+    Vec4 white = vec4(1, 1, 1, 1);
 
-	if (physics->RaycastStatics(start, velocity, outDistance, false))
+    CollisionInfo ci = {};
+	if (physics->RaycastStatics(start, velocity, ci, false))
 	{
-		Console::get()->log_message(std::string("Raycast hit at distance: ") + std::to_string(outDistance));
+		Console::get()->log_message(std::string("Raycast hit at distance: ") + std::to_string(ci.distance));
 		line.push_back(SimpleVertex(start, red));
-		Vec2 end = start + (Normalize(velocity) * outDistance);
+		Vec2 end = start + (Normalize(velocity) * ci.distance);
 		line.push_back(SimpleVertex(end, red));
+        line.push_back(SimpleVertex(end + ci.normal, white));
+
+        float halfSize = 0.1f;
+        float size = halfSize * 2.f;
+        renderer->DrawRect(rectf(ci.point.x - halfSize, ci.point.y - halfSize, size, size), DrawLayer::UI, yellow);
+        renderer->DrawRect(rectf(ci.point.x + ci.projection.x - halfSize, ci.point.y + ci.projection.y - halfSize, size, size), DrawLayer::UI, magenta);
+        // renderer->DrawRect(rectf(ci.projection.x - halfSize, ci.projection.y - halfSize, size, size), DrawLayer::UI, magenta);
 	}
 	else
 	{
@@ -232,11 +228,8 @@ void SceneManager::update_scene()
 		line.push_back(SimpleVertex(start + velocity, green));
 	}
 
-
 	renderer->DrawLine(line, DrawLayer::UI);
 	
-    physics->StepDynamicColliders((float)time->delta_time);
-
     for (auto it = objects.begin(); it != objects.end(); ++it)
     {
         (*it)->Draw();
