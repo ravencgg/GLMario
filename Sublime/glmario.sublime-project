@@ -2,18 +2,18 @@
 	"build_systems":
 	[
 		{
-			"cmd":
-			[
-				"build.bat"
-			],
+			"cmd": ["build.bat"],
 			"name": "MSVC",
+            "file_regex": "^\\s*(.+)\\(([0-9]+)\\)\\s*:\\s*(.*)",
+
 			"working_dir": "$project_path"
 		}
 	],
 	"folders":
 	[
 		{
-			"path": "C:\\Projects\\GLMario\\glmario\\source"
+			"path": "C:\\Projects\\GLMario\\glmario\\source",
+            "file_exclude_patterns": ["*.swp"]
 		},
 		{
 			"path": "C:\\Projects\\GLMario\\res"
