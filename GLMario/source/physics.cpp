@@ -436,7 +436,7 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
                   { mSum.x + mSum.w, mSum.y + mSum.h },
                   { mSum.x + mSum.w, mSum.y} };
 
-//	assert(!Contains(mSum, o));
+	assert(!Contains(mSum, o));
 
 	mRays[0] = make_ray(p[0], p[1]);
 	mRays[1] = make_ray(p[1], p[2]);
@@ -458,7 +458,6 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
                 closest = distance; 
                 out.distance = distance;
 
-
                 // Magnitude of projection vector
                 float remainingDistanceToTravel = length(velocity) - distance;
 
@@ -476,12 +475,6 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 
                 out.projection += geometryOffset * 1.1f; 
                 out.normal = n;
-                // out.projection = r;
-
-                // out.projection *= remainingDistanceToTravel;
-
-                // out.projection.x = abs(out.projection.x) * sign(velocity.x);
-                // out.projection.y = abs(out.projection.y) * sign(velocity.y);
                 if(distance > COLLISION_EPSILON)
                 {
                     // out.point = lerp(o, intersection, 0.9f);

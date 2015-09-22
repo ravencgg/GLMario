@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "mathops.h"
 #include <string.h> // memset
 #include "SDL.h"
 #define NUM_KEYS 256
@@ -12,6 +13,7 @@ struct Mouse
 {
 	Point2 p;
 	Point2 delta;
+    Vec2 world_position;
 	KeyState buttons[(int32)MouseButton::COUNT];
 };
 
@@ -36,10 +38,13 @@ public:
 
 // Mouse handling
 	void update_mouse_position();
+	void update_mouse_world_position(Dimension screen_resolution, Vec2 viewport_size, Vec2 camera_pos);
+    void update_mouse_world_position();
 	void mouse_button_event();
 
 	Point2 mouse_loc();
 	Point2 mouse_delta();
+    Vec2 mouse_world_position();
 
 	bool mouse_on_down(MouseButton);
 	bool mouse_on_up(MouseButton);

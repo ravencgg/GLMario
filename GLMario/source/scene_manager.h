@@ -26,15 +26,13 @@ public:
     // std::vector<GameObject*> objects;
     std::vector<std::shared_ptr<Entity>> objects;
 
-
-
 	SceneManager();
 	~SceneManager();
 
 	void update_scene();
 	void SetMainCamera(Camera*);
 
-	Vec2 process_motion(Vec2&, Rectf, Vec2);
+    // Debug only
 	void render_random_particles();
 	
 	Tilemap* GetTilemap() { return &tilemap; }

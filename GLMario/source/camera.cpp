@@ -36,3 +36,9 @@ void Camera::Tick(float dt)
 		viewport_size *= 0.9f;
 	}
 }
+
+Vec2 Camera::ScreenToWorldPoint(Point2 input)
+{
+    Vec2 result = {};
+    return result;
+}

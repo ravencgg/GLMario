@@ -21,7 +21,8 @@ struct Transform;
 
 
 enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT }; 
-enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, LINE_SHADER, SHADER_COUNT }; // TODO(cgenova): text shader -> simple, with color option
+ // TODO(cgenova): text shader -> simple, with color option
+enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, LINE_SHADER, SHADER_COUNT };
 enum class DrawLayer   : uint32 { BACKGROUND, PRE_TILEMAP, TILEMAP, POST_TILEMAP, PLAYER, FOREGROUND, UI, LAYER_COUNT };
 
 enum class SpriteRect  : uint32 { UNINITIALIZED, STONE, BRICK, MARIO, RECT_COUNT };

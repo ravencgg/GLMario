@@ -95,43 +95,6 @@ SceneManager::~SceneManager()
 	}
 }
 
-// Returns the post-move velocity
-// Put this into the physics system instead of having it here.
-Vec2 SceneManager::process_motion(Vec2& position, Rectf object, Vec2 velocity)
-{
-	//Vec2 result = velocity;
-	//int32 check_size = 50;// max(2, (int32)(length(velocity) * 2.f));
-
-	//PhysicsRect pObj = {};
-	//pObj.col_rect = object;
-
-	//Point2 start = { (int32)position.x - check_size, (int32)position.y - check_size };
-	//Point2 end   = { (int32)position.x + check_size, (int32)position.y + check_size };
-
-	//TileBlock tiles = tilemap.get_tile_block(start, end);
-	//CollisionData cData = {};
-
-	//bool collided = false;
-
-	//for (uint32 i = 0; i < tiles.tile_info.size(); ++i)
-	//{
-	//	if (check_collision(pObj, velocity, tiles.tile_info[i], cData))
-	//	{
-	//		collided = true;
-	//		break;
-	//	}
-	//}
-	//
-
-	//if (!collided)
-	//{
-	//	position += velocity * (float)Time::get()->delta_time;
-	//}
-
-	Vec2 result = {};
-	return result;
-}
-
 void SceneManager::update_scene()
 {
 	tilemap.draw();
@@ -146,7 +109,7 @@ void SceneManager::update_scene()
 		std::shared_ptr<Player> p = std::make_shared<Player>(this);
 		p->parent_scene = this;
 		objects.push_back(std::move(p));
-        objects.back()->SetPosition(vec2(0, 4.f));
+        objects.back()->SetPosition(vec2(0.5f, 4.f));
 	}
 
 	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.size())));

@@ -28,9 +28,7 @@ int main(int argc, char* argv[])
 	Renderer* renderer = Renderer::get();
 
 	Input* input = Input::get();
-
 	SceneManager scene;
-
 	Camera main_camera(&scene);
 
 	scene.SetMainCamera(&main_camera);
@@ -72,6 +70,12 @@ int main(int argc, char* argv[])
 				input->update_mouse_position();
 			}
 		}
+		
+        input->update_mouse_world_position(window.get_resolution(), main_camera.viewport_size, main_camera.transform.position);
+
+        std::string mouse_world_pos("Mouse World Position: " + ::to_string(input->mouse_world_position()));
+        Console::get()->log_message(mouse_world_pos);
+
 #endif
 		if(input->on_down(SDLK_ESCAPE))
 		{

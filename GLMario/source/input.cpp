@@ -134,6 +134,22 @@ void Input::update_mouse_position()
 	mouse.p = new_position;
 }
 
+void Input::update_mouse_world_position(Dimension screen_resolution, Vec2 viewport_size, Vec2 camera_pos)
+{
+	int x, y;
+	uint32 m = SDL_GetMouseState(&x, &y);
+
+    Vec2 relative = vec2( (float) x / (float)screen_resolution.width , (float) y / (float)screen_resolution.height); 
+
+    relative.x -= 0.5f;
+    relative.y -= 0.5f;
+    relative.x *= viewport_size.x;
+    relative.y *= viewport_size.y;
+    relative += camera_pos;
+
+	this->mouse.world_position = relative;
+}
+
 void Input::mouse_button_event()
 {
 	int x, y;
@@ -193,6 +209,11 @@ Point2 Input::mouse_loc()
 Point2 Input::mouse_delta()
 {
 	return mouse.delta;
+}
+
+Vec2 Input::mouse_world_position()
+{
+	return mouse.world_position;
 }
 
 bool Input::mouse_on_down(MouseButton button)

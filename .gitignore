@@ -3,6 +3,9 @@
 
 *.sublime-workspace
 
+## vim swap files
+*.swp
+
 # User-specific files
 *.suo
 *.user
