@@ -3,6 +3,7 @@
 #include "types.h"
 #include "mathops.h"
 #include "renderer.h"
+#include "console.h"
 #include <vector>
 #include <algorithm>
 
@@ -102,10 +103,10 @@ public:
     Vec2 StepCollider(RDynamicCollider collider, Vec2& velocity, float dt);
 	
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	static std::vector<Rectf> minkowski_rects;
-#endif
 	static void AddMinkowskiDebugRect(Rectf);
+#endif
 };
 
 inline

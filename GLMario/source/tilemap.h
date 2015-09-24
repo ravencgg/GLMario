@@ -33,10 +33,11 @@ public:
 	void update();
 	void draw();
 
+    std::vector<Tile> tiles;
+    
 private:
 	void init();
 
-    std::vector<Tile> tiles;
 	int32 tile_width, tile_height;
     DrawCall draw_call;
 

@@ -11,7 +11,9 @@ Rectf CanonicalRect(TDynamicCollider* col)
     return result;
 }
 
+#ifdef _DEBUG
 std::vector<Rectf> Physics::minkowski_rects;
+#endif
 
 void ColliderSetPosition(RDynamicCollider col, Vec2 position)
 {
@@ -132,10 +134,12 @@ void Physics::RemoveDynamicCollider(RDynamicCollider col)
 
 }
 
+#ifdef _DEBUG
 void Physics::AddMinkowskiDebugRect(Rectf rect)
 {
 	Physics::minkowski_rects.push_back(rect);
 }
+#endif
 
 void Physics::DebugDraw()
 {
@@ -162,7 +166,7 @@ void Physics::DebugDraw()
         ren->DrawRect(CanonicalRect(&dynamics[loc]), dl, dynamics[loc].active ? d_active : d_inactive);
     }
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	for (uint32 i = 0; i < Physics::minkowski_rects.size(); ++i)
     {
 		ren->DrawRect(Physics::minkowski_rects[i], dl, { 0, 1, 0, 1 });
@@ -278,6 +282,7 @@ bool Contains(Rectf rect, Vec2 point)
 
 Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float dt)
 {
+    ProfileBeginSection(Profile_PhysicsStepCollider);
     TDynamicCollider& col = dynamics[refCollider.array_index];
     col.collisions.resize(0);
 
@@ -306,6 +311,7 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
 
         for(uint32 j = 0; j < active_statics.size(); ++j)
         {
+            ProfileBeginSection(Profile_PhysicsInnerLoop);
             TStaticCollider& scol = statics[active_statics[j]];
             if (!scol.active) continue;
 
@@ -357,6 +363,7 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
 					}
                 }
             }
+            ProfileEndSection(Profile_PhysicsInnerLoop);
         }
         if (collided)
         {
@@ -385,6 +392,7 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
     
     velocity = col.position - startPosition;
 
+    ProfileEndSection(Profile_PhysicsStepCollider);
     return col.position;
 }
 
@@ -426,7 +434,7 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 
     out.mSumOther = mSum;
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	Physics::AddMinkowskiDebugRect(mSum);
 #endif
 

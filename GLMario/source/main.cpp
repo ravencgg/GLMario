@@ -40,8 +40,14 @@ int main(int argc, char* argv[])
     
 	SDL_Event e;
 	bool running = true;
+
 	while(running)
 	{
+
+        ProfileBeginFrame();
+
+        ProfileBeginSection(Profile_Input);
+
 		input->begin_frame();
 #if 1
 		while (SDL_PollEvent(&e))
@@ -73,8 +79,12 @@ int main(int argc, char* argv[])
 		
         input->update_mouse_world_position(window.get_resolution(), main_camera.viewport_size, main_camera.transform.position);
 
+        ProfileEndSection(Profile_Input);
+
         std::string mouse_world_pos("Mouse World Position: " + ::to_string(input->mouse_world_position()));
         Console::get()->log_message(mouse_world_pos);
+
+
 
 #endif
 		if(input->on_down(SDLK_ESCAPE))
@@ -139,10 +149,17 @@ int main(int argc, char* argv[])
 		 //renderer->render_draw_buffer();
 
 		
+        ProfileBeginSection(Profile_Console);
 		Console::get()->draw();
+        ProfileEndSection(Profile_Console);
+
+        ProfileBeginSection(Profile_RenderFinish);
 		renderer->end_frame();
+        ProfileEndSection(Profile_RenderFinish);
 		// End rendering
 
+
+        ProfileEndFrame();
 
 		// TODO(cgenova): High granularity sleep function! 
 		uint32 delay_time = time->ticks_for_frame_cap();

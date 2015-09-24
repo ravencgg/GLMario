@@ -2,6 +2,75 @@
 
 Console* Console::s_instance = nullptr;
 
+ProfileSection profile_sections[Profile_Count] = {0};
+
+std::string GetProfileSectionName(ProfileSectionName name)
+{
+#define Case(input) {case input: \
+                    std::string result(#input); \
+                    return result; \
+                    } 
+
+    switch(name)
+    {
+        Case(Profile_Input)
+        Case(Profile_PhysicsStepCollider)
+        Case(Profile_PhysicsInnerLoop)
+        Case(Profile_RenderFinish)
+        Case(Profile_Console)
+    }
+    return std::string("Unknown");
+
+#undef Case
+}
+
+void ProfileBeginFrame()
+{
+    memset(profile_sections, 0, sizeof(profile_sections));
+}
+
+void ProfileEndFrame()
+{
+    Console* console = Console::get();
+    for(uint32 i = 0; i < Profile_Count; ++i)
+    {
+        u32 hits = profile_sections[i].hits;
+        
+        std::string output;
+        output.reserve(256);
+        output.append("Function: ");
+        output.append(GetProfileSectionName((ProfileSectionName) i));
+        output.append(" Hits: ");
+        output.append(std::to_string(hits));
+
+        if(hits)
+        {
+            output.append(" Average Cycles: ");
+            output.append(std::to_string(profile_sections[i].sum / profile_sections[i].hits));
+        }
+
+        console->log_message(output);
+    }
+}
+
+// Note: won't be thread safe;
+// Since we are all single threaded for now, this will probably not be called again until the last one is done
+// Put a sum in there so that the average can be found with a division 
+void ProfileBeginSection(ProfileSectionName name)
+{
+    profile_sections[name].hits++;
+
+    // summation will be wrong if this is not true
+    assert(profile_sections[name].clock_start == 0);
+    profile_sections[name].clock_start = __rdtsc();
+}
+
+void ProfileEndSection(ProfileSectionName name)
+{
+    profile_sections[name].sum += __rdtsc() - profile_sections[name].clock_start;
+    profile_sections[name].clock_start = 0;
+}
+
 Console::Console()
 {
 	count = 0;

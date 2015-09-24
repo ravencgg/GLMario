@@ -98,6 +98,11 @@ SceneManager::~SceneManager()
 void SceneManager::update_scene()
 {
 	tilemap.draw();
+
+    std::string tileString("Active Tiles: ");
+    tileString.append(std::to_string(tilemap.tiles.size()));
+    Console::get()->log_message(tileString);
+
 	render_random_particles();
 
 	if (input->on_down(SDLK_n))

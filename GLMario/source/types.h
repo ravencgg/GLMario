@@ -35,8 +35,9 @@ typedef int16_t b6;
 typedef int32_t b32;
 
 
-// Unused:
-typedef void (*fPointer)();
+// TODO: create a utility header to have things like this;
+#define ArrayCount(array) sizeof(array) / sizeof(array[0])
+
 
 struct Dimension
 {
