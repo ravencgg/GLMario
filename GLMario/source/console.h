@@ -5,6 +5,8 @@
 using std::string;
 
 
+#define ProfileBeginSection(name) _ProfileBeginSection(name, __FILE__, __LINE__)
+#define ProfileEndSection(name) _ProfileEndSection(name, __FILE__, __LINE__)
 
 enum ProfileSectionName : uint32
 {
@@ -23,8 +25,8 @@ struct ProfileSection
     u32 hits;
 };
 
-void ProfileEndSection(ProfileSectionName name);
-void ProfileBeginSection(ProfileSectionName name);
+void _ProfileEndSection(ProfileSectionName name, char* file, int line);
+void _ProfileBeginSection(ProfileSectionName name, char* file, int line);
 void ProfileEndFrame();
 void ProfileBeginFrame();
 std::string GetProfileSectionName(ProfileSectionName name);

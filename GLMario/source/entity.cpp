@@ -1,78 +1,51 @@
 #include "entity.h"
-#if 0
-void entity_update(Entity& e, float delta_time)
+
+#include "scene_manager.h"
+
+Enemy::Enemy(SceneManager* sm)
+	: Actor(sm)
 {
-	static Input* input = Input::get();
-	static Renderer* ren = Renderer::get();
-	EntityType::Type t = e.type;
-    switch(t)
-    {
-        case EntityType::PLAYER:
-        {
-            static uint32 count = 0;
-            if(input->is_down(SDLK_w))
-            {
-				e.pe.velocity.y = e.pe.max_hor_vel;
-            }   
-            else if(input->is_down(SDLK_s))
-            {
-				// NOTE USING HOR VEL FOR NOW UNTIL JUMPING IS IN
-				e.pe.velocity.y = -e.pe.max_hor_vel;
-            }
-            else
-            {
-                e.pe.velocity.y = 0;
-            }
+    Vec2 size = vec2(1.0f, 1.5f);
 
-            if(input->is_down(SDLK_d))
-            {
-				e.pe.velocity.x = e.pe.max_hor_vel;
-            }   
-            else if(input->is_down(SDLK_a))
-            {
-				e.pe.velocity.x = -e.pe.max_hor_vel;
-            }
-            else
-            {
-                e.pe.velocity.x = 0;
-            }
-			e.position += e.pe.velocity * delta_time;
+	draw_call = {};
+	draw_call.draw_type = DrawType::SINGLE_SPRITE;
+	draw_call.image = ImageFiles::MARIO_IMAGE; 
+	draw_call.shader = ShaderTypes::DEFAULT_SHADER;
+	draw_call.options = DrawOptions::TEXTURE_RECT;
+    draw_call.sd.tex_rect = { 17, 903, 34, 34 };
+	draw_call.sd.world_size = size; 
+	draw_call.sd.world_position = transform.position;
+	draw_call.sd.draw_angle = 0;
 
-            std::string p_info("New Player x: " + std::to_string(e.position.x) + "\nNew Player y: " + std::to_string(e.position.y));
-            Console::get()->log_message(p_info);
+    TDynamicCollider col;
+    col.active = true;
+    col.position = transform.position;
+    col.rect = { -size.x / 2.f,
+                 -size.y / 2.f, 
+                 size.x,
+                 size.y };
+    col.parent = this;
 
-            //sprite.color_mod.w = 0.
-			e.pe.draw_call.sd.world_position = e.position;
-            ren->push_draw_call(e.pe.draw_call, DrawLayer::PLAYER);
-                // ren->draw_sprite(&sprite, transform.position);
-        } break;
-        case EntityType::TILE:
-        {
-            ren->push_draw_call(e.te.draw_call, DrawLayer::TILEMAP);
-        }break;
-		case EntityType::PARTICLE_SYSTEM:
-        {
-            if(e.pse.ps)
-            {
-                e.pse.ps->update(e.position);
-                e.pse.ps->render();
-            }
-        }break;
-        default:
-        {
-            assert(0);
-        }break;
-    }
+    collider = parent_scene->physics->AddDynamicCollider(col);
+    ColliderSetPosition(collider, transform.position);
+
+	velocity = vec2(-1.0f, 0);
 }
 
-void draw_entity(EntityDrawer ed)
+void Enemy::Tick(float dt)
 {
+	velocity.y = -1.f;
 
+	std::string testOut("Enemy position: ");
+	testOut.append(::to_string(transform.position));
+	Console::get()->log_message(testOut);
+
+    Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1));
+    transform.position = parent_scene->physics->StepCollider(collider, velocity, dt);
 }
 
-void simulate_physics(EntityPhysics ep)
+void Enemy::Draw()
 {
-
+	draw_call.sd.world_position = transform.position;
+	Renderer::get()->push_draw_call(draw_call, DrawLayer::PLAYER);
 }
-
-#endif

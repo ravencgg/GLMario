@@ -56,7 +56,7 @@ void ProfileEndFrame()
 // Note: won't be thread safe;
 // Since we are all single threaded for now, this will probably not be called again until the last one is done
 // Put a sum in there so that the average can be found with a division 
-void ProfileBeginSection(ProfileSectionName name)
+void _ProfileBeginSection(ProfileSectionName name, char* file, int line)
 {
     profile_sections[name].hits++;
 
@@ -65,7 +65,7 @@ void ProfileBeginSection(ProfileSectionName name)
     profile_sections[name].clock_start = __rdtsc();
 }
 
-void ProfileEndSection(ProfileSectionName name)
+void _ProfileEndSection(ProfileSectionName name, char* file, int line)
 {
     profile_sections[name].sum += __rdtsc() - profile_sections[name].clock_start;
     profile_sections[name].clock_start = 0;

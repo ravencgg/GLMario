@@ -33,6 +33,7 @@ public:
 class Actor : public Entity
 {
 public:
+	DrawCall draw_call;
     RDynamicCollider collider;
 
 
@@ -47,11 +48,11 @@ public:
 class Enemy : public Actor 
 {
 public:
-    Enemy(SceneManager* sm) : Actor(sm) {}
+	Vec2 velocity;
+
+	Enemy(SceneManager* sm);
     virtual ~Enemy() {}
 
-    virtual void Tick(float) override
-    {
-        
-    }
+    virtual void Tick(float) override;
+    virtual void Draw() override;
 };

@@ -75,15 +75,15 @@ SceneManager::SceneManager()
     tilemap.MakeWalledRoom(rect(-5, -20, 30, 3));
     tilemap.MakeWalledRoom(rect(-25, -10, 5, 10));
     tilemap.MakeWalledRoom(rect(20, 20, 10, 10));
+    tilemap.MakeWalledRoom(rect(-5, -2, 10, 2));
 
     tilemap.AddTile(2, 2);
-
-     std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
-	 ps->initialize(1000, DrawLayer::FOREGROUND);
-	 ps->ped.spawn_rate = 100;
-	 ps->ped.spawn_size = vec2(20.f, 20.f);
-	 ps->ped.lifetime = FRange(1.5f, 10.f);
-	 objects.push_back(std::move(ps));
+    std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
+    ps->initialize(1000, DrawLayer::FOREGROUND);
+    ps->ped.spawn_rate = 100;
+    ps->ped.spawn_size = vec2(20.f, 20.f);
+    ps->ped.lifetime = FRange(1.5f, 10.f);
+    objects.push_back(std::move(ps));
 }
 
 SceneManager::~SceneManager()
@@ -107,14 +107,25 @@ void SceneManager::update_scene()
 
 	if (input->on_down(SDLK_n))
 	{
+        // TODO: is created inside of a rect and throws an assert. Make spawning check for collisions
 		objects.push_back(std::make_shared<Enemy>(this));
 	}
 	if (input->on_down(SDLK_m))
 	{
-		std::shared_ptr<Player> p = std::make_shared<Player>(this);
-		p->parent_scene = this;
-		objects.push_back(std::move(p));
-        objects.back()->SetPosition(vec2(0.5f, 4.f));
+        if(input->is_down(SDLK_LSHIFT))
+        {
+			std::shared_ptr<Enemy> p = std::make_shared<Enemy>(this);
+			p->parent_scene = this;
+			objects.push_back(std::move(p));
+			objects.back()->SetPosition(vec2(0.5f, 4.f));
+        }
+		else
+		{
+			std::shared_ptr<Player> p = std::make_shared<Player>(this);
+			p->parent_scene = this;
+			objects.push_back(std::move(p));
+			objects.back()->SetPosition(vec2(0.5f, 4.f));
+		}
 	}
 
 	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.size())));
@@ -131,18 +142,6 @@ void SceneManager::update_scene()
 			std::swap(*it, objects.back());
 			objects.pop_back();
 			--it;
-		}
-
-		if (deleting)
-		{
-			 Entity* go = dynamic_cast<Entity*>(it->get());
-			 Enemy* enemy = dynamic_cast<Enemy*>(&(*it->get()));
-			if (enemy && rand() % 2 == 0)
-			{
-				std::swap(*it, objects.back());
-				objects.pop_back();
-				--it;
-			}
 		}
 	}
 

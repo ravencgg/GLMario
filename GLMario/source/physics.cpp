@@ -287,6 +287,7 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
     col.collisions.resize(0);
 
     Vec2 startPosition = col.position;
+    Vec2 startVelocity = velocity;
 
     Vec2 remainingVelocity = velocity * dt;
     CollisionInfo closestCollisionInfo = {};
@@ -391,6 +392,19 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
     }while(iterations++ < maxIterations && collided && length(remainingVelocity) > COLLISION_EPSILON);
     
     velocity = col.position - startPosition;
+
+    if (length_sq(velocity) < 0.0001f)
+    {
+        velocity.x = 0;
+        velocity.y = 0;
+    }
+    else
+    {
+        velocity.x /= dt;
+        velocity.y /= dt;
+        velocity.x = sign(velocity.x) * min(abs(velocity.x), abs(startVelocity.x));
+        velocity.y = sign(velocity.y) * min(abs(velocity.y), abs(startVelocity.y));
+    }
 
     ProfileEndSection(Profile_PhysicsStepCollider);
     return col.position;

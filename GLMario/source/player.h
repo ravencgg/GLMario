@@ -13,7 +13,6 @@ class Player : public Actor
 {
 public:
 
-	DrawCall draw_call;
     Vec2 velocity;
 
 	ParticleSystem ps;

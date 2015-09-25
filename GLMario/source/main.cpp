@@ -158,7 +158,6 @@ int main(int argc, char* argv[])
         ProfileEndSection(Profile_RenderFinish);
 		// End rendering
 
-
         ProfileEndFrame();
 
 		// TODO(cgenova): High granularity sleep function! 

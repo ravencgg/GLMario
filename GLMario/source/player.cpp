@@ -83,17 +83,9 @@ void Player::Tick(float dt)
     std::string posOut("Player position: " + ::to_string(transform.position));
     Console::get()->log_message(posOut);
 
-
     Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1));
 
-    Vec2 startVelocity = velocity;
-
     transform.position = parent_scene->physics->StepCollider(collider, velocity, dt);
-    velocity.x /= dt;
-    velocity.y /= dt;
-
-    velocity.x = sign(velocity.x) * min(abs(velocity.x), abs(startVelocity.x));
-    velocity.y = sign(velocity.y) * min(abs(velocity.y), abs(startVelocity.y));
 
     std::string postPosOut("Player position: " + ::to_string(transform.position));
     Console::get()->log_message(postPosOut);
