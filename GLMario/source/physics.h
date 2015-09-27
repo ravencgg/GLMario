@@ -20,12 +20,22 @@ struct RStaticCollider
 {
     TStaticCollider* data;
     uint32 array_index;
+
+    TStaticCollider* operator->()
+    {
+        return data;
+    }
 };
 
 struct RDynamicCollider
 {
     TDynamicCollider* data;
     uint32 array_index;
+
+    TDynamicCollider* operator->()
+    {
+        return data;
+    }
 };
 
 struct CollisionInfo
@@ -66,8 +76,8 @@ struct Ray
     Vec2 v1;
 };
 
-void ColliderSetPosition(RDynamicCollider, Vec2 position);
-Vec2 ColliderGetPosition(RDynamicCollider col);
+//void ColliderSetPosition(RDynamicCollider, Vec2 position);
+//Vec2 ColliderGetPosition(RDynamicCollider col);
 
 Rectf CanonicalRect(TDynamicCollider*);
 

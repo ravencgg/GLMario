@@ -15,18 +15,6 @@ Rectf CanonicalRect(TDynamicCollider* col)
 std::vector<Rectf> Physics::minkowski_rects;
 #endif
 
-void ColliderSetPosition(RDynamicCollider col, Vec2 position)
-{
-    TDynamicCollider* c = col.data;
-    c->position = position;
-}
-
-Vec2 ColliderGetPosition(RDynamicCollider col)
-{
-    Vec2 result = col.data->position;
-    return result;
-}
-
 Physics::Physics()
 {
 	statics = new TStaticCollider[MAX_STATIC_COLLIDERS];

@@ -41,7 +41,7 @@ public:
     // TODO(cgenova): remove collider from active list in destructor;
     //virtual ~Actor() {if(collider.data} Physics::);
 
-    void SetPosition(Vec2 pos) override { ColliderSetPosition(collider, pos); }
+    void SetPosition(Vec2 pos) { collider->position = pos; }
 };
 
 

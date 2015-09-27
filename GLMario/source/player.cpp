@@ -43,7 +43,7 @@ Player::Player(SceneManager* sm)
     col.parent = this;
 
     collider = parent_scene->physics->AddDynamicCollider(col);
-    ColliderSetPosition(collider, transform.position);
+    collider->position = transform.position;
 }
 
 void Player::Tick(float dt)

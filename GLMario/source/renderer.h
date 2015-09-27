@@ -222,7 +222,7 @@ private:
 
     uint32 array_buffer_loc = 0;
     std::vector<ArrayBufferData> array_buffer;
-	DynamicArray<DrawCall> draw_buffer[(uint32)DrawLayer::LAYER_COUNT];
+	Array<DrawCall> draw_buffer[(uint32)DrawLayer::LAYER_COUNT];
 	DrawObject draw_object;
 
 	Camera* main_camera;

@@ -120,7 +120,7 @@ void Renderer::end_frame()
 	draw_window->swap_buffer();
 	for(uint32 i = 0; i < (uint32)DrawLayer::LAYER_COUNT; ++i)
 	{
-		draw_buffer[i].clear();
+		draw_buffer[i].Clear();
 	}
 }
 
@@ -361,7 +361,7 @@ void Renderer::render_draw_buffer()
 {
 	for (uint32 layer = 0; layer < (uint32)DrawLayer::LAYER_COUNT; ++layer)
 	{
-		for (uint32 i = 0; i < draw_buffer[layer].size(); ++i)
+		for (uint32 i = 0; i < draw_buffer[layer].Size(); ++i)
 		{
 			draw_call(draw_buffer[layer][i]);
 		}
@@ -370,7 +370,7 @@ void Renderer::render_draw_buffer()
 
 void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
 {
-	draw_buffer[(uint32) layer].add(draw_call);
+	draw_buffer[(uint32) layer].AddBack(draw_call);
 }
 
 void Renderer::draw_call(DrawCall data)

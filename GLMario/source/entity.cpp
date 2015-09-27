@@ -27,7 +27,8 @@ Enemy::Enemy(SceneManager* sm)
     col.parent = this;
 
     collider = parent_scene->physics->AddDynamicCollider(col);
-    ColliderSetPosition(collider, transform.position);
+    collider->position = transform.position;
+
 
 	velocity = vec2(-1.0f, 0);
 }
