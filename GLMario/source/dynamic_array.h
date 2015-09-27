@@ -126,7 +126,7 @@ public:
     {
         if (acf)
         {
-            std::qsort(data, Size(), sizeof(T), acf); 
+            std::qsort(data, Size(), sizeof(T), acf);
             return true;
         }
         return false;
@@ -146,7 +146,7 @@ public:
     //{
     //    if (acf)
     //    {
-    //        std::qsort(data, write_pos - 1, sizeof(T), -acf); 
+    //        std::qsort(data, write_pos - 1, sizeof(T), -acf);
     //        return true;
     //    }
     //    return false;
@@ -169,7 +169,7 @@ private:
 		T* temp = data;
 		uint32 old_size = capacity;
 		capacity *= 2;
-		data = new T[capacity] {}; 
+		data = new T[capacity] {};
 
 		//TODO(chris): Replace this with a memcopy call!
 		for(uint32 i = 0; i < old_size; ++i)
@@ -180,7 +180,7 @@ private:
 		delete[] temp;
 	}
 
-	T* data;	
+	T* data;
 	uint32 capacity;
 	uint32 write_pos;
 };
@@ -192,7 +192,8 @@ template<typename T>
 struct RArrayRef
 {
     T* ptr;
-    uint32 id;
+    uint16 index;
+    uint16 generation;
 
     T& operator*() { return *ptr; }
     T* operator->() { return ptr; }
@@ -202,7 +203,8 @@ template<typename T>
 struct Element
 {
     T data;
-    uint32 id;
+    uint16 index; // Pointless, but matches the RArrayRef
+    uint16 generation;
 };
 // Referenced Array
 // Array that uses a level of indirection to access data so that pointers are never invalidated.
@@ -212,16 +214,16 @@ class RArray
 public:
 
     Element<T>* elements;
-    uint32 next_id;
 
+    // NOTE: these don't need to by dynamic arrays, they won't grow beyond MAX
     Array<int32> active_elements;
     Array<int32> inactive_elements;
 
     RArray()
         : elements(nullptr)
-        , next_id(1)
     {
         elements = new Element<T>[MAX];
+        memset(elements, 0, sizeof(elements[0]) * MAX);
         for (int i = MAX - 1; i >= 0; --i)
         {
             inactive_elements.AddBack(i);
@@ -242,8 +244,6 @@ public:
             int32 location = inactive_elements.GetBack();
             inactive_elements.RemoveBack();
 
-//            active_elements.AddBack(location);
-
             bool found = false;
             for(uint32 i = 0; i < active_elements.Size(); ++i)
             {
@@ -260,15 +260,13 @@ public:
                 active_elements.AddBack(location);
             }
 
-            // TODO: handle ID wrapping, don't use zero, or currently in use IDs 
-
             Element<T>* destination = (elements + location);
-            destination->id = next_id;
+            destination->index = location;
             destination->data = element;
 
-            result.id = next_id;
+            result.index = destination->index;
+            result.generation = destination->generation;
             result.ptr = &destination->data;// &elements[location].data;
-            ++next_id;
 
             return result;
         }
@@ -279,10 +277,12 @@ public:
 
     bool Remove(RArrayRef<T> ref)
     {
-        int32 location = FindLocation(ref);
+        int32 location = ref.index;
         if (location >= 0)
         {
-            elements[location].id = 0;
+            //elements[location].id = 0;
+            ++elements[location].generation; // Increment the generation on removal to invalidate
+                                             // references to this location
 
             int active_loc = active_elements.Find(location);
             assert(active_loc >= 0);
@@ -319,27 +319,28 @@ public:
     // Checks to see if the pointer is still pointing to the same data as it expects to
     bool Valid(RArrayRef<T> ref)
     {
-        if(FindLocation(ref) >= 0) return true;
-
-        return false;
+        if(ref.generation != elements[ref.index].generation) return false;
+        assert(ref.ptr == &elements[ref.index].data);
+        return (ref.ptr == &elements[ref.index].data);
     }
 
     // TODO: have the bottom digits of the ID be the location in the array?!
-    int32 FindLocation(RArrayRef<T> ref)
-    {
-        for(uint32 i = 0; i < active_elements.Size(); ++i)
-        {
-            if (elements[active_elements[i]].id == ref.id )
-            {
-                if (elements[active_elements[i]].data == *ref.ptr)
-                {
-                    return i;
-                }
-            }
-        }
-
-        return -1; 
-    }
+    //
+    // NOTE: Redundant now that there are indexes on each element
+//    int32 FindLocation(RArrayRef<T> ref)
+//    {
+//        for(uint32 i = 0; i < active_elements.Size(); ++i)
+//        {
+//            if (elements[active_elements[i]].id == ref.id )
+//            {
+//                if (elements[active_elements[i]].data == *ref.ptr)
+//                {
+//                    return i;
+//                }
+//            }
+//        }
+//        return -1;
+//    }
 
     T& operator[](uint32 loc)
     {

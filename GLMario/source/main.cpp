@@ -13,18 +13,18 @@
 //TODO(chris):
 //	Window class -> stores resolution information, has methods to change the resolution, in charge of SDL windowing
 //  Camera class -> stores location of the camera
-//  Renderer class -> stores 
-// 	Time class -> uptime, frame time, 
+//  Renderer class -> stores
+// 	Time class -> uptime, frame time,
 
 
 int main(int argc, char* argv[])
 {
     Array<int> n;
-    auto lessThan = [](const void* l, const void* r) -> int 
+    auto lessThan = [](const void* l, const void* r) -> int
     {
         return *(int*)l - *(int*)r;
     };
-    auto greaterThan = [](const void* l, const void* r) -> int 
+    auto greaterThan = [](const void* l, const void* r) -> int
     {
         return -(*(int*)l - *(int*)r);
     };
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
             printf("Number %d: %d\n", i, *refs[i]);
         }
     }
-    
+
     ints.Remove(refs[3]);
 
     auto newRef = ints.Add(30);
@@ -64,24 +64,22 @@ int main(int argc, char* argv[])
     {
         if (ints.Valid(refs[i]))
         {
-            printf("Number %d (%d) is valid:  %d\n", i, refs[i].id, *refs[i]);
+            printf("Number %d (%d) is valid:  %d\n", i, refs[i].index, *refs[i]);
         }
         else
         {
-            printf("Number %d (%d) is invalid\n", i, refs[i].id);
+            printf("Number %d (%d) is invalid\n", i, refs[i].index);
         }
     }
 
     if (ints.Valid(newRef))
     {
-        printf("New Ref (%d) is valid:  %d\n", newRef.id, *newRef);
+        printf("New Ref (%d) is valid:  %d generation: %d\n", newRef.index, *newRef, newRef.generation);
     }
     else
     {
-        printf("New Ref (%d) is invalid\n", newRef.id);
+        printf("New Ref (%d) is invalid\n", newRef.index);
     }
-
-
 
 	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 	Window window("Title", 1400, 900);
@@ -103,7 +101,7 @@ int main(int argc, char* argv[])
 	uint32 frame_count = 0;
 	uint32 fps = 0;
 	double last_fps_time = 0;
-    
+
 	SDL_Event e;
 	bool running = true;
 
@@ -142,7 +140,7 @@ int main(int argc, char* argv[])
 				input->update_mouse_position();
 			}
 		}
-		
+
         input->update_mouse_world_position(window.get_resolution(), main_camera.viewport_size, main_camera.transform.position);
 
         ProfileEndSection(Profile_Input);
@@ -180,7 +178,7 @@ int main(int argc, char* argv[])
 		{
 			last_fps_time = time->current_time;
 			fps = frame_count;
-			frame_count = 0;	
+			frame_count = 0;
 		}
 		frame_count++;
 		Console::get()->log_message(std::string("FPS: \t\t" + std::to_string(fps)));
@@ -211,10 +209,10 @@ int main(int argc, char* argv[])
 				v[i].position.y = sin((float)time->current_time + i / (PI * 20));
             }
         }
-        renderer->DrawLine(v, DrawLayer::UI);	
+        renderer->DrawLine(v, DrawLayer::UI);
 		 //renderer->render_draw_buffer();
 
-		
+
         ProfileBeginSection(Profile_Console);
 		Console::get()->draw();
         ProfileEndSection(Profile_Console);
@@ -226,7 +224,7 @@ int main(int argc, char* argv[])
 
         ProfileEndFrame();
 
-		// TODO(cgenova): High granularity sleep function! 
+		// TODO(cgenova): High granularity sleep function!
 		uint32 delay_time = time->ticks_for_frame_cap();
 		if(delay_time > 5) {
 			//std::cout << "Delaying: " << delay_time << " ms" << std::endl;
@@ -234,9 +232,9 @@ int main(int argc, char* argv[])
 		}
 		//std::cout << "Delta T : " << delay_time << " ms" << std::endl;
 
-	}// End main loop	
+	}// End main loop
 
 	SDL_Quit();
 
-	return 0;	
+	return 0;
 }
