@@ -82,7 +82,7 @@ void Tilemap::AddTile(float x, float y)
     Vec2 p = vec2(x, y);
     Vec2 s = vec2(1, 1);
     tiles.push_back(MakeTile(physics, p, s));
-    tiles.back().collider.data->active = true;
+    tiles.back().collider->active = true;
 }
 
 void Tilemap::update()

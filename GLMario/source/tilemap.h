@@ -16,7 +16,7 @@ struct Tile
     Vec2 position;
     Vec2 size;
 	TileType tile_type;
-    RStaticCollider collider;
+    RArrayRef<StaticCollider> collider;
 };
 
 Tile MakeTile(Physics* physics, Vec2 position, Vec2 size, TileType tile_type = BRICK);

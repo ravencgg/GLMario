@@ -6,37 +6,16 @@
 #include "console.h"
 #include <vector>
 #include <algorithm>
+#include "dynamic_array.h"
 
 #define MAX_STATIC_COLLIDERS 2048
 #define MAX_DYNAMIC_COLLIDERS 2048
 
-#define COLLISION_EPSILON 0.0001f
+#define COLLISION_EPSILON 0.001f
 
 class Actor;
 struct TStaticCollider;
 struct TDynamicCollider;
-
-struct RStaticCollider
-{
-    TStaticCollider* data;
-    uint32 array_index;
-
-    TStaticCollider* operator->()
-    {
-        return data;
-    }
-};
-
-struct RDynamicCollider
-{
-    TDynamicCollider* data;
-    uint32 array_index;
-
-    TDynamicCollider* operator->()
-    {
-        return data;
-    }
-};
 
 struct CollisionInfo
 {
@@ -53,18 +32,19 @@ struct CollisionInfo
 };
 
 // Should these get collision messages? They would need a parent pointer!
-struct TStaticCollider
+struct StaticCollider
 {
     bool32 active;
     Rectf rect;
 };
 
-struct TDynamicCollider
+struct DynamicCollider
 {
     bool32 active;
     Rectf rect;
-    Vec2 position; // Allows for non-centered colliders 
+    Vec2 position; // Allows for non-centered colliders
 
+// TODO:Array
     std::vector<CollisionInfo> collisions;
 
     Actor* parent;
@@ -83,35 +63,28 @@ Rectf CanonicalRect(TDynamicCollider*);
 
 class Physics
 {
-    TStaticCollider* statics;
-    TDynamicCollider* dynamics;
-
-    std::vector<uint32> active_statics;
-    std::vector<uint32> active_dynamics;
-
-    std::vector<uint32> inactive_statics;
-    std::vector<uint32> inactive_dynamics;
-
+    RArray<StaticCollider, MAX_STATIC_COLLIDERS> statics;
+    RArray<DynamicCollider, MAX_DYNAMIC_COLLIDERS> dynamics;
 
 public:
 
     Physics();
     ~Physics();
 
-    RStaticCollider AddStaticCollider(TStaticCollider);
-    RStaticCollider AddStaticCollider(Rectf);
-    RDynamicCollider AddDynamicCollider(TDynamicCollider);
+    RArrayRef<StaticCollider> AddStaticCollider(StaticCollider);
+    RArrayRef<StaticCollider> AddStaticCollider(Rectf);
+    RArrayRef<DynamicCollider> AddDynamicCollider(DynamicCollider);
 
-    void RemoveDynamicCollider(RDynamicCollider);
+    void RemoveDynamicCollider(RArrayRef<DynamicCollider>);
     void StepDynamicColliders(float);
     void DebugDraw();
 
     // Returns true if hits
     bool RaycastStatics(Vec2, Vec2, CollisionInfo&, bool draw = false);
 
-    // Returns final collider position 
-    Vec2 StepCollider(RDynamicCollider collider, Vec2& velocity, float dt);
-	
+    // Returns final collider position
+    Vec2 StepCollider(RArrayRef<DynamicCollider> collider, Vec2& velocity, float dt);
+
 
 #ifdef _DEBUG
 	static std::vector<Rectf> minkowski_rects;
@@ -152,7 +125,7 @@ struct PhysicsCircle
 inline
 Rectf make_rect(Vec2 pos, Vec2 size)
 {
-   Rectf result = {}; 
+   Rectf result = {};
    result.x = pos.x - size.x / 2.f;
    result.y = pos.y - size.y / 2.f;
    result.w = size.x;

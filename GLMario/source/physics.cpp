@@ -1,6 +1,6 @@
 #include "physics.h"
 
-Rectf CanonicalRect(TDynamicCollider* col)
+Rectf CanonicalRect(DynamicCollider* col)
 {
     Rectf result = {};
     result.x = col->position.x + col->rect.x;
@@ -16,110 +16,40 @@ std::vector<Rectf> Physics::minkowski_rects;
 #endif
 
 Physics::Physics()
+: statics()
+, dynamics()
 {
-	statics = new TStaticCollider[MAX_STATIC_COLLIDERS];
-    dynamics = new TDynamicCollider[MAX_DYNAMIC_COLLIDERS];
-
-    active_statics.reserve(MAX_STATIC_COLLIDERS);
-    active_dynamics.reserve(MAX_DYNAMIC_COLLIDERS);
-
-    inactive_statics.reserve(MAX_STATIC_COLLIDERS);
-    inactive_dynamics.reserve(MAX_DYNAMIC_COLLIDERS);
-
-    for(int i = MAX_STATIC_COLLIDERS - 1; i >= 0; --i) 
-    {
-        inactive_dynamics.push_back(i);
-    }
-    for(int i = MAX_DYNAMIC_COLLIDERS - 1; i >= 0; --i) 
-    {
-        inactive_statics.push_back(i);
-    }
 }
 
 Physics::~Physics()
 {
-    if(statics) 
-    {
-        delete[] statics;
-        statics = nullptr;
-    }
-    if(dynamics) 
-    {
-        delete[] dynamics;
-        dynamics = nullptr;
-    }
 }
 
-RStaticCollider Physics::AddStaticCollider(Rectf r)
+RArrayRef<StaticCollider> Physics::AddStaticCollider(Rectf r)
 {
-    TStaticCollider col;
+    StaticCollider col;
     col.active = true;
     col.rect = r;
 
     return AddStaticCollider(col);
 }
 
-RStaticCollider Physics::AddStaticCollider(TStaticCollider col)
+RArrayRef<StaticCollider> Physics::AddStaticCollider(StaticCollider col)
 {
-    assert(inactive_statics.size() > 0);
-
-    RStaticCollider result;
-    uint32 location = inactive_statics.back();
-    inactive_statics.pop_back();
-    active_statics.push_back(location);
-
-    statics[location] = col;
-
-    result.data = &statics[location];
-    result.array_index = location;
-
-    return result;
+    return statics.Add(col);
 }
 
-RDynamicCollider Physics::AddDynamicCollider(TDynamicCollider col)
+RArrayRef<DynamicCollider> Physics::AddDynamicCollider(DynamicCollider col)
 {
-    assert(inactive_dynamics.size() > 0);
-    RDynamicCollider result = {};
-
-    uint32 location = inactive_dynamics.back();
-	inactive_dynamics.pop_back();
-    active_dynamics.push_back(location);
-
-    dynamics[location] = col;
-
-    result.data = &dynamics[location];
-    result.array_index = location;
-	return result;
+	return dynamics.Add(col);
 }
 
-void Physics::RemoveDynamicCollider(RDynamicCollider col)
+void Physics::RemoveDynamicCollider(RArrayRef<DynamicCollider> col)
 {
-#ifdef _DEBUG
-    assert(col.array_index < MAX_DYNAMIC_COLLIDERS);
-    memset(dynamics[col.array_index], 0xBD, sizeof(TStaticCollider));
-#endif
-
-    bool found = false;
-    uint32 index = 0;
-
-    for(uint32 i = 0; i < active_dynamics.size(); ++i)
+    if(dynamics.Valid(col))
     {
-        if(col.array_index == active_dynamics[i])
-        {
-            found = true;
-            index = i;
-            break; 
-        }
+        dynamics.Remove(col);
     }
-
-    if(found)
-    {
-        inactive_dynamics.push_back(index);
-		auto it = active_dynamics.front() + index;
-        std::swap(it, active_dynamics.back());
-        active_dynamics.pop_back();
-    }
-
 }
 
 #ifdef _DEBUG
@@ -131,7 +61,7 @@ void Physics::AddMinkowskiDebugRect(Rectf rect)
 
 void Physics::DebugDraw()
 {
-    // call this after "step" so that the arrays are already sorted 
+    // call this after "step" so that the arrays are already sorted
     Renderer* ren = Renderer::get();
     DrawLayer dl = DrawLayer::UI;
 
@@ -142,16 +72,14 @@ void Physics::DebugDraw()
     Vec4 d_inactive = d_active;
     d_inactive.a = 0.5f;
 
-    for(uint32 i = 0; i < active_statics.size(); ++i)
+    for(uint32 i = 0; i < statics.Size(); ++i)
     {
-        uint32 loc = active_statics[i];
-        ren->DrawRect(statics[loc].rect, dl, statics[loc].active ? s_active : s_inactive);
+        ren->DrawRect(statics[i].rect, dl, statics[i].active ? s_active : s_inactive);
     }
 
-    for(uint32 i = 0; i < active_dynamics.size(); ++i)
+    for(uint32 i = 0; i < dynamics.Size(); ++i)
     {
-        uint32 loc = active_dynamics[i];
-        ren->DrawRect(CanonicalRect(&dynamics[loc]), dl, dynamics[loc].active ? d_active : d_inactive);
+        ren->DrawRect(CanonicalRect(&dynamics[i]), dl, dynamics[i].active ? d_active : d_inactive);
     }
 
 #ifdef _DEBUG
@@ -174,9 +102,9 @@ bool Physics::RaycastStatics(Vec2 start, Vec2 cast, CollisionInfo& outHit, bool 
     rect.width = 0;
     rect.height = 0;
 
-    for(uint32 i = 0; i < active_statics.size(); ++i)
+    for(uint32 i = 0; i < statics.Size(); ++i)
     {
-        TStaticCollider& scol = statics[active_statics[i]];
+        StaticCollider& scol = statics[i];
 
 		if (!scol.active) continue;
 
@@ -245,33 +173,11 @@ void Physics::StepDynamicColliders(float dt)
 }
 #endif
 
-// Move to mathops.h
-float MaxSigned(float in, float maxValue)
-{
-	float result = sign(in) * max(abs(in), abs(maxValue));
-	return result;
-}
-
-float MinSigned(float in, float minValue)
-{
-	float result = sign(in) * min(abs(in), abs(minValue));
-	return result;
-}
-
-bool Contains(Rectf rect, Vec2 point)
-{
-	if (point.x < rect.x + rect.w && point.x > rect.x
-		&& point.y > rect.y && point.y < rect.y + rect.h)
-	{
-		return true;
-	}
-	return false;
-}
-
-Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float dt)
+Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocity, float dt)
 {
     ProfileBeginSection(Profile_PhysicsStepCollider);
-    TDynamicCollider& col = dynamics[refCollider.array_index];
+    assert(dynamics.Valid(refCollider));
+    DynamicCollider& col = dynamics[refCollider.index];
     col.collisions.resize(0);
 
     Vec2 startPosition = col.position;
@@ -298,10 +204,10 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
         collided = false;
         memset(&ci, 0, sizeof(CollisionInfo));
 
-        for(uint32 j = 0; j < active_statics.size(); ++j)
+        for(uint32 j = 0; j < statics.Size(); ++j)
         {
             ProfileBeginSection(Profile_PhysicsInnerLoop);
-            TStaticCollider& scol = statics[active_statics[j]];
+            StaticCollider& scol = statics[j];
             if (!scol.active) continue;
 
 			if (CheckCollision(CanonicalRect(&col), remainingVelocity, scol.rect, ci))
@@ -318,11 +224,11 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
 				}
 
                 Rectf curRect = CanonicalRect(&col);
-                for(uint32 k = 0; k < active_statics.size(); ++k)
+                for(uint32 k = 0; k < statics.Size(); ++k)
                 {
-                    if(!statics[active_statics[k]].active) continue;
-                    
-					Rectf& other = statics[active_statics[k]].rect;
+                    if(!statics[k].active) continue;
+
+					Rectf& other = statics[k].rect;
 
                     Rectf mSum = { other.x - curRect.w / 2.f,
                             other.y - curRect.h / 2.f,
@@ -378,7 +284,11 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
 		}
 
     }while(iterations++ < maxIterations && collided && length(remainingVelocity) > COLLISION_EPSILON);
-    
+
+    // Just an assertion of curiousity. If this fires, there is nothing wrong, It just means that many
+    // bounces are being handled.
+    assert(iterations != maxIterations);
+
     velocity = col.position - startPosition;
 
     if (length_sq(velocity) < 0.0001f)
@@ -401,7 +311,7 @@ Vec2 Physics::StepCollider(RDynamicCollider refCollider, Vec2& velocity, float d
 bool LineSegmentIntersection(Vec2 r0, Vec2 r1, Vec2 a, Vec2 b, Vec2& result)
 {
     Vec2 s1, s2;
-    s1 = r1 - r0; 
+    s1 = r1 - r0;
     s2 = b - a;
 
     float s, t;
@@ -424,9 +334,9 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 	bool result = false;
 	Vec2 o = { m.x + m.w / 2.f, m.y + m.h / 2.f };
 
-	Ray motion = { { o.x , o.y }, 
+	Ray motion = { { o.x , o.y },
 					{ o.x + velocity.x, o.y + velocity.y } };
-	
+
 	// Do the Minkowski sum
 	Vec2 center = rect_center(other);
 	Rectf mSum = { other.x - m.w / 2.f,
@@ -461,11 +371,11 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
         if(LineSegmentIntersection(motion.v0, motion.v1, mRays[i].v0, mRays[i].v1, intersection))
         {
             float distance = length(intersection - motion.v0);
-                
+
             if(!result || distance < closest)
             {
                 result = true;
-                closest = distance; 
+                closest = distance;
                 out.distance = distance;
 
                 // Magnitude of projection vector
@@ -483,16 +393,16 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 
                 Vec2 geometryOffset = n * COLLISION_EPSILON;
 
-                out.projection += geometryOffset * 1.1f; 
+                out.projection += geometryOffset * 1.1f;
                 out.normal = n;
                 if(distance > COLLISION_EPSILON)
                 {
                     // out.point = lerp(o, intersection, 0.9f);
-                    out.point = intersection + geometryOffset; 
+                    out.point = intersection + geometryOffset;
                 }
                 else
                 {
-                    out.point = o; 
+                    out.point = o;
                 }
             }
         }

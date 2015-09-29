@@ -76,7 +76,7 @@ inline float sign(float x)
    return (float)result;
 }
 
-union Vec2 
+union Vec2
 {
 	struct { float x, y; };
 	struct { float r, g; };
@@ -95,7 +95,7 @@ union Vec4
 {
 	struct { float x, y, z, w; };
 	struct { float r, g, b, a; };
-	struct { Vec3 xyz; float _ignoredv4; };	
+	struct { Vec3 xyz; float _ignoredv4; };
 	float e[4];
 };
 
@@ -269,7 +269,7 @@ operator*(float A, Vec3 B)
     result.x = A*B.x;
     result.y = A*B.y;
     result.z = A*B.z;
-    
+
     return result;
 }
 
@@ -405,7 +405,7 @@ operator*(float A, Vec4 B)
     result.y = A*B.y;
     result.z = A*B.z;
     result.w = A*B.w;
-    
+
     return result;
 }
 
@@ -524,7 +524,7 @@ Lerp(Vec4 A, float t, Vec4 B)
     return result;
 }
 
-// inline 
+// inline
 // Vec2 vec2(Vec2 rhs)
 // {
 // 	Vec2 result = {};
@@ -548,13 +548,13 @@ Lerp(Vec4 A, float t, Vec4 B)
 // }
 
 // inline
-// Vec2 operator-(Vec2 l, Vec2 r) 
+// Vec2 operator-(Vec2 l, Vec2 r)
 // {
 // 	Vec2 result = { l.x - r.x, l.y - r.y };
 // 	return result;
 // }
 
-// inline 
+// inline
 // Vec2 & operator-=(vector2 &rhs);
 
 
@@ -620,7 +620,7 @@ public:
 
 	Vector3(float = 0, float = 0, float = 0);
 	Vector3(Vector2, float z = 0);
-	
+
 	Vector2 xy();
 
 	void operator=(const Vector3 &rhs);
@@ -719,6 +719,29 @@ Vector2 lerp(Vector2&, Vector2&, float);
 Vector3 lerp(Vector3&, Vector3&, float);
 
 Vector4 lerp(Vector4&, Vector4&, float);
+
+inline float MaxSigned(float in, float maxValue)
+{
+	float result = sign(in) * max(abs(in), abs(maxValue));
+	return result;
+}
+
+inline float MinSigned(float in, float minValue)
+{
+	float result = sign(in) * min(abs(in), abs(minValue));
+	return result;
+}
+
+inline bool Contains(Rectf rect, Vec2 point)
+{
+	if (point.x < rect.x + rect.w && point.x > rect.x
+		&& point.y > rect.y && point.y < rect.y + rect.h)
+	{
+		return true;
+	}
+	return false;
+}
+
 
 inline __m128 lerp(__m128& a, __m128& b, __m128& t)
 {

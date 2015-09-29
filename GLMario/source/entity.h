@@ -4,6 +4,7 @@
 #include "mathops.h"
 #include "types.h"
 #include "physics.h"
+#include "dynamic_array.h"
 
 class SceneManager;
 
@@ -34,7 +35,7 @@ class Actor : public Entity
 {
 public:
 	DrawCall draw_call;
-    RDynamicCollider collider;
+    RArrayRef<DynamicCollider> collider;
 
 
     Actor(SceneManager* sm) : Entity(sm) {}
@@ -45,7 +46,7 @@ public:
 };
 
 
-class Enemy : public Actor 
+class Enemy : public Actor
 {
 public:
 	Vec2 velocity;

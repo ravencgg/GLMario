@@ -33,7 +33,7 @@ Player::Player(SceneManager* sm)
 	draw_call.sd.world_position = transform.position;
 	draw_call.sd.draw_angle = 0;
 
-    TDynamicCollider col;
+    DynamicCollider col;
     col.active = true;
     col.position = transform.position;
     col.rect = { -size.x / 2.f,

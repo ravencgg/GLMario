@@ -199,6 +199,7 @@ struct RArrayRef
     T* operator->() { return ptr; }
 };
 
+// Storing the index here will help with loading save games
 template<typename T>
 struct Element
 {
@@ -275,6 +276,12 @@ public:
         return result;
     }
 
+    uint32 Size()
+    {
+        uint32 result = active_elements.Size();
+        return result;
+    }
+
     bool Remove(RArrayRef<T> ref)
     {
         int32 location = ref.index;
@@ -345,7 +352,7 @@ public:
     T& operator[](uint32 loc)
     {
         assert(loc < active_elements.Size());
-        return elements[active_elements[i]].data;
+        return elements[active_elements[loc]].data;
     }
 
     RArrayRef<T> NullRef()
