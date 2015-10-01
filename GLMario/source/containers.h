@@ -192,20 +192,23 @@ template<typename T>
 struct RArrayRef
 {
     T* ptr;
+    uint32 generation;
     uint16 index;
-    uint16 generation;
 
     T& operator*() { return *ptr; }
     T* operator->() { return ptr; }
 };
 
+
+#define VALID_MASK 0x80000000
 // Storing the index here will help with loading save games
 template<typename T>
 struct Element
 {
     T data;
+                  // Top bit of the index is off when valid
     uint16 index; // Pointless, but matches the RArrayRef
-    uint16 generation;
+    uint32 generation;
 };
 // Referenced Array
 // Array that uses a level of indirection to access data so that pointers are never invalidated.
@@ -223,11 +226,13 @@ public:
     RArray()
         : elements(nullptr)
     {
+        assert(MAX < (uint32)0xFFFFFFFF - 2);
         elements = new Element<T>[MAX];
         memset(elements, 0, sizeof(elements[0]) * MAX);
         for (int i = MAX - 1; i >= 0; --i)
         {
             inactive_elements.AddBack(i);
+            elements[i].generation = 1;
         }
     }
 
@@ -262,8 +267,11 @@ public:
             }
 
             Element<T>* destination = (elements + location);
-            destination->index = location;
+            destination->index = location; 
             destination->data = element;
+            destination->generation &= ~VALID_MASK;
+            //if (destination->generation == 0) ++destination->generation;
+            if (destination->generation == ~VALID_MASK) destination->generation = 1;
 
             result.index = destination->index;
             result.generation = destination->generation;
@@ -288,8 +296,18 @@ public:
         if (location >= 0)
         {
             //elements[location].id = 0;
-            ++elements[location].generation; // Increment the generation on removal to invalidate
-                                             // references to this location
+
+            if(elements[location].generation == ~VALID_MASK)
+            {
+                elements[location].generation = 1;
+            }
+            else
+            {
+                ++elements[location].generation; // Increment the generation on removal to invalidate
+                                                 // references to this location
+            }
+
+            elements[location].index ^= VALID_MASK;
 
             int active_loc = active_elements.Find(location);
             assert(active_loc >= 0);
@@ -300,7 +318,7 @@ public:
             uint32 size = inactive_elements.Size();
             for (uint32 i = 0; i < size; ++i)
             {
-                uint32 index = size - i;
+                uint32 index = size - i - 1;
                 if(location < inactive_elements[index])
                 {
                     inactive_elements.AddAt(index, location);
@@ -324,30 +342,28 @@ public:
     }
 
     // Checks to see if the pointer is still pointing to the same data as it expects to
-    bool Valid(RArrayRef<T> ref)
+    bool IsValid(RArrayRef<T> ref)
     {
         if(ref.generation != elements[ref.index].generation) return false;
         assert(ref.ptr == &elements[ref.index].data);
         return (ref.ptr == &elements[ref.index].data);
     }
 
-    // TODO: have the bottom digits of the ID be the location in the array?!
-    //
-    // NOTE: Redundant now that there are indexes on each element
-//    int32 FindLocation(RArrayRef<T> ref)
-//    {
-//        for(uint32 i = 0; i < active_elements.Size(); ++i)
-//        {
-//            if (elements[active_elements[i]].id == ref.id )
-//            {
-//                if (elements[active_elements[i]].data == *ref.ptr)
-//                {
-//                    return i;
-//                }
-//            }
-//        }
-//        return -1;
-//    }
+    RArrayRef<T> GetRef(uint32 index)
+    {
+        if ((elements[active_elements[index]].generation & ~VALID_MASK))
+        {
+            RArrayRef<T> result;
+            result.generation = elements[active_elements[index]].generation;
+            result.index = active_elements[index];
+            result.ptr = &elements[active_elements[index]].data;
+            return result;
+        }
+        else
+        {
+            return NullRef();
+        }
+    }
 
     T& operator[](uint32 loc)
     {

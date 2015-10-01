@@ -6,7 +6,7 @@
 #include "console.h"
 #include <vector>
 #include <algorithm>
-#include "dynamic_array.h"
+#include "containers.h"
 
 #define MAX_STATIC_COLLIDERS 2048
 #define MAX_DYNAMIC_COLLIDERS 2048
@@ -75,7 +75,7 @@ public:
     RArrayRef<StaticCollider> AddStaticCollider(Rectf);
     RArrayRef<DynamicCollider> AddDynamicCollider(DynamicCollider);
 
-    void RemoveDynamicCollider(RArrayRef<DynamicCollider>);
+    void DestroyCollider(RArrayRef<DynamicCollider>);
     void StepDynamicColliders(float);
     void DebugDraw();
 

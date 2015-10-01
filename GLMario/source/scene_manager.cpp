@@ -7,14 +7,14 @@ void SceneManager::SetMainCamera(Camera* camera)
 
 void SceneManager::render_random_particles()
 {
-#if 1	
+#if 1
 	static Time* time = Time::get();
 	static ParticleSystem ps1(this, 10000);
 	ps1.draw_layer = DrawLayer::PRE_TILEMAP;
 	//ps1.draw_layer = DrawLayer::POST_TILEMAP;
 	static ParticleEmissionData data[2];
 	static uint32 active_data = 0;
-	
+
 	static ParticleSystem ps2(this, 7500);
 	ps2.draw_layer = DrawLayer::PRE_TILEMAP;
 	static bool setup = false;
@@ -29,7 +29,7 @@ void SceneManager::render_random_particles()
 		ps1.ped.lifetime.min = 9.0f;
 		ps1.ped.lifetime.max = 10.f;
 		ps1.ptd.gravity = vec2(-10.0f, 1.0f);
-		
+
 		ps2.ptd.gravity = vec2(1.0f, 0.3f);
 		ps2.ped.spawn_size.x = 1.f;
 		ps2.ped.spawn_size.y = 1.f;
@@ -78,12 +78,14 @@ SceneManager::SceneManager()
     tilemap.MakeWalledRoom(rect(-5, -2, 10, 2));
 
     tilemap.AddTile(2, 2);
-    std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
+//    std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
+    ParticleSystem* ps = new ParticleSystem(this);
     ps->initialize(1000, DrawLayer::FOREGROUND);
     ps->ped.spawn_rate = 100;
     ps->ped.spawn_size = vec2(20.f, 20.f);
     ps->ped.lifetime = FRange(1.5f, 10.f);
-    objects.push_back(std::move(ps));
+    //objects.push_back(std::move(ps));
+    objects.Add(ps);
 }
 
 SceneManager::~SceneManager()
@@ -108,42 +110,71 @@ void SceneManager::update_scene()
 	if (input->on_down(SDLK_n))
 	{
         // TODO: is created inside of a rect and throws an assert. Make spawning check for collisions
-		objects.push_back(std::make_shared<Enemy>(this));
+		//objects.push_back(std::make_shared<Enemy>(this));
+		objects.Add(new Enemy(this));
 	}
 	if (input->on_down(SDLK_m))
 	{
         if(input->is_down(SDLK_LSHIFT))
         {
-			std::shared_ptr<Enemy> p = std::make_shared<Enemy>(this);
+//			std::shared_ptr<Enemy> p = std::make_shared<Enemy>(this);
+            Entity* p = new Enemy(this);
 			p->parent_scene = this;
-			objects.push_back(std::move(p));
-			objects.back()->SetPosition(vec2(0.5f, 4.f));
+			//objects.push_back(std::move(p));
+			//objects.back()->SetPosition(vec2(0.5f, 4.f));
+			auto obj = objects.Add(p);
+			(*obj.ptr)->SetPosition(vec2(0.5f, 4.f));
         }
 		else
 		{
-			std::shared_ptr<Player> p = std::make_shared<Player>(this);
+			//std::shared_ptr<Player> p = std::make_shared<Player>(this);
+            Entity* p = new Player(this);
 			p->parent_scene = this;
-			objects.push_back(std::move(p));
-			objects.back()->SetPosition(vec2(0.5f, 4.f));
+			//objects.push_back(std::move(p));
+			//objects.back()->SetPosition(vec2(0.5f, 4.f));
+			auto obj = objects.Add(p);
+			(*obj.ptr)->SetPosition(vec2(0.5f, 4.f));
 		}
 	}
 
-	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.size())));
+	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.Size())));
     Time* time = Time::get();
 
-	bool deleting = objects.size() > 10;
+	bool deleting = objects.Size() > 10;
 
-	for (auto it = objects.begin(); it != objects.end(); ++it)
-	{
-		(*it)->Tick((float)time->delta_time);
+//	for (auto it = objects.begin(); it != objects.end(); ++it)
+//	{
+//		(*it)->Tick((float)time->delta_time);
+//
+//		if ((*it)->delete_this_frame)
+//		{
+//			std::swap(*it, objects.back());
+//			objects.pop_back();
+//			--it;
+//		}
+//	}
 
-		if ((*it)->delete_this_frame)
-		{
-			std::swap(*it, objects.back());
-			objects.pop_back();
-			--it;
-		}
-	}
+    Array<RArrayRef<Entity*>> to_delete;
+    uint32 counter = 0;
+    uint32 max = objects.Size();
+    for (uint32 index = 0; counter < max; ++counter, ++index)
+  	{
+        RArrayRef<Entity*> obj = objects.GetRef(index);
+        (*obj)->Tick((float)time->delta_time);
+        
+        // NOTE: Can I just do a --i and delete in place?
+  		if ((*obj)->delete_this_frame)
+  		{
+            delete (*obj.ptr);
+            objects.Remove(obj);
+            --index;
+  		}
+  	}
+
+    for(uint32 i = 0; i < to_delete.Size(); ++i)
+    {
+        objects.Remove(to_delete[i]);
+    }
 
 	static Vec2 start = { -3.5f, 4.0f };
     static Vec2 velocity = { 0, -1.f };
@@ -196,10 +227,16 @@ void SceneManager::update_scene()
 	}
 
 	renderer->DrawLine(line, DrawLayer::UI);
-	
-    for (auto it = objects.begin(); it != objects.end(); ++it)
+
+    //for (auto it = objects.begin(); it != objects.end(); ++it)
+    //{
+    //    (*it)->Draw();
+    //}
+    for (uint32 i = 0; i < objects.Size(); ++i)
     {
-        (*it)->Draw();
+        auto o = objects.GetRef(i);
+        (*o.ptr)->Draw();
+        //(*it)->Draw();
     }
 
     static bool draw_colliders = true;

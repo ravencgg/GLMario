@@ -6,7 +6,7 @@
 #include "mathops.h"
 #include "window.h"
 #include "helper.h"
-#include "dynamic_array.h"
+#include "containers.h"
 
 // GLM includes
 #include <glm/glm.hpp>

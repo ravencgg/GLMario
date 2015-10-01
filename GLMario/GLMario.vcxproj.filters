@@ -22,11 +22,9 @@
     <ClInclude Include="source\types.h" />
     <ClInclude Include="source\window.h" />
     <ClInclude Include="source\input.h" />
-    <ClInclude Include="source\dynamic_array.h" />
     <ClInclude Include="source\renderer.h" />
     <ClInclude Include="source\player.h" />
     <ClInclude Include="source\scene_manager.h" />
-    <ClInclude Include="source\IDrawer.h" />
     <ClInclude Include="source\camera.h" />
     <ClInclude Include="source\helper.h" />
     <ClInclude Include="source\tilemap.h" />
@@ -158,6 +156,7 @@
     <ClInclude Include="source\time.h" />
     <ClInclude Include="source\entity.h" />
     <ClInclude Include="source\physics.h" />
+    <ClInclude Include="source\containers.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="GLM">

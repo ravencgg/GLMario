@@ -1,5 +1,7 @@
 #include "camera.h"
 
+#include "scene_manager.h"
+
 Camera::Camera(SceneManager* sm)
 	: Entity(sm)
 {
@@ -7,12 +9,25 @@ Camera::Camera(SceneManager* sm)
 	viewport_size.y = 9;
 
 	transform.position.x = 0;
-	transform.position.y = 0; 
+	transform.position.y = 0;
+}
+
+void Camera::SetFollowTarget(RArrayRef<Entity*> new_target)
+{
+    if(parent_scene->ValidRef(new_target))
+    {
+        follow_target = new_target;
+    }
 }
 
 void Camera::Tick(float dt)
 {
 	static Input* input = Input::get();
+
+    if (parent_scene->ValidRef(follow_target))
+    {
+        transform.position = (*follow_target)->transform.position;
+    }
 
 	if(input->is_down(SDLK_LEFT))
 	{

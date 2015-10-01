@@ -138,10 +138,9 @@
     <ClInclude Include="Dependencies\glm\vector_relational.hpp" />
     <ClInclude Include="source\camera.h" />
     <ClInclude Include="source\console.h" />
-    <ClInclude Include="source\dynamic_array.h" />
+    <ClInclude Include="source\containers.h" />
     <ClInclude Include="source\entity.h" />
     <ClInclude Include="source\helper.h" />
-    <ClInclude Include="source\IDrawer.h" />
     <ClInclude Include="source\input.h" />
     <ClInclude Include="source\mathops.h" />
     <ClInclude Include="source\particles.h" />

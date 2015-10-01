@@ -8,7 +8,7 @@
 #include "scene_manager.h"
 #include "time.h"
 
-#include "dynamic_array.h"
+#include "containers.h"
 
 //TODO(chris):
 //	Window class -> stores resolution information, has methods to change the resolution, in charge of SDL windowing
@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 
     for (uint32 i = 0; i < refs.Size(); ++i)
     {
-        if (ints.Valid(refs[i]))
+        if (ints.IsValid(refs[i]))
         {
             printf("Number %d: %d\n", i, *refs[i]);
         }
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
     for (uint32 i = 0; i < refs.Size(); ++i)
     {
-        if (ints.Valid(refs[i]))
+        if (ints.IsValid(refs[i]))
         {
             printf("Number %d (%d) is valid:  %d\n", i, refs[i].index, *refs[i]);
         }
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (ints.Valid(newRef))
+    if (ints.IsValid(newRef))
     {
         printf("New Ref (%d) is valid:  %d generation: %d\n", newRef.index, *newRef, newRef.generation);
     }

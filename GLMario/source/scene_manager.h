@@ -2,13 +2,14 @@
 #include <vector>
 
 #include "entity.h"
-#include "dynamic_array.h"
+#include "containers.h"
 #include "player.h"
 #include "input.h"
 #include "camera.h"
 #include "tilemap.h"
 #include "physics.h"
 #include "particles.h"
+#include "containers.h"
 
 #include <algorithm>
 #include <memory>
@@ -24,7 +25,14 @@ public:
     Tilemap tilemap;
     // Use resize() not clear() to "empty" vectors
     // std::vector<GameObject*> objects;
-    std::vector<std::shared_ptr<Entity>> objects;
+//    std::vector<std::shared_ptr<Entity>> objects;
+
+    RArray<Entity*, 2048> objects;
+    bool ValidRef(RArrayRef<Entity*> ref)
+    {
+        return objects.IsValid(ref);
+    }
+
 
 	SceneManager();
 	~SceneManager();
@@ -34,7 +42,7 @@ public:
 
     // Debug only
 	void render_random_particles();
-	
+
 	Tilemap* GetTilemap() { return &tilemap; }
     Physics* GetPhysics() { return physics; }
 };

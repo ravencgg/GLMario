@@ -4,7 +4,7 @@
 #include "mathops.h"
 #include "types.h"
 #include "physics.h"
-#include "dynamic_array.h"
+#include "containers.h"
 
 class SceneManager;
 
@@ -34,14 +34,12 @@ public:
 class Actor : public Entity
 {
 public:
+
 	DrawCall draw_call;
     RArrayRef<DynamicCollider> collider;
 
-
-    Actor(SceneManager* sm) : Entity(sm) {}
-    // TODO(cgenova): remove collider from active list in destructor;
-    //virtual ~Actor() {if(collider.data} Physics::);
-
+    Actor(SceneManager* sm) : Entity(sm) { };
+    virtual ~Actor() { }
     void SetPosition(Vec2 pos) { collider->position = pos; }
 };
 
@@ -57,3 +55,4 @@ public:
     virtual void Tick(float) override;
     virtual void Draw() override;
 };
+

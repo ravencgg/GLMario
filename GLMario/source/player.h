@@ -9,7 +9,7 @@
 
 class SceneManager;
 
-class Player : public Actor 
+class Player : public Actor
 {
 public:
 
@@ -18,6 +18,7 @@ public:
 	ParticleSystem ps;
 
     Player(SceneManager* sm);
+    virtual ~Player() override;
 
     void Tick(float) override;
     void Draw() override;

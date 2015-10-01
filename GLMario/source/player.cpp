@@ -25,11 +25,11 @@ Player::Player(SceneManager* sm)
 
 	draw_call = {};
 	draw_call.draw_type = DrawType::SINGLE_SPRITE;
-	draw_call.image = ImageFiles::MARIO_IMAGE; 
+	draw_call.image = ImageFiles::MARIO_IMAGE;
 	draw_call.shader = ShaderTypes::DEFAULT_SHADER;
 	draw_call.options = DrawOptions::TEXTURE_RECT;
     draw_call.sd.tex_rect = { 17, 903, 34, 34 };
-	draw_call.sd.world_size = size; 
+	draw_call.sd.world_size = size;
 	draw_call.sd.world_position = transform.position;
 	draw_call.sd.draw_angle = 0;
 
@@ -37,13 +37,18 @@ Player::Player(SceneManager* sm)
     col.active = true;
     col.position = transform.position;
     col.rect = { -size.x / 2.f,
-                 -size.y / 2.f, 
+                 -size.y / 2.f,
                  size.x,
                  size.y };
     col.parent = this;
 
     collider = parent_scene->physics->AddDynamicCollider(col);
     collider->position = transform.position;
+}
+
+Player::~Player()
+{
+    parent_scene->physics->DestroyCollider(collider);
 }
 
 void Player::Tick(float dt)
@@ -55,7 +60,7 @@ void Player::Tick(float dt)
 	if(input->is_down(SDLK_SPACE))
 	{
 		velocity.y = 10.f;
-	}	
+	}
     else
     {
         velocity.y += gravity * dt;
@@ -66,7 +71,7 @@ void Player::Tick(float dt)
 	{
 		velocity.x += 50.f * dt;
         velocity.x = min(velocity.x, 5.0f);
-	}	
+	}
 	else if(input->is_down(SDLK_a))
 	{
 		velocity.x -= 50.f * dt;
@@ -77,23 +82,31 @@ void Player::Tick(float dt)
 		velocity.x = 0;
 	}
 
+
+	if(input->is_down(SDLK_1))
+    {
+        delete_this_frame = true;
+    }
+
 	std::string conOut("Player collider.data->velocity: " + ::to_string(velocity));
 	Console::get()->log_message(conOut);
 
     std::string posOut("Player position: " + ::to_string(transform.position));
     Console::get()->log_message(posOut);
 
-    Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1));
+    Vec2 old_velocity = velocity;
 
     transform.position = parent_scene->physics->StepCollider(collider, velocity, dt);
 
-    std::string postPosOut("Player position: " + ::to_string(transform.position));
+    Renderer::get()->DrawLine(transform.position, transform.position + old_velocity, vec4(0, 1, 1, 1));
+
+    std::string postPosOut("Player velocity: " + ::to_string(velocity));
     Console::get()->log_message(postPosOut);
 
     ps.update(this->transform.position);
 	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
 	//Console::get()->log_message(p_info);
-	// sprite.angle += 0.1f;
+	//draw_call.sd.draw_angle += 0.1f;
 }
 
 void Player::Draw()
@@ -103,7 +116,7 @@ void Player::Draw()
     {
         draw_player = !draw_player;
         ps.create_particle_burst(500);
-    }    
+    }
 
     ps.render();
 

@@ -44,9 +44,9 @@ RArrayRef<DynamicCollider> Physics::AddDynamicCollider(DynamicCollider col)
 	return dynamics.Add(col);
 }
 
-void Physics::RemoveDynamicCollider(RArrayRef<DynamicCollider> col)
+void Physics::DestroyCollider(RArrayRef<DynamicCollider> col)
 {
-    if(dynamics.Valid(col))
+    if(dynamics.IsValid(col))
     {
         dynamics.Remove(col);
     }
@@ -176,8 +176,8 @@ void Physics::StepDynamicColliders(float dt)
 Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocity, float dt)
 {
     ProfileBeginSection(Profile_PhysicsStepCollider);
-    assert(dynamics.Valid(refCollider));
-    DynamicCollider& col = dynamics[refCollider.index];
+    assert(dynamics.IsValid(refCollider));
+    DynamicCollider& col = (*refCollider.ptr);// dynamics[refCollider.index];
     col.collisions.resize(0);
 
     Vec2 startPosition = col.position;
@@ -291,7 +291,7 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
 
     velocity = col.position - startPosition;
 
-    if (length_sq(velocity) < 0.0001f)
+    if (length(velocity) < 0.0001f)
     {
         velocity.x = 0;
         velocity.y = 0;
