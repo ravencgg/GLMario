@@ -86,6 +86,8 @@ SceneManager::SceneManager()
     ps->ped.lifetime = FRange(1.5f, 10.f);
     //objects.push_back(std::move(ps));
     objects.Add(ps);
+
+    AddEntity(new Spawner(this));
 }
 
 SceneManager::~SceneManager()
@@ -95,6 +97,17 @@ SceneManager::~SceneManager()
 		delete physics;
 		physics = nullptr;
 	}
+}
+
+void SceneManager::AddEntity(Entity* p)
+{
+    //Entity* p = new Enemy(this);
+    //p->parent_scene = this;
+    //objects.push_back(std::move(p));
+    //objects.back()->SetPosition(vec2(0.5f, 4.f));
+
+    auto obj = objects.Add(p);
+    (*obj.ptr)->SetPosition(vec2(0.5f, 4.f));
 }
 
 void SceneManager::update_scene()

@@ -50,3 +50,44 @@ void Enemy::Draw()
 	draw_call.sd.world_position = transform.position;
 	Renderer::get()->push_draw_call(draw_call, DrawLayer::PLAYER);
 }
+
+
+///////////////////////////////////////////////////
+//  Spawner
+///////////////////////////////////////////////////
+Spawner::Spawner(SceneManager* sm)
+    : Entity(sm)
+    , time_between_spawns(1.0f)
+    , last_spawn_time(0)
+{ }
+
+Spawner::~Spawner() {}
+
+void Spawner::Tick(float dt)
+{
+    float current_time = (float) Time::get()->current_time;
+
+    if (current_time - last_spawn_time > time_between_spawns)
+    {
+        this->SpawnEnemy();
+        last_spawn_time = current_time;
+    }
+}
+
+void Spawner::SpawnEnemy()
+{
+    Entity* p = new Enemy(parent_scene);
+    p->SetPosition(vec2(0, 0));
+    parent_scene->AddEntity(p);
+}
+
+void Spawner::Draw()
+{
+    // Invisible
+}
+
+
+
+
+
+

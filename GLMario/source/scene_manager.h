@@ -33,6 +33,7 @@ public:
         return objects.IsValid(ref);
     }
 
+    void AddEntity(Entity*);
 
 	SceneManager();
 	~SceneManager();

@@ -56,3 +56,18 @@ public:
     virtual void Draw() override;
 };
 
+class Spawner : public Entity
+{
+public:
+
+    float time_between_spawns;
+    float last_spawn_time;
+
+    void SpawnEnemy();
+
+	Spawner(SceneManager* sm);
+    virtual ~Spawner();
+
+    virtual void Tick(float) override;
+    virtual void Draw() override;
+};
