@@ -35,6 +35,8 @@ typedef int16_t b6;
 typedef int32_t b32;
 
 
+#define NO_MATRICES 1
+
 // TODO: create a utility header to have things like this;
 #define ArrayCount(array) sizeof(array) / sizeof(array[0])
 
@@ -77,6 +79,9 @@ struct Rect
 		};
 		int32 E[4];
 	};
+
+    int32 Right() { return x + w; }
+    int32 Bottom() { return y + h; }
 };
 
 struct Rectf

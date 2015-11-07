@@ -10,77 +10,8 @@
 
 #include "containers.h"
 
-//TODO(chris):
-//	Window class -> stores resolution information, has methods to change the resolution, in charge of SDL windowing
-//  Camera class -> stores location of the camera
-//  Renderer class -> stores
-// 	Time class -> uptime, frame time,
-
-
 int main(int argc, char* argv[])
 {
-    Array<int> n;
-    auto lessThan = [](const void* l, const void* r) -> int
-    {
-        return *(int*)l - *(int*)r;
-    };
-    auto greaterThan = [](const void* l, const void* r) -> int
-    {
-        return -(*(int*)l - *(int*)r);
-    };
-    for (int i = 0; i < 10; ++i)
-    {
-        n.AddBack(i);
-    }
-    n.Sort(lessThan);
-    n.Sort(greaterThan);
-    n.Remove(0);
-    n.Remove(3);
-    n.Sort(lessThan);
-    n.SwapRemove(4);
-    n.Sort(greaterThan);
-
-    RArray<int32, 10> ints;
-    Array<RArrayRef<int32>> refs;
-
-    for (uint32 i = 10; i < 20; ++i)
-    {
-        refs.AddBack(ints.Add(i));
-    }
-
-    for (uint32 i = 0; i < refs.Size(); ++i)
-    {
-        if (ints.IsValid(refs[i]))
-        {
-            printf("Number %d: %d\n", i, *refs[i]);
-        }
-    }
-
-    ints.Remove(refs[3]);
-
-    auto newRef = ints.Add(30);
-
-    for (uint32 i = 0; i < refs.Size(); ++i)
-    {
-        if (ints.IsValid(refs[i]))
-        {
-            printf("Number %d (%d) is valid:  %d\n", i, refs[i].index, *refs[i]);
-        }
-        else
-        {
-            printf("Number %d (%d) is invalid\n", i, refs[i].index);
-        }
-    }
-
-    if (ints.IsValid(newRef))
-    {
-        printf("New Ref (%d) is valid:  %d generation: %d\n", newRef.index, *newRef, newRef.generation);
-    }
-    else
-    {
-        printf("New Ref (%d) is invalid\n", newRef.index);
-    }
-
 	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 	Window window("Title", 1400, 900);
 
@@ -209,7 +140,7 @@ int main(int argc, char* argv[])
 				v[i].position.y = sin((float)time->current_time + i / (PI * 20));
             }
         }
-        renderer->DrawLine(v, DrawLayer::UI);
+        renderer->DrawLine(v, DrawLayer_UI);
 		 //renderer->render_draw_buffer();
 
 

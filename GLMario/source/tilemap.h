@@ -9,7 +9,7 @@
 
 #include <vector>
 
-enum TileType { EMPTY, BRICK, COUNT };
+enum TileType : uint32 { EMPTY, BRICK, COUNT };
 
 struct Tile 
 {

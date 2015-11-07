@@ -10,7 +10,7 @@ Enemy::Enemy(SceneManager* sm)
 	draw_call = {};
 	draw_call.draw_type = DrawType::SINGLE_SPRITE;
 	draw_call.image = ImageFiles::MARIO_IMAGE; 
-	draw_call.shader = ShaderTypes::DEFAULT_SHADER;
+	draw_call.shader = Shader_Default;
 	draw_call.options = DrawOptions::TEXTURE_RECT;
     draw_call.sd.tex_rect = { 17, 903, 34, 34 };
 	draw_call.sd.world_size = size; 
@@ -48,7 +48,7 @@ void Enemy::Tick(float dt)
 void Enemy::Draw()
 {
 	draw_call.sd.world_position = transform.position;
-	Renderer::get()->push_draw_call(draw_call, DrawLayer::PLAYER);
+	Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
 }
 
 

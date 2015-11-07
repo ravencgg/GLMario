@@ -98,7 +98,7 @@ void Tilemap::draw()
     {
         draw_call.sd.world_position = tiles[i].position;
         draw_call.sd.world_size = tiles[i].size;
-        ren->push_draw_call(draw_call, DrawLayer::TILEMAP);
+        ren->push_draw_call(draw_call, DrawLayer_Tilemap);
     }
 }
 
@@ -111,7 +111,7 @@ void Tilemap::init()
 	draw_call = {};
 	draw_call.draw_type = DrawType::SINGLE_SPRITE;
 	draw_call.image = ImageFiles::MAIN_IMAGE; 
-	draw_call.shader = ShaderTypes::DEFAULT_SHADER;
+	draw_call.shader = Shader_Default;
 	draw_call.options = DrawOptions::TEXTURE_RECT;
 	draw_call.sd.tex_rect = get_sprite_rect(SpriteRect::STONE);
 	

@@ -110,7 +110,7 @@ class ParticleSystem : public Entity
 {
 public:
 	ParticleSystem(SceneManager*);
-	ParticleSystem(SceneManager*, uint32 max, DrawLayer dl = DrawLayer::FOREGROUND);
+	ParticleSystem(SceneManager*, uint32 max, DrawLayer dl = DrawLayer_Foreground);
 	~ParticleSystem();
 
 	uint32 max_particles;

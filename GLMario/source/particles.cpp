@@ -445,7 +445,7 @@ void ParticleSystem::render()
 	DrawCall draw_call = {};
 	draw_call.draw_type = DrawType::PARTICLE_ARRAY_BUFFER;
 	draw_call.image = ImageFiles::PARTICLE_IMAGE; 
-	draw_call.shader = ShaderTypes::PARTICLE_SHADER;
+	draw_call.shader = Shader_Particle;
 	draw_call.options |= DrawOptions::WHOLE_TEXTURE; //TODO(cgenova): support animated textures
 	draw_call.abd.vao = vao;
 	draw_call.abd.vbo = vbo;

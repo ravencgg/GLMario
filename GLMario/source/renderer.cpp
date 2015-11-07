@@ -15,6 +15,18 @@ char* Renderer::text_image = "..\\res\\charmap.png";
 char* Renderer::particle_image = "..\\res\\particle.png";
 const uint32 Renderer::pixels_to_meters = 16;
 
+//enum class ShaderTypes : uint32 { DEFAULT_SHADER, TEXT_SHADER, PARTICLE_SHADER, LINE_SHADER, SHADER_COUNT };
+struct ShaderLoadData
+{
+    char* vertexFile;
+    char* fragFile;
+    ShaderTypes type;
+};
+
+ShaderLoadData shaderLoadData[Shader_Count];
+
+
+
 
 Rect sprite_rects[(uint32) SpriteRect::RECT_COUNT] = {};
 
@@ -33,9 +45,11 @@ Rect get_sprite_rect(SpriteRect r)
 
 Renderer* Renderer::s_instance = nullptr;
 
+#if NO_MATRICES
 glm::mat4 Renderer::proj_matrix;
 glm::mat4 Renderer::view_matrix;
 glm::mat4 Renderer::vp_matrix;
+#endif
 
 Renderer::Renderer(Window* w, Vec4 clear_color)
 : draw_window(w)
@@ -53,9 +67,10 @@ Renderer::Renderer(Window* w, Vec4 clear_color)
 	load_image(Renderer::mario_image, ImageFiles::MARIO_IMAGE);
 	load_image(Renderer::text_image, ImageFiles::TEXT_IMAGE);
 	load_image(Renderer::particle_image, ImageFiles::PARTICLE_IMAGE);
-	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, ShaderTypes::DEFAULT_SHADER);
-	load_shader(Renderer::particle_vert_shader, Renderer::particle_frag_shader, ShaderTypes::PARTICLE_SHADER);
-    load_shader("..\\res\\line_vert.glsl", "..\\res\\line_frag.glsl", ShaderTypes::LINE_SHADER);
+	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, Shader_Default);
+	load_shader(Renderer::particle_vert_shader, Renderer::particle_frag_shader, Shader_Particle);
+    load_shader("..\\res\\line_vert.glsl", "..\\res\\line_frag.glsl", Shader_Line);
+    load_shader("..\\res\\text_vert.glsl", "..\\res\\text_frag.glsl", Shader_Text);
 
 	text_data.chars_per_line = 18;
 	text_data.char_size = { 7, 9 };
@@ -84,22 +99,26 @@ void Renderer::set_camera(Camera* camera)
 void Renderer::begin_frame()
 {
 	frame_resolution = draw_window->get_resolution();
-	glViewport(0, 0, frame_resolution.width, frame_resolution.height);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //TODO(cgenova): disable depth buffer for better 2d rendering simulation
+	glViewport(0, 0, frame_resolution.width, frame_resolution.height); // TODO: check to see if it is rendering into the title bar
+                                                                       // TODO: add a way to get the client rect from the window system
+                                                                       // NOTE: this is probably why text rendering is off by a bit 
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	array_buffer_loc = 0;
 
 	float width = main_camera->viewport_size.x;
 	float height = main_camera->viewport_size.y;
 
-	float depth = (float) DrawLayer::LAYER_COUNT + 1.f;
+	float depth = (float) DrawLayer_Count + 1.f;
 	proj_matrix = glm::ortho(-width / 2, width / 2, -height / 2, height / 2, 0.1f, depth); 
 
+#if NO_MATRICES
 	Vec3 cp = vec3(main_camera->transform.position, -1.0f);
 	glm::vec3 look = glm::vec3(cp.x, cp.y, -1.0f);
 	view_matrix = glm::lookAt(glm::vec3(cp.x, cp.y, 1.0f),
 		look,
 		glm::vec3(0, 1, 0));
+#endif
 
 	vp_matrix = proj_matrix * view_matrix;
 }
@@ -118,7 +137,7 @@ void Renderer::end_frame()
 {
 	render_draw_buffer();
 	draw_window->swap_buffer();
-	for(uint32 i = 0; i < (uint32)DrawLayer::LAYER_COUNT; ++i)
+	for(uint32 i = 0; i < DrawLayer_Count; ++i)
 	{
 		draw_buffer[i].Clear();
 	}
@@ -236,54 +255,100 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 // 	draw_buffer[(uint32)sprite->layer].add(draw_info); 
 // }
 
-void Renderer::draw_character(char c, uint32 x, uint32 y, glm::mat4& proj, glm::mat4& scale)
+void Renderer::draw_character(char c, int32 x, int32 y)
 {
-	const float bo_scale = 0.9f;
+    uint32 tshader = Shader_Text;
 
-	uint32 tshader = (uint32) ShaderTypes::DEFAULT_SHADER;
+    // NOTE(chris): Layer is ignored until sorting is implemented;
+    //TODO(chris): still need some conversion from pixels to world space
+    //glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
+    //glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
 
-	// NOTE(chris): Layer is ignored until sorting is implemented;
-	//TODO(chris): still need some conversion from pixels to world space
+#if NO_MATRICES
+    //glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
 
-	Vec3 new_position = { (float)x, (float)y, 0 };
-	//glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
-	//glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
-	glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
+    //glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
+    //glm::mat4 mvp = proj * trans * scale;
+#endif
 
-	//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
-	glm::mat4 mvp = proj * trans * scale;
+    int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
+    int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
 
-	int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
-	int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
+    uint32 ascii_position = c - ' ';
 
-	uint32 ascii_position = c - ' ';
+    Dimension screen_size = this->draw_window->get_resolution();
 
-	Point2 char_pos;
-	char_pos.x = ascii_position % text_data.chars_per_line;
-	char_pos.x *= text_data.char_size.width;
-	char_pos.y = ascii_position / text_data.chars_per_line;
-	char_pos.y *= text_data.char_size.height;
+    Rectf rect = {};
+    rect.left = (float)(x / (float)screen_size.width) * 2.0f - 1.0f;
+    rect.width = (float)(tw / (float)screen_size.width) / 4.0f;
+    rect.top = (float)y / (float)screen_size.height * 2.0f - 1.0f;
+    rect.height = (float)(th / (float)screen_size.height) / 2.0f;
 
-	float left = (float)char_pos.x / tw;
-	float right = (float)(char_pos.x + text_data.char_size.width) / tw;
-	float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
-	float top = (float)(th - char_pos.y) / th;
+    Point2 char_pos;
+    char_pos.x = ascii_position % text_data.chars_per_line;
+    char_pos.x *= text_data.char_size.width;
+    char_pos.y = ascii_position / text_data.chars_per_line;
+    char_pos.y *= text_data.char_size.height;
 
-	draw_object.tex_coords[0] = vec2(left, top);
-	draw_object.tex_coords[1] = vec2(right, top);
-	draw_object.tex_coords[2] = vec2(right, bot);
-	draw_object.tex_coords[3] = vec2(left, bot);
+    float left = (float)char_pos.x / tw;
+    float right = (float)(char_pos.x + text_data.char_size.width) / tw;
+    float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
+    float top = (float)(th - char_pos.y) / th;
+
+    draw_object.tex_coords[0] = vec2(left, top);
+    draw_object.tex_coords[1] = vec2(right, top);
+    draw_object.tex_coords[2] = vec2(right, bot);
+    draw_object.tex_coords[3] = vec2(left, bot);
+
+    static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
+    static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+    glBindVertexArray(textVAO);
+
+    struct TextVertex
+    {
+        float x, y, tx, ty;
+    };
+
+    TextVertex vertices[4] =
+    {
+        { rect.left, rect.top, left, bot },
+        { rect.left, rect.top + rect.height, left, top },
+        { rect.left + rect.width, rect.top, right, bot },
+        { rect.left + rect.width, rect.top + rect.height, right, top },
+    };
+
+	glUseProgram(shaders[Shader_Text].shader_handle);
+	{ // TODO(cgenova): convert to function and pull this and the one in draw_call out
+		GLint active_tex = 0;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
+
+		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
+		{
+			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
+		}
+	}
+
+    glEnableVertexArrayAttrib(textVAO, 0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)0);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(TextVertex), vertices, GL_STATIC_DRAW);
+
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	//glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
 	//glBindVertexArray(draw_object.vao);	
 	//glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, draw_object.memory_size, draw_object.memory);
+	//glBufferSubData(GL_ARRAY_BUFFER, 0, draw_object.memory_size, draw_object.memory);
 
-	GLint mat_loc = glGetUniformLocation(shaders[tshader].shader_handle, "mvp");
-	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
+#if NO_MATRICES
+	//GLint mat_loc = glGetUniformLocation(shaders[tshader].shader_handle, "mvp");
+	//glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
+#endif
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 // TODO(cgenova): text drawing styles;
@@ -310,7 +375,7 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 		x = start_x;
 	};
 
-	glUseProgram(shaders[(uint32) ShaderTypes::DEFAULT_SHADER].shader_handle);
+	glUseProgram(shaders[Shader_Text].shader_handle);
 	{ // TODO(cgenova): convert to function and pull this and the one in draw_call out
 		GLint active_tex = 0;
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
@@ -325,8 +390,10 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 	glBindVertexArray(draw_object.vao);
 
 	float bo_scale = 0.9f;
+#if NO_MATRICES
 	glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
 	glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
+#endif
 
 	for (uint32 i = 0; i < s.length(); ++i)
 	{
@@ -345,8 +412,8 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 			new_line();
 			ld++;
 		}		
-		draw_character(s[i], x, y, proj, scale);
-		x += (uint32)(text_data.char_size.width * 1.2f);
+		draw_character(s[i], x, y);
+		x += (uint32)(text_data.char_size.width * 1.5f);
 	}
 
 	new_line();
@@ -359,7 +426,7 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 
 void Renderer::render_draw_buffer()
 {
-	for (uint32 layer = 0; layer < (uint32)DrawLayer::LAYER_COUNT; ++layer)
+	for (uint32 layer = 0; layer < DrawLayer_Count; ++layer)
 	{
 		for (uint32 i = 0; i < draw_buffer[layer].Size(); ++i)
 		{
@@ -470,7 +537,7 @@ void Renderer::draw_call(DrawCall data)
 			glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&Renderer::vp_matrix);
 
 			float world_scale = viewport_width();
-			GLint scl_loc = glGetUniformLocation(shaders[(uint32)ShaderTypes::PARTICLE_SHADER].shader_handle, "w_scale");
+			GLint scl_loc = glGetUniformLocation(shaders[Shader_Particle].shader_handle, "w_scale");
 			glUniform1f(scl_loc, world_scale);
 
 			//glDrawArrays(data.pbd.draw_method, 0, data.pbd.num_vertices);
@@ -501,7 +568,7 @@ void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl)
 {
 	DrawCall dc = {};
 	dc.draw_type = DrawType::ARRAY_BUFFER;
-    dc.shader = ShaderTypes::LINE_SHADER;
+    dc.shader = Shader_Line;
 
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);    

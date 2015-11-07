@@ -10,13 +10,13 @@ void SceneManager::render_random_particles()
 #if 1
 	static Time* time = Time::get();
 	static ParticleSystem ps1(this, 10000);
-	ps1.draw_layer = DrawLayer::PRE_TILEMAP;
+	ps1.draw_layer = DrawLayer_PreTilemap;
 	//ps1.draw_layer = DrawLayer::POST_TILEMAP;
 	static ParticleEmissionData data[2];
 	static uint32 active_data = 0;
 
 	static ParticleSystem ps2(this, 7500);
-	ps2.draw_layer = DrawLayer::PRE_TILEMAP;
+	ps2.draw_layer = DrawLayer_PreTilemap;
 	static bool setup = false;
 	if(!setup)
 	{
@@ -80,7 +80,7 @@ SceneManager::SceneManager()
     tilemap.AddTile(2, 2);
 //    std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
     ParticleSystem* ps = new ParticleSystem(this);
-    ps->initialize(1000, DrawLayer::FOREGROUND);
+    ps->initialize(1000, DrawLayer_Foreground);
     ps->ped.spawn_rate = 100;
     ps->ped.spawn_size = vec2(20.f, 20.f);
     ps->ped.lifetime = FRange(1.5f, 10.f);
@@ -229,8 +229,8 @@ void SceneManager::update_scene()
 
         float halfSize = 0.1f;
         float size = halfSize * 2.f;
-        renderer->DrawRect(rectf(ci.point.x - halfSize, ci.point.y - halfSize, size, size), DrawLayer::UI, yellow);
-        renderer->DrawRect(rectf(ci.point.x + ci.projection.x - halfSize, ci.point.y + ci.projection.y - halfSize, size, size), DrawLayer::UI, magenta);
+        renderer->DrawRect(rectf(ci.point.x - halfSize, ci.point.y - halfSize, size, size), DrawLayer_UI, yellow);
+        renderer->DrawRect(rectf(ci.point.x + ci.projection.x - halfSize, ci.point.y + ci.projection.y - halfSize, size, size), DrawLayer_UI, magenta);
         // renderer->DrawRect(rectf(ci.projection.x - halfSize, ci.projection.y - halfSize, size, size), DrawLayer::UI, magenta);
 	}
 	else
@@ -239,7 +239,7 @@ void SceneManager::update_scene()
 		line.push_back(SimpleVertex(start + velocity, green));
 	}
 
-	renderer->DrawLine(line, DrawLayer::UI);
+	renderer->DrawLine(line, DrawLayer_UI);
 
     //for (auto it = objects.begin(); it != objects.end(); ++it)
     //{

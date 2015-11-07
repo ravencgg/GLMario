@@ -14,8 +14,11 @@ class Camera : public Entity
 public:
     RArrayRef<Entity*> follow_target;
 	Vec2 viewport_size;
+
+#if NO_MATRICES
 	glm::mat4x4 cached_projection_matrix;
 	glm::mat4x4 cached_view_matrix;
+#endif
 
 	Camera(SceneManager*);
 	virtual ~Camera() {}

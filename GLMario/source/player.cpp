@@ -18,7 +18,7 @@ Player::Player(SceneManager* sm)
 	ps.ped.spawn_rate = 100;
 	ps.ptd.gravity = vec2(0, -0.8f);
 	// ps.ptd.options |= ParticleOptions::LOCAL_SIM;
-	ps.draw_layer = DrawLayer::POST_TILEMAP;
+	ps.draw_layer = DrawLayer_PostTilemap;
 	ps.ptd.options = ParticleOptions::NONE;
 
     Vec2 size = vec2(1.0f, 1.5f);
@@ -26,7 +26,7 @@ Player::Player(SceneManager* sm)
 	draw_call = {};
 	draw_call.draw_type = DrawType::SINGLE_SPRITE;
 	draw_call.image = ImageFiles::MARIO_IMAGE;
-	draw_call.shader = ShaderTypes::DEFAULT_SHADER;
+	draw_call.shader = Shader_Default;
 	draw_call.options = DrawOptions::TEXTURE_RECT;
     draw_call.sd.tex_rect = { 17, 903, 34, 34 };
 	draw_call.sd.world_size = size;
@@ -123,7 +123,7 @@ void Player::Draw()
     if(draw_player)
     {
         draw_call.sd.world_position = transform.position;
-        Renderer::get()->push_draw_call(draw_call, DrawLayer::PLAYER);
+        Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
         // ren->draw_sprite(&sprite, transform.position);
     }
 }

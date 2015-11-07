@@ -20,11 +20,10 @@ struct Animation;
 struct Transform;
 
 
-enum class ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT }; 
+enum ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT };
  // TODO(cgenova): text shader -> simple, with color option
-enum class ShaderTypes : uint32 { DEFAULT_SHADER, PARTICLE_SHADER, LINE_SHADER, SHADER_COUNT };
-enum class DrawLayer   : uint32 { BACKGROUND, PRE_TILEMAP, TILEMAP, POST_TILEMAP, PLAYER, FOREGROUND, UI, LAYER_COUNT };
-
+enum ShaderTypes : uint32 { Shader_Default, Shader_Text, Shader_Particle, Shader_Line, Shader_Count };
+enum DrawLayer   : uint32 { DrawLayer_Background, DrawLayer_PreTilemap, DrawLayer_Tilemap, DrawLayer_PostTilemap, DrawLayer_Player, DrawLayer_Foreground, DrawLayer_UI, DrawLayer_Count };
 enum class SpriteRect  : uint32 { UNINITIALIZED, STONE, BRICK, MARIO, RECT_COUNT };
 
 Rect sprite_rects[];
@@ -39,7 +38,7 @@ namespace DrawOptions
 		TEXTURE_RECT = 0x2,
 	};
 }
- 
+
 namespace DrawType
 {
 	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, LINE_BUFFER, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
@@ -61,7 +60,7 @@ struct SimpleVertex
     SimpleVertex(Vec2 p, Vec4 c) : position(p), color(c) {}
 };
 
-struct SpriteData 
+struct SpriteData
 {
 	Rect tex_rect;
 	Vec2 world_size;
@@ -70,21 +69,13 @@ struct SpriteData
 	float draw_angle;
 };
 
-struct ArrayBufferData 
+struct ArrayBufferData
 {
 	GLuint vao;
 	GLuint vbo;
 	GLuint draw_method;
 	uint32 num_vertices;
 };
-//
-//struct ArrayBufferData
-//{
-//	GLuint vao;
-//	GLuint vbo;
-//	GLuint draw_method;
-//	uint32 num_vertices;
-//};
 
 struct DrawCall// Used for drawing to the screen.
 {
@@ -94,7 +85,7 @@ struct DrawCall// Used for drawing to the screen.
 	ShaderTypes shader;
 	uint32 options;
 
-	union 
+	union
 	{
 		SpriteData sd;
 		ArrayBufferData abd;
@@ -162,7 +153,7 @@ public:
 	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }
 	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
 
-	void draw_character(char, uint32, uint32, glm::mat4&, glm::mat4&);
+	void draw_character(char, int32, int32);
 	TextDrawResult draw_string(std::string, uint32 x, uint32 y);
 
 	static char* default_frag_shader;
@@ -175,7 +166,7 @@ public:
 	static char* particle_image;
 	static const uint32 pixels_to_meters;
 
-	struct TextData 
+	struct TextData
 	{
 		uint32 chars_per_line;
 		Dimension char_size;
@@ -192,13 +183,13 @@ public:
 	};
 
 	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
-	Shader shaders[(uint32) ShaderTypes::SHADER_COUNT];
+	Shader shaders[Shader_Count];
 
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
-    void DrawLine(Vec2, Vec2, Vec4, DrawLayer dl = DrawLayer::UI);
+    void DrawLine(Vec2, Vec2, Vec4, DrawLayer dl = DrawLayer_UI);
     void DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl);
-	void DrawRect(Rectf&, DrawLayer dl = DrawLayer::UI, Vec4 color = vec4(1, 1, 1, 1));
+	void DrawRect(Rectf&, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1));
 
 private:
 	struct DrawObject
@@ -222,7 +213,7 @@ private:
 
     uint32 array_buffer_loc = 0;
     std::vector<ArrayBufferData> array_buffer;
-	Array<DrawCall> draw_buffer[(uint32)DrawLayer::LAYER_COUNT];
+	Array<DrawCall> draw_buffer[DrawLayer_Count];
 	DrawObject draw_object;
 
 	Camera* main_camera;
@@ -230,4 +221,4 @@ private:
 
 	static Renderer* s_instance;
 };
-	
+

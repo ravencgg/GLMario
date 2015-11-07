@@ -63,7 +63,7 @@ void Physics::DebugDraw()
 {
     // call this after "step" so that the arrays are already sorted
     Renderer* ren = Renderer::get();
-    DrawLayer dl = DrawLayer::UI;
+    DrawLayer dl = DrawLayer_UI;
 
     Vec4 s_active = vec4(1, 0, 0, 1);
     Vec4 s_inactive = s_active;
@@ -269,7 +269,7 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
 
 			float rh = 0.2f;
 			float rw = rh * 2.f;
-			Renderer::get()->DrawRect(rectf(ci.point.x + ci.projection.x - rh, ci.point.y + ci.projection.y - rh, rw, rw), DrawLayer::UI, vec4(1, 1, 0, 1));
+			Renderer::get()->DrawRect(rectf(ci.point.x + ci.projection.x - rh, ci.point.y + ci.projection.y - rh, rw, rw), DrawLayer_UI, vec4(1, 1, 0, 1));
 
             // col.position.x = MinSigned(col.position.x, maxX);
             // col.position.y = MinSigned(col.position.y, maxY);
