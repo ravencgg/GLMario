@@ -10,14 +10,14 @@
 
 #include "containers.h"
 
+#define MS_PER_FRAME 16
+
 int main(int argc, char* argv[])
 {
 	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 	Window window("Title", 1400, 900);
 
-	Time* time = Time::get(); // Initialize the static time object
-
-	// main_camera.viewport_size = Vec2(16.f, 9.f);
+    InitializeTime(MS_PER_FRAME);
 
 	Renderer::create_instance(&window);
 	Renderer* renderer = Renderer::get();
@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
 
         ProfileBeginFrame();
 
+        ProfileBeginSection(Profile_Frame);
         ProfileBeginSection(Profile_Input);
 
 		input->begin_frame();
@@ -100,24 +101,24 @@ int main(int argc, char* argv[])
 		}
 		// TODO(cgenova): profiling;
 
-		time->begin_frame();
+	    TimeBeginFrame();
 
 		// Update the scene first, pushing draw calls if necessary.
 		// Then call begin_frame which builds matrices and clears buffers;
 
-		if(time->current_time - last_fps_time > 1.0f)
+		if(CurrentTime() - last_fps_time > 1.0f)
 		{
-			last_fps_time = time->current_time;
+			last_fps_time = CurrentTime();
 			fps = frame_count;
 			frame_count = 0;
 		}
 		frame_count++;
 		Console::get()->log_message(std::string("FPS: \t\t" + std::to_string(fps)));
-		Console::get()->log_message(std::string("Frames:\t" + std::to_string(time->frame_count)));
+		Console::get()->log_message(std::string("Frames:\t" + std::to_string(FrameCount())));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
-		main_camera.Tick((float)time->delta_time);
+		main_camera.Tick(CurrentTime());
 		scene.update_scene();
 
         static std::vector<SimpleVertex> v;
@@ -137,27 +138,31 @@ int main(int argc, char* argv[])
         {
             for(uint32 i = 0; i < v.size(); ++i)
             {
-				v[i].position.y = sin((float)time->current_time + i / (PI * 20));
+				v[i].position.y = sin(CurrentTime() + i / (PI * 20));
             }
         }
-        renderer->DrawLine(v, DrawLayer_UI);
-		 //renderer->render_draw_buffer();
+        renderer->DrawLine(v, 3, DrawLayer_UI, LineDrawOptions::SMOOTH);
+		//renderer->render_draw_buffer();
 
+
+
+        ProfileBeginSection(Profile_RenderFinish);
+		renderer->Flush();
+        ProfileEndSection(Profile_RenderFinish);
 
         ProfileBeginSection(Profile_Console);
 		Console::get()->draw();
         ProfileEndSection(Profile_Console);
 
-        ProfileBeginSection(Profile_RenderFinish);
-		renderer->end_frame();
-        ProfileEndSection(Profile_RenderFinish);
+        renderer->SwapBuffer();
 		// End rendering
 
-        ProfileEndFrame();
+        ProfileEndSection(Profile_Frame);
+        ProfileEndFrame(renderer, MS_PER_FRAME);
 
 		// TODO(cgenova): High granularity sleep function!
-		uint32 delay_time = time->ticks_for_frame_cap();
-		if(delay_time > 5) {
+		uint32 delay_time = RemainingTicksInFrame();
+		if(delay_time > 10) {
 			//std::cout << "Delaying: " << delay_time << " ms" << std::endl;
 			SDL_Delay(delay_time);
 		}

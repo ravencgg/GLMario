@@ -5,15 +5,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "..\Dependencies\stb_image.h"
 
-char* Renderer::default_vert_shader = "..\\res\\default_vert.glsl";
-char* Renderer::default_frag_shader = "..\\res\\default_frag.glsl";
-char* Renderer::particle_vert_shader = "..\\res\\particle_vert.glsl";
-char* Renderer::particle_frag_shader = "..\\res\\particle_frag.glsl";
-char* Renderer::mario_image = "..\\res\\supermariobros.png";
-char* Renderer::main_image = "..\\res\\tiles.png";
-char* Renderer::text_image = "..\\res\\charmap.png";
-char* Renderer::particle_image = "..\\res\\particle.png";
-const uint32 Renderer::pixels_to_meters = 16;
+char* default_vert_shader = "..\\res\\default_vert.glsl";
+char* default_frag_shader = "..\\res\\default_frag.glsl";
+char* particle_vert_shader = "..\\res\\particle_vert.glsl";
+char* particle_frag_shader = "..\\res\\particle_frag.glsl";
+char* mario_image = "..\\res\\supermariobros.png";
+char* main_image = "..\\res\\tiles.png";
+char* text_image = "..\\res\\charmap.png";
+char* particle_image = "..\\res\\particle.png";
+
+//const uint32 Renderer::pixels_to_meters = 16;
 
 //enum class ShaderTypes : uint32 { DEFAULT_SHADER, TEXT_SHADER, PARTICLE_SHADER, LINE_SHADER, SHADER_COUNT };
 struct ShaderLoadData
@@ -24,16 +25,13 @@ struct ShaderLoadData
 };
 
 ShaderLoadData shaderLoadData[Shader_Count];
-
-
-
-
 Rect sprite_rects[(uint32) SpriteRect::RECT_COUNT] = {};
+Renderer* Renderer::s_instance = nullptr;
 
 void initialize_sprite_rects()
 {
-	sprite_rects[(uint32) SpriteRect::BRICK] = rect( 85, 0, 16, 16 ); 
-	sprite_rects[(uint32) SpriteRect::STONE] = rect( 0, 0, 16, 16 ); 
+	sprite_rects[(uint32) SpriteRect::BRICK] = rect( 85, 0, 16, 16 );
+	sprite_rects[(uint32) SpriteRect::STONE] = rect( 0, 0, 16, 16 );
 }
 
 Rect get_sprite_rect(SpriteRect r)
@@ -42,14 +40,6 @@ Rect get_sprite_rect(SpriteRect r)
 	Rect result = sprite_rects[(uint32)r];
 	return result;
 }
-
-Renderer* Renderer::s_instance = nullptr;
-
-#if NO_MATRICES
-glm::mat4 Renderer::proj_matrix;
-glm::mat4 Renderer::view_matrix;
-glm::mat4 Renderer::vp_matrix;
-#endif
 
 Renderer::Renderer(Window* w, Vec4 clear_color)
 : draw_window(w)
@@ -63,19 +53,18 @@ Renderer::Renderer(Window* w, Vec4 clear_color)
 	set_clear_color(clear_color);
 
 	// NOTE(chris): also enables textures and blending
-	load_image(Renderer::main_image, ImageFiles::MAIN_IMAGE);
-	load_image(Renderer::mario_image, ImageFiles::MARIO_IMAGE);
-	load_image(Renderer::text_image, ImageFiles::TEXT_IMAGE);
-	load_image(Renderer::particle_image, ImageFiles::PARTICLE_IMAGE);
-	load_shader(Renderer::default_vert_shader, Renderer::default_frag_shader, Shader_Default);
-	load_shader(Renderer::particle_vert_shader, Renderer::particle_frag_shader, Shader_Particle);
+	load_image(main_image, ImageFiles::MAIN_IMAGE);
+	load_image(mario_image, ImageFiles::MARIO_IMAGE);
+	load_image(text_image, ImageFiles::TEXT_IMAGE);
+	load_image(particle_image, ImageFiles::PARTICLE_IMAGE);
+	load_shader(default_vert_shader, default_frag_shader, Shader_Default);
+	load_shader(particle_vert_shader, particle_frag_shader, Shader_Particle);
     load_shader("..\\res\\line_vert.glsl", "..\\res\\line_frag.glsl", Shader_Line);
     load_shader("..\\res\\text_vert.glsl", "..\\res\\text_frag.glsl", Shader_Text);
 
 	text_data.chars_per_line = 18;
 	text_data.char_size = { 7, 9 };
 
-	build_buffer_object();
 }
 
 void Renderer::create_instance(Window* w)
@@ -93,34 +82,18 @@ Renderer* Renderer::get()
 
 void Renderer::set_camera(Camera* camera)
 {
-	this->main_camera = camera;	
+	this->main_camera = camera;
 }
 
 void Renderer::begin_frame()
 {
+    // Resolution can't change mid frame, although the camera position can
 	frame_resolution = draw_window->get_resolution();
 	glViewport(0, 0, frame_resolution.width, frame_resolution.height); // TODO: check to see if it is rendering into the title bar
                                                                        // TODO: add a way to get the client rect from the window system
-                                                                       // NOTE: this is probably why text rendering is off by a bit 
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	array_buffer_loc = 0;
-
-	float width = main_camera->viewport_size.x;
-	float height = main_camera->viewport_size.y;
-
-	float depth = (float) DrawLayer_Count + 1.f;
-	proj_matrix = glm::ortho(-width / 2, width / 2, -height / 2, height / 2, 0.1f, depth); 
-
-#if NO_MATRICES
-	Vec3 cp = vec3(main_camera->transform.position, -1.0f);
-	glm::vec3 look = glm::vec3(cp.x, cp.y, -1.0f);
-	view_matrix = glm::lookAt(glm::vec3(cp.x, cp.y, 1.0f),
-		look,
-		glm::vec3(0, 1, 0));
-#endif
-
-	vp_matrix = proj_matrix * view_matrix;
+	line_buffer_loc = 0;
 }
 
 void Renderer::set_clear_color(Vec4 color)
@@ -133,14 +106,18 @@ void Renderer::force_color_clear()
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void Renderer::end_frame()
+void Renderer::Flush()
 {
 	render_draw_buffer();
-	draw_window->swap_buffer();
 	for(uint32 i = 0; i < DrawLayer_Count; ++i)
 	{
 		draw_buffer[i].Clear();
 	}
+}
+
+void Renderer::SwapBuffer()
+{
+	draw_window->swap_buffer();
 }
 
 Dimension Renderer::get_resolution()
@@ -151,7 +128,7 @@ Dimension Renderer::get_resolution()
 float Renderer::viewport_width()
 {
 	float result = main_camera->viewport_size.x;
-	return result; 
+	return result;
 }
 
 void Renderer::load_image(char* filename, ImageFiles location)
@@ -186,7 +163,7 @@ void Renderer::load_image(char* filename, ImageFiles location)
 
 	stbi_image_free(data);
 
-	textures[(uint32)location].texture_handle = handle; 
+	textures[(uint32)location].texture_handle = handle;
 	textures[(uint32)location].w = x;
 	textures[(uint32)location].h = y;
 	textures[(uint32)location].bytes_per_color = n;
@@ -197,8 +174,8 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 	GLuint vert_loc = glCreateShader(GL_VERTEX_SHADER);
 	GLuint frag_loc = glCreateShader(GL_FRAGMENT_SHADER);
 
-	char* vert_shader = load_text_file(vert_file); 
-	char* frag_shader = load_text_file(frag_file); 
+	char* vert_shader = load_text_file(vert_file);
+	char* frag_shader = load_text_file(frag_file);
 
 	glShaderSource(vert_loc, 1, &vert_shader, 0);
 	glShaderSource(frag_loc, 1, &frag_shader, 0);
@@ -252,24 +229,15 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 // 	draw_info.sd.color_mod = sprite->color_mod;
 // 	// draw_info.camera_position = draw_position;
 // 	// draw_info.camera_size = screen_dim;
-// 	draw_buffer[(uint32)sprite->layer].add(draw_info); 
+// 	draw_buffer[(uint32)sprite->layer].add(draw_info);
 // }
 
 void Renderer::draw_character(char c, int32 x, int32 y)
 {
+    static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
+    static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
+
     uint32 tshader = Shader_Text;
-
-    // NOTE(chris): Layer is ignored until sorting is implemented;
-    //TODO(chris): still need some conversion from pixels to world space
-    //glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
-    //glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
-
-#if NO_MATRICES
-    //glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.world_position.x, data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
-
-    //glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
-    //glm::mat4 mvp = proj * trans * scale;
-#endif
 
     int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
     int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
@@ -295,24 +263,15 @@ void Renderer::draw_character(char c, int32 x, int32 y)
     float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
     float top = (float)(th - char_pos.y) / th;
 
-    draw_object.tex_coords[0] = vec2(left, top);
-    draw_object.tex_coords[1] = vec2(right, top);
-    draw_object.tex_coords[2] = vec2(right, bot);
-    draw_object.tex_coords[3] = vec2(left, bot);
-
-    static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
-    static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
-
     glBindBuffer(GL_ARRAY_BUFFER, textVBO);
     glBindVertexArray(textVAO);
 
-    struct TextVertex
+    struct
     {
         float x, y, tx, ty;
-    };
 
-    TextVertex vertices[4] =
-    {
+    } vertices[4] = {
+
         { rect.left, rect.top, left, bot },
         { rect.left, rect.top + rect.height, left, top },
         { rect.left + rect.width, rect.top, right, bot },
@@ -332,23 +291,9 @@ void Renderer::draw_character(char c, int32 x, int32 y)
 
     glEnableVertexArrayAttrib(textVAO, 0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)0);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(TextVertex), vertices, GL_STATIC_DRAW);
-
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-	//glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-	//glBindVertexArray(draw_object.vao);	
-	//glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
-	//glBufferSubData(GL_ARRAY_BUFFER, 0, draw_object.memory_size, draw_object.memory);
-
-#if NO_MATRICES
-	//GLint mat_loc = glGetUniformLocation(shaders[tshader].shader_handle, "mvp");
-	//glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
-#endif
-
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 // TODO(cgenova): text drawing styles;
@@ -390,10 +335,6 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 	glBindVertexArray(draw_object.vao);
 
 	float bo_scale = 0.9f;
-#if NO_MATRICES
-	glm::mat4 proj  = glm::ortho(0.f, (float)frame_resolution.width, 0.f, (float)frame_resolution.height, 0.1f, 10.f);
-	glm::mat4 scale = glm::scale(glm::vec3((float) text_data.char_size.width * bo_scale, (float) text_data.char_size.height * bo_scale, 1.0f));
-#endif
 
 	for (uint32 i = 0; i < s.length(); ++i)
 	{
@@ -411,7 +352,7 @@ TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start
 			x = start_x;
 			new_line();
 			ld++;
-		}		
+		}
 		draw_character(s[i], x, y);
 		x += (uint32)(text_data.char_size.width * 1.5f);
 	}
@@ -442,10 +383,18 @@ void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
 
 void Renderer::draw_call(DrawCall data)
 {
-	// NOTE(cgenova): The buffer object is (-1, 1) so this conversion factor will return it to a one length object.
-	const float bo_scale = 0.5;
+    // TODO: set up the shaders once per frame (or once per draw surface)
+    // TODO: don't have every draw type specify a shader e.g. lines only have the line shader
+    // and text will ony have the text shader. Oh, and TODO: Batch text draws into a buffer.
 
-	glUseProgram(shaders[(uint32)data.shader].shader_handle); 
+	static GLuint vao = (glGenVertexArrays(1, &vao), vao);
+	static GLuint vbo = (glGenBuffers(1, &vbo), vbo);
+
+
+    Vec2 cam_position = { main_camera->transform.position.x, main_camera->transform.position.y };
+    Vec2 viewport     = { main_camera->viewport_size.x, main_camera->viewport_size.y };
+
+	glUseProgram(shaders[(uint32)data.shader].shader_handle);
 
 	{
 		GLint active_tex = 0;
@@ -461,54 +410,70 @@ void Renderer::draw_call(DrawCall data)
 	{
 		case DrawType::SINGLE_SPRITE:
 		{
-			// NOTE(chris): Layer is ignored until sorting is implemented;
-			// TODO(chris): still need some conversion from pixels to world space
 			// TODO(cgenova): handle rotated scaling;
-		 	// Vec3 scale_vec(data.world_size.x * 800 * bo_scale, data.world_size.y * 600 * bo_scale, 1.0f);
-
-		 	Vec3 new_position = {data.sd.world_position.x, // * main_camera->viewport_size.x, 
-		 						 data.sd.world_position.y, // * main_camera->viewport_size.y,
-		 						 0};
-
-			glm::mat4 model_matrix = glm::mat4(1.0f);
-			glm::mat4 scale = glm::scale(glm::vec3(data.sd.world_size.x * bo_scale, data.sd.world_size.y * bo_scale, 1.0f));
-			glm::mat4 rot = glm::rotate(glm::radians(data.sd.draw_angle), glm::vec3(0, 0, 1.0f));
-			glm::mat4 trans = glm::translate(glm::vec3(new_position.x, new_position.y, 0.f));//  data.sprite_data.world_position.x, data.sprite_data.world_position.y, 0.0f)); // NOTE(cgenova): everything is at 1.0f in z!
-
-			//glm::mat4 mvp = glm::mat4(1.0f);// vp_matrix * trans * rot * scale;
-			glm::mat4 mvp = vp_matrix * trans * rot * scale;
 
 			int32 tw = textures[(uint32)data.image].w;
 			int32 th = textures[(uint32)data.image].h;
 
-		 	float left  = (float)data.sd.tex_rect.left / tw;
-		 	float right = (float)(data.sd.tex_rect.left + data.sd.tex_rect.width) / tw;
-		 	float bot   = (float)(th - (data.sd.tex_rect.top + data.sd.tex_rect.height)) / th; 
-		 	float top   = (float)(th - data.sd.tex_rect.top) / th;
+		 	float tex_left  = (float)data.sd.tex_rect.left / tw;
+		 	float tex_right = (float)(data.sd.tex_rect.left + data.sd.tex_rect.width) / tw;
+		 	float tex_bot   = (float)(th - (data.sd.tex_rect.top + data.sd.tex_rect.height)) / th;
+		 	float tex_top   = (float)(th - data.sd.tex_rect.top) / th;
 
-			draw_object.tex_coords[0] = vec2(left, top);
-			draw_object.tex_coords[1] = vec2(right, top);
-			draw_object.tex_coords[2] = vec2(right, bot);
-			draw_object.tex_coords[3] = vec2(left, bot);
+            float width  = data.sd.world_size.x;
+            float height = data.sd.world_size.y;
 
-			glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-			glBufferData(GL_ARRAY_BUFFER, draw_object.memory_size, draw_object.memory, GL_STREAM_DRAW);
-			glBindVertexArray(draw_object.vao);
+            float x_pos = (data.sd.world_position.x - cam_position.x) - width / 2;
+            float y_pos = (data.sd.world_position.y - cam_position.y) - height / 2;
 
-			// NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call	
-			float time = 1.f;
-			GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
-			glUniform1f(time_loc, time);
+#define TO_OGL(pos, dir) ((((pos + (dir / 2)) / dir) * 2) - 1)
 
+            x_pos = TO_OGL(x_pos, viewport.x);
+            y_pos = TO_OGL(y_pos, viewport.y);
+            width = TO_OGL(width, viewport.x);
+            height = TO_OGL(height, viewport.y);
 
-			GLint color_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "color_in");
-			glUniform4f(color_loc, data.sd.color_mod.x, data.sd.color_mod.y, data.sd.color_mod.z, data.sd.color_mod.w);
+#undef TO_OGL
 
-			GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
-			glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&mvp);
+            SpriteVertex sprite_vertices[4] = {
+                {
+                    { x_pos, y_pos },                    // World position
+                    { tex_left, tex_bot }                // UV coords
+                },
+                {
+                    { x_pos + width, y_pos },            // World position
+                    { tex_right, tex_bot }               // UV coords
+                },
+                {
+                    { x_pos, y_pos + height },           // World position
+                    { tex_left, tex_top }                // UV coords
+                },
+                {
+                    { x_pos + width, y_pos + height },   // World position
+                    { tex_right, tex_top }               // UV coords
+                },
+            };
 
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);	
+            // TODO: Culling
+
+			glBindBuffer(GL_ARRAY_BUFFER, vbo);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(sprite_vertices), sprite_vertices, GL_STREAM_DRAW);
+			glBindVertexArray(vao);
+
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (GLvoid*)(2 * sizeof(float)) );
+
+			// NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call
+			//float time = 1.f;
+			//GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
+			//glUniform1f(time_loc, time);
+
+			//GLint color_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "color_in");
+			//glUniform4f(color_loc, data.sd.color_mod.x, data.sd.color_mod.y, data.sd.color_mod.z, data.sd.color_mod.w);
+
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		}break;
         case DrawType::ARRAY_BUFFER:
@@ -520,10 +485,66 @@ void Renderer::draw_call(DrawCall data)
 			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
 			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
 
-			GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
-			glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&Renderer::vp_matrix);
+			GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+			glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+
+			GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+			glUniform2f(viewport_loc, viewport.x, viewport.y);
 
 			glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
+
+        }break;
+        case DrawType::LINE_BUFFER:
+        {
+			glBindBuffer(GL_ARRAY_BUFFER, data.lbd.vbo);
+			glBindVertexArray(data.lbd.vao);
+			glEnableVertexAttribArray(0);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
+			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
+
+
+            if(data.lbd.line_draw_options & LineDrawOptions::SMOOTH)
+            {
+                glEnable(GL_LINE_SMOOTH);
+                glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+            }
+            else
+            {
+                glDisable(GL_LINE_SMOOTH);
+            }
+
+            if(data.lbd.line_draw_options & LineDrawOptions::CUSTOM_SIZE)
+            {
+                uint8 s = ((data.lbd.line_draw_options & (0xFF << 24)) >> 24);
+                float size = (float) s;
+                glLineWidth(size);
+            }
+            else
+            {
+                glLineWidth(4.f);
+            }
+
+            if(data.lbd.line_draw_options & LineDrawOptions::SCREEN_SPACE)
+            {
+                GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, (float)frame_resolution.width / 2.f, (float)frame_resolution.height / 2.f);
+
+                GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, (float)frame_resolution.width, (float)frame_resolution.height);
+            }
+            else
+            {
+                GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+
+                GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, viewport.x, viewport.y);
+            }
+
+			glDrawArrays(data.lbd.draw_method, 0, data.lbd.num_vertices);
+			//glDrawArrays(GL_LINE_LOOP, 0, data.lbd.num_vertices);
+
         }break;
 		case DrawType::PARTICLE_ARRAY_BUFFER:
 		{
@@ -533,12 +554,17 @@ void Renderer::draw_call(DrawCall data)
 			glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
 			glBindVertexArray(data.abd.vao);
 
-			GLint mat_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "mvp");
-			glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&Renderer::vp_matrix);
-
 			float world_scale = viewport_width();
 			GLint scl_loc = glGetUniformLocation(shaders[Shader_Particle].shader_handle, "w_scale");
 			glUniform1f(scl_loc, world_scale);
+
+
+			GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+			glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+
+			GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+			glUniform2f(viewport_loc, viewport.x, viewport.y);
+
 
 			//glDrawArrays(data.pbd.draw_method, 0, data.pbd.num_vertices);
 			//glDrawArrays(GL_TRIANGLE_FAN, 0, data.pbd.num_vertices);
@@ -552,7 +578,7 @@ void Renderer::draw_call(DrawCall data)
 
 }
 
-void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, DrawLayer dl)
+void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, uint8 line_width, DrawLayer dl, uint32 line_draw_options)
 {
     std::vector<SimpleVertex> v;
     SimpleVertex s;
@@ -561,23 +587,18 @@ void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, DrawLayer dl)
     v.push_back(s);
     s.position = end;
     v.push_back(s);
-    DrawLine(v, dl);
+    DrawLine(v, line_width, dl, line_draw_options);
 }
 
-void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl)
+void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options)
 {
 	DrawCall dc = {};
-	dc.draw_type = DrawType::ARRAY_BUFFER;
+	dc.draw_type = DrawType::LINE_BUFFER;
     dc.shader = Shader_Line;
 
-    glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);    
-    glLineWidth(4.f);
-
-
-    if(array_buffer_loc == array_buffer.size())
+    if(line_buffer_loc == line_buffer.size())
     {
-		ArrayBufferData a = {};
+		LineBufferData a = {};
 		glGenBuffers(1, &a.vbo);
 		glGenVertexArrays(1, &a.vao);
 		glBindVertexArray(a.vao);
@@ -586,23 +607,33 @@ void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl)
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
 
-        array_buffer.push_back(a);
+        line_buffer.push_back(a);
     }
 
-    ArrayBufferData* abd = &array_buffer[array_buffer_loc++];
-    abd->num_vertices = vertices.size();
-    abd->draw_method = GL_LINE_STRIP;
+    LineBufferData* lbd = &line_buffer[line_buffer_loc++];
+    lbd->num_vertices = vertices.size();
 
-    glBindBuffer(GL_ARRAY_BUFFER, abd->vbo);
+    lbd->draw_method = (line_draw_options & LineDrawOptions::LOOPED) ? GL_LINE_LOOP : GL_LINE_STRIP;
+    lbd->line_draw_options = line_draw_options;
+
+    if(line_width)
+    {
+        lbd->line_draw_options |= LineDrawOptions::CUSTOM_SIZE;
+
+        lbd->line_draw_options |= ((uint32)line_width << 24);
+
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(SimpleVertex), &vertices[0], GL_STREAM_DRAW);
-    dc.abd = *abd;
+    dc.lbd = *lbd;
     push_draw_call(dc, dl);
 }
 
-void Renderer::DrawRect(Rectf& rect, DrawLayer layer, Vec4 color)
+void Renderer::DrawRect(Rectf& rect, uint8 line_width, DrawLayer layer, Vec4 color)
 {
     std::vector<SimpleVertex> verts;
-    verts.reserve(5);
+    verts.reserve(4);
 
     SimpleVertex v;
 	v.color = color;
@@ -611,65 +642,14 @@ void Renderer::DrawRect(Rectf& rect, DrawLayer layer, Vec4 color)
 
 	v.position = vec2(rect.left + rect.width, rect.top);
 	verts.push_back(v);
-	
+
 	v.position = vec2(rect.left + rect.width, rect.top + rect.height);
 	verts.push_back(v);
 
 	v.position = vec2(rect.left, rect.top + rect.height);
 	verts.push_back(v);
 
-	v.position = vec2(rect.left, rect.top);
-	verts.push_back(v);
-
-	DrawLine(verts, layer);
-}
-
-void Renderer::build_buffer_object()
-{
-	uint32 num_vertices = 4;
-	uint32 bytes_per_vertex = 3 + 4 + 2; // Position, RGBA, Tex coords
-	uint32 memory_size = num_vertices * bytes_per_vertex * sizeof(float); 
-	draw_object.memory = new uint8[memory_size];
-	draw_object.memory_size = memory_size;
-
-	uint8* mem_loc = draw_object.memory;
-
-	draw_object.vert_positions = (Vec3*) mem_loc;
-	mem_loc += sizeof(*draw_object.vert_positions) * num_vertices;
-	draw_object.tex_coords = (Vec2*) mem_loc;
-
-	draw_object.vert_positions[0] = vec3(-1, 1, -1);//Vec3(-0.5f, 0.5f, 0.0f);
-	draw_object.vert_positions[1] = vec3(1, 1, -1);//Vec3(0.5f, 0.5f, 0.0f); 
-	draw_object.vert_positions[2] = vec3(1, -1, -1);//Vec3(0.5f, -0.5f, 0.0f);
-	draw_object.vert_positions[3] = vec3(-1, -1, -1);//Vec3(-0.5f, -0.5f, 0.0f); 
-
-	draw_object.tex_coords[0] = vec2(0.0f, 1.0f);
-	draw_object.tex_coords[1] = vec2(1.0f, 1.0f);
-	draw_object.tex_coords[2] = vec2(1.0f, 0.0f);
-	draw_object.tex_coords[3] = vec2(0.0f, 0.0f);
-
-	GLuint indices[] = {
-		0, 1, 2,
-		0, 2, 3
-	};
-
-	glGenVertexArrays(1, &draw_object.vao);
-	glBindVertexArray(draw_object.vao);
-
-	glGenBuffers(1, &draw_object.vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-	glBufferData(GL_ARRAY_BUFFER, memory_size, draw_object.memory, GL_STREAM_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(4 * sizeof(*draw_object.vert_positions)));
-
-	glGenBuffers(1, &draw_object.ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, draw_object.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	DrawLine(verts, line_width, layer, LineDrawOptions::LOOPED);
 }
 
 void Renderer::draw_animation(Animation* animation, Transform* t, float time)

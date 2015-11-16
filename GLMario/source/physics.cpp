@@ -72,20 +72,22 @@ void Physics::DebugDraw()
     Vec4 d_inactive = d_active;
     d_inactive.a = 0.5f;
 
+    const uint8 line_width = 3;
+
     for(uint32 i = 0; i < statics.Size(); ++i)
     {
-        ren->DrawRect(statics[i].rect, dl, statics[i].active ? s_active : s_inactive);
+        ren->DrawRect(statics[i].rect, line_width, dl, statics[i].active ? s_active : s_inactive);
     }
 
     for(uint32 i = 0; i < dynamics.Size(); ++i)
     {
-        ren->DrawRect(CanonicalRect(&dynamics[i]), dl, dynamics[i].active ? d_active : d_inactive);
+        ren->DrawRect(CanonicalRect(&dynamics[i]), line_width, dl, dynamics[i].active ? d_active : d_inactive);
     }
 
 #ifdef _DEBUG
 	for (uint32 i = 0; i < Physics::minkowski_rects.size(); ++i)
     {
-		ren->DrawRect(Physics::minkowski_rects[i], dl, { 0, 1, 0, 1 });
+		ren->DrawRect(Physics::minkowski_rects[i], line_width, dl, { 0, 1, 0, 1 });
     }
 	Physics::minkowski_rects.clear();
 #endif
@@ -269,7 +271,8 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
 
 			float rh = 0.2f;
 			float rw = rh * 2.f;
-			Renderer::get()->DrawRect(rectf(ci.point.x + ci.projection.x - rh, ci.point.y + ci.projection.y - rh, rw, rw), DrawLayer_UI, vec4(1, 1, 0, 1));
+            const uint8 line_width = 3;
+			Renderer::get()->DrawRect(rectf(ci.point.x + ci.projection.x - rh, ci.point.y + ci.projection.y - rh, rw, rw), line_width, DrawLayer_UI, vec4(1, 1, 0, 1));
 
             // col.position.x = MinSigned(col.position.x, maxX);
             // col.position.y = MinSigned(col.position.y, maxY);

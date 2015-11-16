@@ -44,7 +44,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\Dependencies\;.\Dependencies\glew;.\Dependencies;.\Dependencies\sdl\include;.\Dependencies\glm;.\Dependencies\sdl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Dependencies\;.\Dependencies\glew;.\Dependencies;.\Dependencies\sdl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -63,7 +63,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\Dependencies\;.\Dependencies\glew;.\Dependencies;.\Dependencies\sdl\include;.\Dependencies\glm;.\Dependencies\sdl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Dependencies\;.\Dependencies\glew;.\Dependencies;.\Dependencies\sdl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -81,7 +81,7 @@
     <ClCompile Include="source\camera.cpp" />
     <ClCompile Include="source\console.cpp" />
     <ClCompile Include="source\entity.cpp" />
-    <ClCompile Include="source\helper.cpp" />
+    <ClCompile Include="source\utility.cpp" />
     <ClCompile Include="source\input.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\mathops.cpp" />
@@ -95,52 +95,11 @@
     <ClCompile Include="source\window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Dependencies\glm\common.hpp" />
-    <ClInclude Include="Dependencies\glm\exponential.hpp" />
-    <ClInclude Include="Dependencies\glm\ext.hpp" />
-    <ClInclude Include="Dependencies\glm\fwd.hpp" />
-    <ClInclude Include="Dependencies\glm\geometric.hpp" />
-    <ClInclude Include="Dependencies\glm\glm.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\bitfield.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\constants.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\epsilon.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\integer.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\matrix_access.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\matrix_integer.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\matrix_inverse.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\matrix_transform.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\noise.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\packing.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\quaternion.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\random.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\reciprocal.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\round.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\type_precision.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\type_ptr.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\ulp.hpp" />
-    <ClInclude Include="Dependencies\glm\gtc\vec1.hpp" />
-    <ClInclude Include="Dependencies\glm\integer.hpp" />
-    <ClInclude Include="Dependencies\glm\mat2x2.hpp" />
-    <ClInclude Include="Dependencies\glm\mat2x3.hpp" />
-    <ClInclude Include="Dependencies\glm\mat2x4.hpp" />
-    <ClInclude Include="Dependencies\glm\mat3x2.hpp" />
-    <ClInclude Include="Dependencies\glm\mat3x3.hpp" />
-    <ClInclude Include="Dependencies\glm\mat3x4.hpp" />
-    <ClInclude Include="Dependencies\glm\mat4x2.hpp" />
-    <ClInclude Include="Dependencies\glm\mat4x3.hpp" />
-    <ClInclude Include="Dependencies\glm\mat4x4.hpp" />
-    <ClInclude Include="Dependencies\glm\matrix.hpp" />
-    <ClInclude Include="Dependencies\glm\packing.hpp" />
-    <ClInclude Include="Dependencies\glm\trigonometric.hpp" />
-    <ClInclude Include="Dependencies\glm\vec2.hpp" />
-    <ClInclude Include="Dependencies\glm\vec3.hpp" />
-    <ClInclude Include="Dependencies\glm\vec4.hpp" />
-    <ClInclude Include="Dependencies\glm\vector_relational.hpp" />
     <ClInclude Include="source\camera.h" />
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\containers.h" />
     <ClInclude Include="source\entity.h" />
-    <ClInclude Include="source\helper.h" />
+    <ClInclude Include="source\utility.h" />
     <ClInclude Include="source\input.h" />
     <ClInclude Include="source\mathops.h" />
     <ClInclude Include="source\particles.h" />
@@ -152,25 +111,6 @@
     <ClInclude Include="source\time.h" />
     <ClInclude Include="source\types.h" />
     <ClInclude Include="source\window.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Dependencies\glm\gtc\bitfield.inl" />
-    <None Include="Dependencies\glm\gtc\constants.inl" />
-    <None Include="Dependencies\glm\gtc\epsilon.inl" />
-    <None Include="Dependencies\glm\gtc\integer.inl" />
-    <None Include="Dependencies\glm\gtc\matrix_access.inl" />
-    <None Include="Dependencies\glm\gtc\matrix_inverse.inl" />
-    <None Include="Dependencies\glm\gtc\matrix_transform.inl" />
-    <None Include="Dependencies\glm\gtc\noise.inl" />
-    <None Include="Dependencies\glm\gtc\packing.inl" />
-    <None Include="Dependencies\glm\gtc\quaternion.inl" />
-    <None Include="Dependencies\glm\gtc\random.inl" />
-    <None Include="Dependencies\glm\gtc\reciprocal.inl" />
-    <None Include="Dependencies\glm\gtc\round.inl" />
-    <None Include="Dependencies\glm\gtc\type_precision.inl" />
-    <None Include="Dependencies\glm\gtc\type_ptr.inl" />
-    <None Include="Dependencies\glm\gtc\ulp.inl" />
-    <None Include="Dependencies\glm\gtc\vec1.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,14 +1,10 @@
 #pragma once
 
-#include <assert.h>
-#include "SDL.h" 
 #include "types.h"
 
 
-class Time
+struct GameTime
 {
-public:
-
 	double current_time;
 	double delta_time;
 
@@ -17,28 +13,50 @@ public:
 	uint32 ticks_per_frame;
 
 	uint32 frame_count;
-
-	uint32 ticks_for_frame_cap();
-	void begin_frame();
-
-	Time();
-	~Time() {}
-	static Time* get() { if (!s_time) { s_time = new Time(); } return s_time; }
-
-private:
-	static Time* s_time;
 };
 
 struct Timer
 {
 	float start_time;
 	float duration;
-
-	uint32 last_frame_count;
-
-	Timer(float);
-	bool is_finished();
-	float remaining_time();
-	void reset();
-	void reset(bool, float);
 };
+
+/****************************
+ *
+ * Time functions
+ *
+ ******/
+
+
+double CurrentTimePrecise();
+
+float CurrentTime();
+
+float FrameTime();
+
+uint32 FrameCount();
+
+void InitializeTime(uint32 ms_per_frame);
+
+void TimeBeginFrame();
+
+uint32 RemainingTicksInFrame();
+
+uint32 RealTimeSinceStartup();
+
+
+/****************************
+ *
+ * Timer functions
+ *
+ ******/
+
+Timer* CreateTimer(float dur);
+
+void StartTimer(Timer* timer, float new_duration = 0);
+
+void DestroyTimer(Timer* timer);
+
+bool TimerIsFinished(Timer* timer);
+
+float RemainingTime(Timer* timer);

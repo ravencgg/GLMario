@@ -5,14 +5,8 @@
 #include "types.h"
 #include "mathops.h"
 #include "window.h"
-#include "helper.h"
+#include "utility.h"
 #include "containers.h"
-
-// GLM includes
-#include <glm/glm.hpp>
-#include "glm/gtc/matrix_transform.hpp"
-#include <glm/gtx/transform.hpp>
-#include "glm/mat4x4.hpp"
 
 class Camera;
 struct Sprite;
@@ -35,14 +29,33 @@ namespace DrawOptions
 {
 	enum : uint32  {
 		WHOLE_TEXTURE = 0x1, // TODO(cgenova): remove this? pointless with flags
-		TEXTURE_RECT = 0x2,
+		TEXTURE_RECT  = 0x2,
 	};
+}
+
+namespace LineDrawOptions
+{
+    enum : uint32 {
+        NONE          = 0x0,
+        LOOPED        = 0x1,
+        SCREEN_SPACE  = 0x2, // Uses resolution coordinates instead of world coords
+        CUSTOM_SIZE   = 0x4, // top byte of the uint32 holding this data is the size in pixels of the line;
+        SMOOTH        = 0x8
+    };
 }
 
 namespace DrawType
 {
 	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, LINE_BUFFER, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
 }
+
+// Pass color in as a uniform if it is desired
+struct SpriteVertex
+{
+    Vec2 position;
+    Vec2 uv;
+};
+
 
 struct Vertex
 {
@@ -56,7 +69,7 @@ struct SimpleVertex
     Vec2 position;
     Vec4 color;
 
-    SimpleVertex() {};
+    SimpleVertex() {}
     SimpleVertex(Vec2 p, Vec4 c) : position(p), color(c) {}
 };
 
@@ -77,6 +90,15 @@ struct ArrayBufferData
 	uint32 num_vertices;
 };
 
+struct LineBufferData
+{
+	GLuint vao;
+	GLuint vbo;
+	GLuint draw_method;
+    uint32 line_draw_options;
+	uint32 num_vertices;
+};
+
 struct DrawCall// Used for drawing to the screen.
 {
 	DrawType::Type draw_type;
@@ -88,6 +110,7 @@ struct DrawCall// Used for drawing to the screen.
 	union
 	{
 		SpriteData sd;
+        LineBufferData lbd;
 		ArrayBufferData abd;
 	};
 };
@@ -125,10 +148,6 @@ struct TextDrawResult
 class Renderer
 {
 public:
-	static glm::mat4 proj_matrix;
-	static glm::mat4 view_matrix;
-	static glm::mat4 vp_matrix;
-
 	Renderer(Window* w, Vec4 clear_color = vec4(0, 0, 0, 1));
 	virtual ~Renderer() {};
 
@@ -137,7 +156,8 @@ public:
 
 	void set_camera(Camera*);
 	void begin_frame();
-	void end_frame();
+	void Flush();
+    void SwapBuffer();
 	void set_clear_color(Vec4);
 	void force_color_clear();
 	void load_image(char*, ImageFiles);
@@ -155,16 +175,6 @@ public:
 
 	void draw_character(char, int32, int32);
 	TextDrawResult draw_string(std::string, uint32 x, uint32 y);
-
-	static char* default_frag_shader;
-	static char* default_vert_shader;
-	static char* particle_vert_shader;
-	static char* particle_frag_shader;
-	static char* main_image;
-	static char* mario_image;
-	static char* text_image;
-	static char* particle_image;
-	static const uint32 pixels_to_meters;
 
 	struct TextData
 	{
@@ -187,9 +197,9 @@ public:
 
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
-    void DrawLine(Vec2, Vec2, Vec4, DrawLayer dl = DrawLayer_UI);
-    void DrawLine(std::vector<SimpleVertex>& vertices, DrawLayer dl);
-	void DrawRect(Rectf&, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1));
+    void DrawLine(Vec2, Vec2, Vec4, uint8 line_width, DrawLayer dl = DrawLayer_UI, uint32 line_draw_options = 0);
+    void DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
+	void DrawRect(Rectf&, uint8 line_width = 4, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1));
 
 private:
 	struct DrawObject
@@ -205,14 +215,12 @@ private:
 		~DrawObject() { if(memory) delete[] memory; }
 	};
 
-	void build_buffer_object();
-
 	Dimension frame_resolution;
 
 	TextData text_data;
 
-    uint32 array_buffer_loc = 0;
-    std::vector<ArrayBufferData> array_buffer;
+    uint32 line_buffer_loc = 0;
+    std::vector<LineBufferData> line_buffer;
 	Array<DrawCall> draw_buffer[DrawLayer_Count];
 	DrawObject draw_object;
 

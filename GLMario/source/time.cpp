@@ -1,17 +1,50 @@
 #include "time.h"
 
-Time* Time::s_time = nullptr;
+#include "SDL.h"
+#include <assert.h>
+#include <string.h>
+#include "utility.h"
 
-Time::Time()
-:	delta_time(0),
-	last_frame_ticks(0),
-	ticks_per_frame(16), // Default is 60 fps
-	frame_count(0)
+
+namespace
 {
+	double current_time;
+	double delta_time;
+
+	uint32 last_frame_ticks;
+	uint32 current_frame_ticks;
+	uint32 ticks_per_frame;
+
+	uint32 frame_count;
+}
+
+double CurrentTimePrecise()
+{
+    return current_time;
+}
+
+float CurrentTime()
+{
+    return (float)current_time;
+}
+
+float FrameTime()
+{
+    return (float)delta_time;
+}
+
+uint32 FrameCount()
+{
+    return frame_count;
+}
+
+void InitializeTime(uint32 ms_per_frame)
+{
+	ticks_per_frame = 16;
 	current_frame_ticks = SDL_GetTicks();
 }
 
-void Time::begin_frame()
+void TimeBeginFrame()
 {
 	last_frame_ticks = current_frame_ticks;
 	current_frame_ticks = SDL_GetTicks();
@@ -22,7 +55,7 @@ void Time::begin_frame()
 	++frame_count;
 }
 
-uint32 Time::ticks_for_frame_cap()
+uint32 RemainingTicksInFrame()
 {
 	uint32 cur_time = SDL_GetTicks();
 	uint32 next_frame_start = current_frame_ticks + ticks_per_frame;
@@ -31,45 +64,48 @@ uint32 Time::ticks_for_frame_cap()
 
 	if(cur_time < next_frame_start)
 	{
-		result = next_frame_start - cur_time; 
+		result = next_frame_start - cur_time;
 	}
 
 	return result;
 }
 
-
-
-Timer::Timer(float d)
+uint32 RealTimeSinceStartup()
 {
-	assert(d > 0);
-	duration = d;
-	start_time = (float)Time::get()->current_time;
+    uint32 result = SDL_GetTicks();
+    return result;
 }
 
-bool Timer::is_finished()
+Timer* CreateTimer(float dur)
 {
-	bool result = remaining_time() <= 0;
-	return result; 
+    NEW_ZERO(result, Timer);
+	assert(dur >= 0);
+    StartTimer(result, dur);
+    return result;
 }
 
-float Timer::remaining_time()
+void StartTimer(Timer* timer, float new_duration)
 {
-	float result = duration - (float)(Time::get()->current_time - start_time); 
+    if(new_duration > 0)
+    {
+		timer->duration = new_duration;
+    }
+    timer->start_time = CurrentTime();
+}
+
+void DestroyTimer(Timer* timer)
+{
+    delete timer;
+}
+
+bool TimerIsFinished(Timer* timer)
+{
+	bool result = RemainingTime(timer) <= 0;
 	return result;
 }
 
-void Timer::reset()
+float RemainingTime(Timer* timer)
 {
-	start_time = (float)Time::get()->current_time;
+	float result = timer->duration - (float)(CurrentTime() - timer->start_time);
+	return result;
 }
-
-void Timer::reset(bool overwrite_duration, float new_duration = 0)
-{
-	assert (new_duration >= 0);
-	if(overwrite_duration)
-	{
-		duration = new_duration;
-	}
-	start_time = (float)Time::get()->current_time;
-}
-

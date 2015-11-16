@@ -35,11 +35,11 @@ typedef int16_t b6;
 typedef int32_t b32;
 
 
+#define KILOBYTES(kb) (1024ull * kb)
+#define MEGABYTES(mb) (1024ull * KILOBYTES(mb))
+#define GIGABYTES(gb) (1024ull * MEGABYTES(gb))
+
 #define NO_MATRICES 1
-
-// TODO: create a utility header to have things like this;
-#define ArrayCount(array) sizeof(array) / sizeof(array[0])
-
 
 struct Dimension
 {
@@ -97,7 +97,7 @@ struct Rectf
 			float left, top, width, height;
 		};
 		float E[4];
-	};	
+	};
 };
 
 inline Rect rect(int32 x, int32 y, int32 w, int32 h)
@@ -119,3 +119,4 @@ inline Rectf rectf(float x, float y, float w, float h)
 	result.h = h;
 	return result;
 }
+

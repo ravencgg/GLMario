@@ -60,10 +60,10 @@ struct ParticleData
 	uint32 last_active_index;
 
 	~ParticleData() { destroy(); }
-	void destroy() 
-	{ 
-		if (memory) delete[] memory; 
-		memory = nullptr; 
+	void destroy()
+	{
+		if (memory) delete[] memory;
+		memory = nullptr;
 	}
 	void init(int32 count)
 	{
@@ -106,7 +106,7 @@ struct ParticleTransformData
 	uint32 options = ParticleOptions::NONE;
 };
 
-class ParticleSystem : public Entity 
+class ParticleSystem : public Entity
 {
 public:
 	ParticleSystem(SceneManager*);
@@ -144,7 +144,6 @@ private:
 #endif
 
 	Renderer* ren;
-	Time* time;
 
 	GLuint vbo;
 	GLuint vao;

@@ -13,7 +13,7 @@ ParticleSystem::ParticleSystem(SceneManager* sm)
 
 }
 
-ParticleSystem::ParticleSystem(SceneManager* sm, uint32 max, DrawLayer dl) 
+ParticleSystem::ParticleSystem(SceneManager* sm, uint32 max, DrawLayer dl)
     : Entity(sm),
 	  max_particles(max),
       active_particles(0),
@@ -31,7 +31,6 @@ void ParticleSystem::initialize(uint32 max_particles, DrawLayer layer)
 	this->max_particles = max_particles;
 	draw_layer = layer;
 
-	time = Time::get();
 	ren = Renderer::get();
 	particles.init(max_particles);
 	allocate();
@@ -56,14 +55,14 @@ void ParticleSystem::allocate()
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)(6 * sizeof(float)));
 	glBindVertexArray(0);
 }
- 
+
 ParticleSystem::~ParticleSystem()
 {
 	glDeleteBuffers(1, &vbo);
 	glDeleteVertexArrays(1, &vao);
 
 	int i = 0;
-	particles.destroy(); 
+	particles.destroy();
 }
 
 void ParticleSystem::init_random(uint32 count)
@@ -78,7 +77,7 @@ void ParticleSystem::init_random(uint32 count)
 		particles.pvd[i].scale = 1.0f;
 
 		particles.pfd[i].lifetime = random_float(0.5f, 3.0f);
-		particles.pfd[i].start_time = (float) time->current_time;
+		particles.pfd[i].start_time = CurrentTime();
 	}
 }
 
@@ -103,8 +102,8 @@ void ParticleSystem::update(Vec2 new_position)
 	uint64 cycle_start = __rdtsc();
 	static uint64 avg_cycles = 0;
 
-	float current_time = (float)time->current_time;
-	float dt = (float)time->delta_time;
+	float current_time = CurrentTime();
+	float dt = FrameTime();
 	Vec2 frame_gravity = ptd.gravity * dt;
 	uint32 new_particles = (uint32)((float)ped.spawn_rate * dt);
 	new_particles = max(new_particles + burst_particles, (uint32)1);
@@ -120,7 +119,7 @@ void ParticleSystem::update(Vec2 new_position)
 	ptd.last_world_position = ptd.world_position;
 
 	static Input* input = Input::get();
-if(input->is_down(SDLK_l)) // Hold l for SIMD, currently ~ %10 faster than not doing wide 
+if(input->is_down(SDLK_l)) // Hold l for SIMD, currently ~ %10 faster than not doing wide
 {
 // #ifdef UPDATE_PARTICLE_WIDE
 
@@ -130,7 +129,7 @@ if(input->is_down(SDLK_l)) // Hold l for SIMD, currently ~ %10 faster than not d
 	{
 		bool valid_particle = true;
 		uint32 i;
-		for(i = j; i < j + wide_count; ++i)	
+		for(i = j; i < j + wide_count; ++i)
 		{
 			if (!(i < max_particles))
 			{
@@ -384,14 +383,14 @@ void ParticleSystem::update_particle_wide(uint32 s_index, Vec2& frame_gravity, f
 		y_pos = _mm_add_ps(y_pos, delta_py);
 	}
 
-// Resulting colors after the lerp 
+// Resulting colors after the lerp
 	__m128 r_col  = lerp(r_scol, r_ecol, lerp_t);
 	__m128 g_col  = lerp(g_scol, g_ecol, lerp_t);
-	__m128 b_col  = lerp(b_scol, b_ecol, lerp_t); 
-	__m128 a_col  = lerp(a_scol, a_ecol, lerp_t); 
+	__m128 b_col  = lerp(b_scol, b_ecol, lerp_t);
+	__m128 a_col  = lerp(a_scol, a_ecol, lerp_t);
 
 
-// NOTE(chris): This would all be faster in SOA instead of Vec2s 
+// NOTE(chris): This would all be faster in SOA instead of Vec2s
 	uint32 p;
 	for(uint32 i = 0; i < count; ++i)
 	{
@@ -444,7 +443,7 @@ void ParticleSystem::render()
 
 	DrawCall draw_call = {};
 	draw_call.draw_type = DrawType::PARTICLE_ARRAY_BUFFER;
-	draw_call.image = ImageFiles::PARTICLE_IMAGE; 
+	draw_call.image = ImageFiles::PARTICLE_IMAGE;
 	draw_call.shader = Shader_Particle;
 	draw_call.options |= DrawOptions::WHOLE_TEXTURE; //TODO(cgenova): support animated textures
 	draw_call.abd.vao = vao;
@@ -483,7 +482,7 @@ void ParticleSystem::render()
 	glUniform1f(scl_loc, world_scale);
 
 	glDrawArrays(GL_POINTS, 0, active_particles);
-#endif	
+#endif
 }
 
 void ParticleSystem::Tick(float dt)

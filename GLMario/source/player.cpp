@@ -98,7 +98,8 @@ void Player::Tick(float dt)
 
     transform.position = parent_scene->physics->StepCollider(collider, velocity, dt);
 
-    Renderer::get()->DrawLine(transform.position, transform.position + old_velocity, vec4(0, 1, 1, 1));
+    const uint8 line_width = 3;
+    Renderer::get()->DrawLine(transform.position,  transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
 
     std::string postPosOut("Player velocity: " + ::to_string(velocity));
     Console::get()->log_message(postPosOut);

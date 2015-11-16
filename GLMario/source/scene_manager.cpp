@@ -8,7 +8,6 @@ void SceneManager::SetMainCamera(Camera* camera)
 void SceneManager::render_random_particles()
 {
 #if 1
-	static Time* time = Time::get();
 	static ParticleSystem ps1(this, 10000);
 	ps1.draw_layer = DrawLayer_PreTilemap;
 	//ps1.draw_layer = DrawLayer::POST_TILEMAP;
@@ -46,13 +45,13 @@ void SceneManager::render_random_particles()
 		data[1].end_color   = vec4(1, 1, 0, 0);
 	}
 
-	ps2.ped.start_color = vec4((float)sin(time->current_time), (float)cos(time->current_time), 1, 1.f);
-	ps2.ped.end_color = vec4(0.2f, (float)sin(time->current_time), (float)cos(time->current_time), 0.4f);
+	ps2.ped.start_color = vec4((float)sin(CurrentTime()), (float)cos(CurrentTime()), 1, 1.f);
+	ps2.ped.end_color = vec4(0.2f, sin(CurrentTime()), cos(CurrentTime()), 0.4f);
 
-	static Timer timer(1.0f);
-	if (timer.is_finished())
+	static Timer timer = (StartTimer(&timer, 1.0f), timer);
+	if (TimerIsFinished(&timer))
 	{
-		timer.reset();
+		StartTimer(&timer);
 		active_data ^= 1;
 		ps2.ped = data[active_data];
 	}
@@ -71,7 +70,7 @@ SceneManager::SceneManager()
 	 input(Input::get())
 {
 	//tilemap.fill_checkerboard();
-	tilemap.MakeWalledRoom(rect(-50, -20, 50, 50));
+    tilemap.MakeWalledRoom(rect(-50, -20, 50, 50));
     tilemap.MakeWalledRoom(rect(-5, -20, 30, 3));
     tilemap.MakeWalledRoom(rect(-25, -10, 5, 10));
     tilemap.MakeWalledRoom(rect(20, 20, 10, 10));
@@ -79,15 +78,15 @@ SceneManager::SceneManager()
 
     tilemap.AddTile(2, 2);
 //    std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
-    ParticleSystem* ps = new ParticleSystem(this);
-    ps->initialize(1000, DrawLayer_Foreground);
-    ps->ped.spawn_rate = 100;
-    ps->ped.spawn_size = vec2(20.f, 20.f);
-    ps->ped.lifetime = FRange(1.5f, 10.f);
-    //objects.push_back(std::move(ps));
-    objects.Add(ps);
-
-    AddEntity(new Spawner(this));
+//    ParticleSystem* ps = new ParticleSystem(this);
+//    ps->initialize(1000, DrawLayer_Foreground);
+//    ps->ped.spawn_rate = 100;
+//    ps->ped.spawn_size = vec2(20.f, 20.f);
+//    ps->ped.lifetime = FRange(1.5f, 10.f);
+//    //objects.push_back(std::move(ps));
+//    objects.Add(ps);
+//
+//    AddEntity(new Spawner(this));
 }
 
 SceneManager::~SceneManager()
@@ -151,7 +150,6 @@ void SceneManager::update_scene()
 	}
 
 	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.Size())));
-    Time* time = Time::get();
 
 	bool deleting = objects.Size() > 10;
 
@@ -173,8 +171,8 @@ void SceneManager::update_scene()
     for (uint32 index = 0; counter < max; ++counter, ++index)
   	{
         RArrayRef<Entity*> obj = objects.GetRef(index);
-        (*obj)->Tick((float)time->delta_time);
-        
+        (*obj)->Tick(FrameTime());
+
         // NOTE: Can I just do a --i and delete in place?
   		if ((*obj)->delete_this_frame)
   		{
@@ -194,19 +192,19 @@ void SceneManager::update_scene()
 
 	if (input->is_down(SDLK_k))
 	{
-		velocity.y -= (float)time->delta_time;
+		velocity.y -= FrameTime();
 	}
     if (input->is_down(SDLK_i))
     {
-        velocity.y += (float)time->delta_time;
+        velocity.y += FrameTime();
     }
     if (input->is_down(SDLK_j))
     {
-        velocity.x -= (float)time->delta_time;
+        velocity.x -= FrameTime();
     }
 	if (input->is_down(SDLK_l))
 	{
-		velocity.x += (float)time->delta_time;
+		velocity.x += FrameTime();
 	}
 
     float outDistance = 0;
@@ -229,8 +227,10 @@ void SceneManager::update_scene()
 
         float halfSize = 0.1f;
         float size = halfSize * 2.f;
-        renderer->DrawRect(rectf(ci.point.x - halfSize, ci.point.y - halfSize, size, size), DrawLayer_UI, yellow);
-        renderer->DrawRect(rectf(ci.point.x + ci.projection.x - halfSize, ci.point.y + ci.projection.y - halfSize, size, size), DrawLayer_UI, magenta);
+
+        const uint8 line_width = 3;
+        renderer->DrawRect(rectf(ci.point.x - halfSize, ci.point.y - halfSize, size, size), line_width, DrawLayer_UI, yellow);
+        renderer->DrawRect(rectf(ci.point.x + ci.projection.x - halfSize, ci.point.y + ci.projection.y - halfSize, size, size), line_width, DrawLayer_UI, magenta);
         // renderer->DrawRect(rectf(ci.projection.x - halfSize, ci.projection.y - halfSize, size, size), DrawLayer::UI, magenta);
 	}
 	else
@@ -239,7 +239,7 @@ void SceneManager::update_scene()
 		line.push_back(SimpleVertex(start + velocity, green));
 	}
 
-	renderer->DrawLine(line, DrawLayer_UI);
+	//renderer->DrawLine(line, DrawLayer_UI);
 
     //for (auto it = objects.begin(); it != objects.end(); ++it)
     //{
@@ -252,7 +252,7 @@ void SceneManager::update_scene()
         //(*it)->Draw();
     }
 
-    static bool draw_colliders = true;
+    static bool draw_colliders = false;
 
     if(input->on_down(SDLK_b)) draw_colliders = !draw_colliders;
 

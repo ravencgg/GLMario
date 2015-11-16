@@ -9,11 +9,11 @@ Enemy::Enemy(SceneManager* sm)
 
 	draw_call = {};
 	draw_call.draw_type = DrawType::SINGLE_SPRITE;
-	draw_call.image = ImageFiles::MARIO_IMAGE; 
+	draw_call.image = ImageFiles::MARIO_IMAGE;
 	draw_call.shader = Shader_Default;
 	draw_call.options = DrawOptions::TEXTURE_RECT;
     draw_call.sd.tex_rect = { 17, 903, 34, 34 };
-	draw_call.sd.world_size = size; 
+	draw_call.sd.world_size = size;
 	draw_call.sd.world_position = transform.position;
 	draw_call.sd.draw_angle = 0;
 
@@ -21,7 +21,7 @@ Enemy::Enemy(SceneManager* sm)
     col.active = true;
     col.position = transform.position;
     col.rect = { -size.x / 2.f,
-                 -size.y / 2.f, 
+                 -size.y / 2.f,
                  size.x,
                  size.y };
     col.parent = this;
@@ -30,6 +30,7 @@ Enemy::Enemy(SceneManager* sm)
     collider->position = transform.position;
 
 
+    entity_type = EntityType_Enemy;
 	velocity = vec2(-1.0f, 0);
 }
 
@@ -41,7 +42,8 @@ void Enemy::Tick(float dt)
 	testOut.append(::to_string(transform.position));
 	Console::get()->log_message(testOut);
 
-    Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1));
+    const uint8 line_width = 3;
+    Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1), line_width);
     transform.position = parent_scene->physics->StepCollider(collider, velocity, dt);
 }
 
@@ -65,7 +67,7 @@ Spawner::~Spawner() {}
 
 void Spawner::Tick(float dt)
 {
-    float current_time = (float) Time::get()->current_time;
+    float current_time = CurrentTime();
 
     if (current_time - last_spawn_time > time_between_spawns)
     {

@@ -8,6 +8,16 @@
 
 class SceneManager;
 
+enum EntityType
+{
+    EntityType_Player,
+    EntityType_Enemy,
+    EntityType_Tile,
+
+    EntityType_Count
+};
+
+
 struct Transform
 {
     Vec2 position;
@@ -21,6 +31,10 @@ public:
     Transform transform;
     bool delete_this_frame = false;
     SceneManager* parent_scene;
+    EntityType entity_type;
+
+    LIST_LINK(Entity) entity_group;
+
 
     Entity(SceneManager* sm) { parent_scene = sm; }
     virtual ~Entity() {}

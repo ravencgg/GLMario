@@ -8,7 +8,6 @@
     <ClCompile Include="source\renderer.cpp" />
     <ClCompile Include="source\scene_manager.cpp" />
     <ClCompile Include="source\player.cpp" />
-    <ClCompile Include="source\helper.cpp" />
     <ClCompile Include="source\camera.cpp" />
     <ClCompile Include="source\tilemap.cpp" />
     <ClCompile Include="source\console.cpp" />
@@ -16,6 +15,7 @@
     <ClCompile Include="source\time.cpp" />
     <ClCompile Include="source\entity.cpp" />
     <ClCompile Include="source\physics.cpp" />
+    <ClCompile Include="source\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\mathops.h" />
@@ -26,194 +26,13 @@
     <ClInclude Include="source\player.h" />
     <ClInclude Include="source\scene_manager.h" />
     <ClInclude Include="source\camera.h" />
-    <ClInclude Include="source\helper.h" />
     <ClInclude Include="source\tilemap.h" />
-    <ClInclude Include="Dependencies\glm\common.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\exponential.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\ext.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\fwd.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\geometric.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\glm.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\integer.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat2x2.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat2x3.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat2x4.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat3x2.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat3x3.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat3x4.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat4x2.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat4x3.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\mat4x4.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\matrix.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\packing.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\trigonometric.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\vec2.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\vec3.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\vec4.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\vector_relational.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\bitfield.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\constants.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\epsilon.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\integer.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\matrix_access.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\matrix_integer.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\matrix_inverse.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\matrix_transform.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\noise.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\packing.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\quaternion.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\random.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\reciprocal.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\round.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\type_precision.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\type_ptr.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\ulp.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
-    <ClInclude Include="Dependencies\glm\gtc\vec1.hpp">
-      <Filter>GLM</Filter>
-    </ClInclude>
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\particles.h" />
     <ClInclude Include="source\time.h" />
     <ClInclude Include="source\entity.h" />
     <ClInclude Include="source\physics.h" />
     <ClInclude Include="source\containers.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="GLM">
-      <UniqueIdentifier>{bfc22fdc-067a-4e13-85ab-4d71a8f35ffd}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Dependencies\glm\gtc\bitfield.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\constants.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\epsilon.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\integer.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\matrix_access.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\matrix_inverse.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\matrix_transform.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\noise.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\packing.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\quaternion.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\random.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\reciprocal.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\round.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\type_precision.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\type_ptr.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\ulp.inl">
-      <Filter>GLM</Filter>
-    </None>
-    <None Include="Dependencies\glm\gtc\vec1.inl">
-      <Filter>GLM</Filter>
-    </None>
+    <ClInclude Include="source\utility.h" />
   </ItemGroup>
 </Project>

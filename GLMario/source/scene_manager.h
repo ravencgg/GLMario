@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <memory>
 
+
 class SceneManager
 {
 public:
@@ -21,6 +22,8 @@ public:
     Input* input;
     Camera* main_camera;
     Physics* physics;
+
+    LIST_DECLARE(Entity, entity_group) entity_groups[EntityType_Count];
 
     Tilemap tilemap;
     // Use resize() not clear() to "empty" vectors
