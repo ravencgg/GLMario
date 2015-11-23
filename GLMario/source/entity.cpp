@@ -38,9 +38,7 @@ void Enemy::Tick(float dt)
 {
 	velocity.y = -1.f;
 
-	std::string testOut("Enemy position: ");
-	testOut.append(::to_string(transform.position));
-	Console::get()->log_message(testOut);
+	Console::get()->LogMessage("Enemy position:  (%.2f, %.2f)", transform.position.x, transform.position.y);
 
     const uint8 line_width = 3;
     Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1), line_width);

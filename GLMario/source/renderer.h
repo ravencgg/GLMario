@@ -39,7 +39,7 @@ namespace LineDrawOptions
         NONE          = 0x0,
         LOOPED        = 0x1,
         SCREEN_SPACE  = 0x2, // Uses resolution coordinates instead of world coords
-        CUSTOM_SIZE   = 0x4, // top byte of the uint32 holding this data is the size in pixels of the line;
+        CUSTOM_SIZE   = 0x4, // top byte of the uint32 holding these flags data is the size in pixels of the line;
         SMOOTH        = 0x8
     };
 }
@@ -56,6 +56,10 @@ struct SpriteVertex
     Vec2 uv;
 };
 
+struct TextVertex
+{
+    float x, y, tx, ty;
+};
 
 struct Vertex
 {
@@ -145,10 +149,13 @@ struct TextDrawResult
 	Point2 bottom_right;
 };
 
+// TODO: break this up into logical components
+//  -> Text drawing
+//  -> Particles?
 class Renderer
 {
 public:
-	Renderer(Window* w, Vec4 clear_color = vec4(0, 0, 0, 1));
+	Renderer(Window* w, Vec4 clear_color = vec4(0.1f, 0.1f, 0.1f, 1));
 	virtual ~Renderer() {};
 
 	static void create_instance(Window*);
@@ -173,8 +180,10 @@ public:
 	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }
 	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
 
-	void draw_character(char, int32, int32);
-	TextDrawResult draw_string(std::string, uint32 x, uint32 y);
+private:
+	void DrawCharacter(TextVertex*, char, int32, int32, Dimension);
+public:
+	TextDrawResult DrawString(char* string, uint32 string_size, uint32 start_x, uint32 start_y);
 
 	struct TextData
 	{
@@ -199,30 +208,20 @@ public:
 	void draw_call(DrawCall);
     void DrawLine(Vec2, Vec2, Vec4, uint8 line_width, DrawLayer dl = DrawLayer_UI, uint32 line_draw_options = 0);
     void DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
-	void DrawRect(Rectf&, uint8 line_width = 4, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1));
+	void DrawRect(Rectf&, uint8 line_width = 4, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1), uint32 line_draw_options = 0);
 
 private:
-	struct DrawObject
-	{
-		GLuint vao = 0;
-		GLuint vbo = 0;
-		GLuint ebo = 0;
-		uint8* memory = nullptr;
-		uint32 memory_size = 0;
-		Vec3* vert_positions = nullptr;
-		Vec2* tex_coords = nullptr;
-
-		~DrawObject() { if(memory) delete[] memory; }
-	};
 
 	Dimension frame_resolution;
 
 	TextData text_data;
 
+    TextVertex* text_array;
+    size_t text_array_size;
+
     uint32 line_buffer_loc = 0;
     std::vector<LineBufferData> line_buffer;
 	Array<DrawCall> draw_buffer[DrawLayer_Count];
-	DrawObject draw_object;
 
 	Camera* main_camera;
 	Window* draw_window;

@@ -1,9 +1,9 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS 1
 #include "types.h"
 #include <string>
 #include "renderer.h"
 #include <vector>
-using std::string;
 
 #define PROFILE_HISTORY_SIZE 100
 
@@ -16,10 +16,13 @@ enum ProfileSectionName : uint32
     Profile_PhysicsStepCollider,
     Profile_PhysicsInnerLoop,
     Profile_RenderFinish,
-    Profile_Console,
+    Profile_ParticleUpdate,
     Profile_Frame,
+    Profile_Console,
 
     // NOTE: don't add any more her without adding a new color to the profile_colors array
+    // TODO: Fix that note
+    // TODO: Output color table at runtime
 
     Profile_Count,
 };
@@ -47,17 +50,19 @@ void ProfileEndFrame(Renderer* ren, uint32 desired_frame_time);
 void ProfileBeginFrame();
 std::string GetProfileSectionName(ProfileSectionName name);
 
-// Immediate mode console/ per frame rendering
+
+
+// Immediate mode text output / per frame rendering
 class Console
 {
 public:
-	static const uint32 max_stored_lines = 250;
+    char* output_string;
+    uint32 used_chars;
+    uint32 array_size;
 
-	string lines[max_stored_lines];
-	uint32 count;
-	Vec2 screen_start = vec2( 0.01f, 0.975f );
+	Vec2 screen_start = vec2( 0.01f, 0.9f);
 
-	void log_message(string input);
+	void LogMessage(char* format, ...);
 	void draw();
 
 	static Console* get() { if (!s_instance) s_instance = new Console(); return s_instance; }

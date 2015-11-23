@@ -88,11 +88,9 @@ void Player::Tick(float dt)
         delete_this_frame = true;
     }
 
-	std::string conOut("Player collider.data->velocity: " + ::to_string(velocity));
-	Console::get()->log_message(conOut);
+	Console::get()->LogMessage("Player collider.data->velocity: (%.2f, %.2f)", velocity.x, velocity.y);
 
-    std::string posOut("Player position: " + ::to_string(transform.position));
-    Console::get()->log_message(posOut);
+    Console::get()->LogMessage("Player position: (%.2f, %.2f)", transform.position.x, transform.position.y);
 
     Vec2 old_velocity = velocity;
 
@@ -101,8 +99,7 @@ void Player::Tick(float dt)
     const uint8 line_width = 3;
     Renderer::get()->DrawLine(transform.position,  transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
 
-    std::string postPosOut("Player velocity: " + ::to_string(velocity));
-    Console::get()->log_message(postPosOut);
+    Console::get()->LogMessage("Player collider.data->velocity: (%.2f, %.2f)", velocity.x, velocity.y);
 
     ps.update(this->transform.position);
 	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));

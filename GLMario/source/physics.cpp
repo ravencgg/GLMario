@@ -359,7 +359,7 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
                   { mSum.x + mSum.w, mSum.y + mSum.h },
                   { mSum.x + mSum.w, mSum.y} };
 
-	assert(!Contains(mSum, o));
+	//assert(!Contains(mSum, o));
 
 	mRays[0] = make_ray(p[0], p[1]);
 	mRays[1] = make_ray(p[1], p[2]);

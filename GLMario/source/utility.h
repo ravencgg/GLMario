@@ -1,11 +1,10 @@
+#pragma once
+
 /**********************************************
  *
  * Cross platform utility functions
  *
  ***************/
-
-
-#pragma once
 
 #include "types.h"
 
@@ -14,19 +13,47 @@
 
 /**********************************************
  *
- * File functions
+ * File
  *
  ***************/
 
 char* load_text_file(char*);
 
 
+/**********************************************
+ *
+ * String
+ *
+ ***************/
+
+
+#ifdef _MSC_VER
+//#define vsnprintf _vsnprintf
+#define snprintf  _snprintf
+#endif
 
 /**********************************************
  *
- * Memory functions
+ * Memory
  *
  ***************/
+
+template <typename T>
+T* ExpandArray(T* array, uint32 start_count, uint32 new_count)
+{
+    T* result = nullptr;
+    if(array)
+    {
+        result = new T[new_count];
+        memcpy(result, array, sizeof(T) * start_count);
+        delete[] array;
+    }
+
+    assert(result);
+    return result;
+}
+
+
 
 #define ArrayCount(array) sizeof(array) / sizeof(array[0])
 
@@ -52,4 +79,16 @@ void FreeMemoryArena(MemoryArena*);
 #define PushStruct(type, arena, clear) (type*) PushSize(arena, sizeof(type), clear)
 
 uint8* PushSize(MemoryArena* arena, bool clear);
+
+
+/**********************************************
+ *
+ * High Performance Clock
+ *
+ ***************/
+
+
+uint64 GetCycleCount();
+
+uint64 GetCyclesPerSecond();
 

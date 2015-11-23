@@ -73,3 +73,27 @@ uint8* PushSize(MemoryArena* arena, size_t size, bool clear)
     return nullptr;
 }
 
+
+/**********************************************
+ *
+ * Clock Functions
+ *
+ ***************/
+
+uint64 GetCycleCount()
+{
+    LARGE_INTEGER result;
+    QueryPerformanceCounter(&result);
+    return (uint64)result.QuadPart;
+}
+
+uint64 GetCyclesPerSecond()
+{
+    LARGE_INTEGER result;
+    QueryPerformanceFrequency(&result);
+    return (uint64)result.QuadPart;
+}
+
+
+
+

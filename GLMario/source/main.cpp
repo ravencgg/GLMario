@@ -10,7 +10,9 @@
 
 #include "containers.h"
 
+// Should be like 16.66666
 #define MS_PER_FRAME 16
+#define TARGET_FPS (1000 / MS_PER_FRAME)
 
 int main(int argc, char* argv[])
 {
@@ -38,7 +40,6 @@ int main(int argc, char* argv[])
 
 	while(running)
 	{
-
         ProfileBeginFrame();
 
         ProfileBeginSection(Profile_Frame);
@@ -77,10 +78,8 @@ int main(int argc, char* argv[])
 
         ProfileEndSection(Profile_Input);
 
-        std::string mouse_world_pos("Mouse World Position: " + ::to_string(input->mouse_world_position()));
-        Console::get()->log_message(mouse_world_pos);
-
-
+        Vec2 mouse_pos = input->mouse_world_position();
+        Console::get()->LogMessage("Mouse World Position: (%.2f, %.2f)",  mouse_pos.x, mouse_pos.y);
 
 #endif
 		if(input->on_down(SDLK_ESCAPE))
@@ -113,8 +112,8 @@ int main(int argc, char* argv[])
 			frame_count = 0;
 		}
 		frame_count++;
-		Console::get()->log_message(std::string("FPS: \t\t" + std::to_string(fps)));
-		Console::get()->log_message(std::string("Frames:\t" + std::to_string(FrameCount())));
+		Console::get()->LogMessage("FPS: \t\t%d Frames: \t%d", fps, FrameCount());
+		//Console::get()->log_message("Frames: \t%d",  + std::to_string(FrameCount()));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
@@ -144,21 +143,24 @@ int main(int argc, char* argv[])
         renderer->DrawLine(v, 3, DrawLayer_UI, LineDrawOptions::SMOOTH);
 		//renderer->render_draw_buffer();
 
-
+        for(int i = 0; i < 10; ++i)
+        {
+            Console::get()->LogMessage("this is a test of the console output performance");
+        }
 
         ProfileBeginSection(Profile_RenderFinish);
 		renderer->Flush();
         ProfileEndSection(Profile_RenderFinish);
 
-        ProfileBeginSection(Profile_Console);
+        ProfileEndSection(Profile_Frame);
+        ProfileEndFrame(renderer, TARGET_FPS);
+
+        // TODO: what are the values for the renderer profiling if this is outputting already?
 		Console::get()->draw();
-        ProfileEndSection(Profile_Console);
 
         renderer->SwapBuffer();
 		// End rendering
 
-        ProfileEndSection(Profile_Frame);
-        ProfileEndFrame(renderer, MS_PER_FRAME);
 
 		// TODO(cgenova): High granularity sleep function!
 		uint32 delay_time = RemainingTicksInFrame();

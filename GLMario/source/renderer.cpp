@@ -42,8 +42,11 @@ Rect get_sprite_rect(SpriteRect r)
 }
 
 Renderer::Renderer(Window* w, Vec4 clear_color)
-: draw_window(w)
+: draw_window(w),
+  text_array_size(1024)
 {
+    text_array = new TextVertex[text_array_size];
+
 	glewExperimental = GL_TRUE;
 	GLenum glew_status = glewInit();
 	if(glew_status)
@@ -217,34 +220,19 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 	shaders[(uint32)location].shader_handle = program;
 }
 
-// void Renderer::draw_sprite(Sprite* sprite, Vec2 position)
-// {
-// 	DrawCall draw_info;
-// 	draw_info.image = sprite->image_file;
-// 	draw_info.shader = sprite->shader_type;
-// 	draw_info.sd.tex_rect = sprite->tex_rect;
-// 	draw_info.sd.world_size = sprite->world_size;
-// 	draw_info.sd.world_position = position;
-// 	draw_info.sd.draw_angle = sprite->angle;
-// 	draw_info.sd.color_mod = sprite->color_mod;
-// 	// draw_info.camera_position = draw_position;
-// 	// draw_info.camera_size = screen_dim;
-// 	draw_buffer[(uint32)sprite->layer].add(draw_info);
-// }
-
-void Renderer::draw_character(char c, int32 x, int32 y)
+// TODO: create an array buffer struct that can abstract the creation of
+// VAOs/VBOs away from code that doesn't care about while still letting that code
+// store them
+//
+// This will allow strings to be drawn with a ARRAY_BUFFER style instead of drawing
+// outside of the control of the renderer
+void Renderer::DrawCharacter(TextVertex* start_vertex, char c, int32 x, int32 y, Dimension screen_size)
 {
-    static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
-    static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
-
-    uint32 tshader = Shader_Text;
-
     int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
     int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
 
+    // NOTE: this assumes valid characters are being rendered
     uint32 ascii_position = c - ' ';
-
-    Dimension screen_size = this->draw_window->get_resolution();
 
     Rectf rect = {};
     rect.left = (float)(x / (float)screen_size.width) * 2.0f - 1.0f;
@@ -263,106 +251,114 @@ void Renderer::draw_character(char c, int32 x, int32 y)
     float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
     float top = (float)(th - char_pos.y) / th;
 
-    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
-    glBindVertexArray(textVAO);
 
-    struct
-    {
-        float x, y, tx, ty;
-
-    } vertices[4] = {
-
-        { rect.left, rect.top, left, bot },
-        { rect.left, rect.top + rect.height, left, top },
-        { rect.left + rect.width, rect.top, right, bot },
-        { rect.left + rect.width, rect.top + rect.height, right, top },
-    };
-
-	glUseProgram(shaders[Shader_Text].shader_handle);
-	{ // TODO(cgenova): convert to function and pull this and the one in draw_call out
-		GLint active_tex = 0;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
-
-		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
-		{
-			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
-		}
-	}
-
-    glEnableVertexArrayAttrib(textVAO, 0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)0);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    *start_vertex++ =  { rect.left, rect.top, left, bot };
+    *start_vertex++ =  { rect.left, rect.top + rect.height, left, top };
+    *start_vertex++ =  { rect.left + rect.width, rect.top, right, bot };
+    *start_vertex++ =  { rect.left, rect.top + rect.height, left, top };
+    *start_vertex++ =  { rect.left + rect.width, rect.top, right, bot };
+    *start_vertex++ =  { rect.left + rect.width, rect.top + rect.height, right, top };
 }
 
-// TODO(cgenova): text drawing styles;
-
 /*  Text drawing TODO(cgenova):
-		* precalculate MVP matrix in draw_string as much as possible
-		* have console move down for each line
 		* Character width is not correct
 		* Character height is probably not correct
 		* figure out the border color issue
+        *      -> color not set in shader, though it wasn't being used, so it still doesn't make sense
+        *
+        * No more immediate mode! Make this use the ARRAY_BUFFER path
+        *      -> needs dynamic vao/vbo for this to happen
 		*/
 
-TextDrawResult Renderer::draw_string(std::string s, uint32 start_x, uint32 start_y)
+TextDrawResult Renderer::DrawString(char* string, uint32 string_size, uint32 start_x, uint32 start_y)
 {
+//    if(1) return { };
+
+    // TODO: more sane way of storing these
+    static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
+    static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
+
+    const uint32 verts_per_char = 6;
+    if(text_array_size < string_size * verts_per_char)
+    {
+        uint32 new_size = string_size * verts_per_char;
+        text_array = ExpandArray<TextVertex>(text_array, text_array_size, new_size);
+        text_array_size = new_size;
+    }
+
+    uint32 array_pos = 0;
+
 	uint32 x = start_x;
 	uint32 y = start_y;
 	uint32 ld = 0;
-	uint32 y_spacing = 10;
 	const uint32 tab_size = 4;
 	int32 char_height = text_data.char_size.height;
+	uint32 y_spacing = 10;
 
-	auto new_line = [&y, &x, y_spacing, char_height, start_x](){
-		y -= (char_height + y_spacing);
-		x = start_x;
-	};
 
-	glUseProgram(shaders[Shader_Text].shader_handle);
-	{ // TODO(cgenova): convert to function and pull this and the one in draw_call out
-		GLint active_tex = 0;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
+#define NEW_LINE()                      \
+		y -= (char_height + y_spacing); \
+		x = start_x
 
-		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
-		{
-			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
-		}
-	}
+    Dimension screen_size = this->draw_window->get_resolution();
 
-	glBindBuffer(GL_ARRAY_BUFFER, draw_object.vbo);
-	glBindVertexArray(draw_object.vao);
-
-	float bo_scale = 0.9f;
-
-	for (uint32 i = 0; i < s.length(); ++i)
+	for (uint32 i = 0; i < string_size; ++i)
 	{
-		if(s[i] == '\n')
+		if(string[i] == '\n')
 		{
-			new_line();
+			NEW_LINE();
 			continue;
 		}
-		else if (s[i] == '\t')
+		else if (string[i] == '\t')
 		{
 			x += tab_size * text_data.char_size.width;
+            continue;
 		}
+
 		if (x + text_data.char_size.width > (uint32)frame_resolution.width)
 		{
-			x = start_x;
-			new_line();
+            NEW_LINE();
 			ld++;
 		}
-		draw_character(s[i], x, y);
-		x += (uint32)(text_data.char_size.width * 1.5f);
+
+		DrawCharacter(text_array + array_pos, string[i], x, y, screen_size);
+        array_pos += 6;
+		x += (uint32)(text_data.char_size.width * 1.5f); // @cleanup why is this size not right pre-multiplication?
 	}
 
-	new_line();
+	NEW_LINE();
 	TextDrawResult result;
 	result.bottom_right = { x, y };
 	result.lines_drawn = ld;
 
+	glUseProgram(shaders[Shader_Text].shader_handle);
+
+    Vec4 color = vec4(0, 1.0f, 0, 1.0f);
+
+    GLint color_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "color_modifier");
+    glUniform4f(color_loc, color.x, color.y, color.z, color.w);
+
+	{
+        // TODO(cgenova): convert to function and pull this and the one in draw_call out
+		GLint active_tex = 0;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
+		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
+		{
+			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
+		}
+	}
+
+    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+    glBindVertexArray(textVAO);
+
+    glEnableVertexArrayAttrib(textVAO, 0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+	glBufferData(GL_ARRAY_BUFFER, array_pos * sizeof(text_array[0]), text_array, GL_STREAM_DRAW);
+
+    glDrawArrays(GL_TRIANGLES, 0, array_pos);
+
 	return result;
+#undef NEW_LINE
 }
 
 void Renderer::render_draw_buffer()
@@ -630,7 +626,7 @@ void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, D
     push_draw_call(dc, dl);
 }
 
-void Renderer::DrawRect(Rectf& rect, uint8 line_width, DrawLayer layer, Vec4 color)
+void Renderer::DrawRect(Rectf& rect, uint8 line_width, DrawLayer layer, Vec4 color, uint32 line_draw_options)
 {
     std::vector<SimpleVertex> verts;
     verts.reserve(4);
@@ -649,7 +645,7 @@ void Renderer::DrawRect(Rectf& rect, uint8 line_width, DrawLayer layer, Vec4 col
 	v.position = vec2(rect.left, rect.top + rect.height);
 	verts.push_back(v);
 
-	DrawLine(verts, line_width, layer, LineDrawOptions::LOOPED);
+	DrawLine(verts, line_width, layer, LineDrawOptions::LOOPED | line_draw_options);
 }
 
 void Renderer::draw_animation(Animation* animation, Transform* t, float time)

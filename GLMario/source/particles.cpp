@@ -99,7 +99,9 @@ void ParticleSystem::create_particle_burst(uint32 num_particles)
 
 void ParticleSystem::update(Vec2 new_position)
 {
-	uint64 cycle_start = __rdtsc();
+    ProfileBeginSection(Profile_ParticleUpdate);
+
+	uint64 cycle_start = GetCycleCount();
 	static uint64 avg_cycles = 0;
 
 	float current_time = CurrentTime();
@@ -119,147 +121,148 @@ void ParticleSystem::update(Vec2 new_position)
 	ptd.last_world_position = ptd.world_position;
 
 	static Input* input = Input::get();
-if(input->is_down(SDLK_l)) // Hold l for SIMD, currently ~ %10 faster than not doing wide
-{
-// #ifdef UPDATE_PARTICLE_WIDE
+    if(!input->is_down(SDLK_l)) // Hold l to disable SIMD
+                                // SIMD is currently ~2x as fast as normal path
+    {
+        // #ifdef UPDATE_PARTICLE_WIDE
 
-	const int wide_count = 4;
-	uint32 j;
-	for(j = 0; j < max_particles;)
-	{
-		bool valid_particle = true;
-		uint32 i;
-		for(i = j; i < j + wide_count; ++i)
-		{
-			if (!(i < max_particles))
-			{
-				valid_particle = false;
-				break;
-			}
-			ParticleVertexData& pvd = particles.pvd[i];
-			ParticleFrameData& pfd = particles.pfd[i];
+        const int wide_count = 4;
+        uint32 j;
+        for(j = 0; j < max_particles;)
+        {
+            bool valid_particle = true;
+            uint32 i;
+            for(i = j; i < j + wide_count; ++i)
+            {
+                if (!(i < max_particles))
+                {
+                    valid_particle = false;
+                    break;
+                }
+                ParticleVertexData& pvd = particles.pvd[i];
+                ParticleFrameData& pfd = particles.pfd[i];
 
-			if(pfd.is_active(current_time))
-			{
-				// update_particle(pvd, pfd, frame_gravity, dt, current_time, delta_p);
-			}
-			else // Create particle in this new slot
-			{
-				if(new_particles > 0) // If there is a new particle to create this frame, put it here;
-				{
-					--new_particles;
-					create_particle(pvd, pfd, current_time);
-					particles.last_active_index = max(particles.last_active_index, i); // Inconsistent without an update call on new particles every time
-				}
-				else // otherwise pack the particle data tightly
-				{
-					if (i >= particles.last_active_index)
-					{
-						valid_particle = false;
-						break;
-					}
+                if(pfd.is_active(current_time))
+                {
+                    // update_particle(pvd, pfd, frame_gravity, dt, current_time, delta_p);
+                }
+                else // Create particle in this new slot
+                {
+                    if(new_particles > 0) // If there is a new particle to create this frame, put it here;
+                    {
+                        --new_particles;
+                        create_particle(pvd, pfd, current_time);
+                        particles.last_active_index = max(particles.last_active_index, i); // Inconsistent without an update call on new particles every time
+                    }
+                    else // otherwise pack the particle data tightly
+                    {
+                        if (i >= particles.last_active_index)
+                        {
+                            valid_particle = false;
+                            break;
+                        }
 
-					while (!particles.pfd[particles.last_active_index].is_active(current_time) && particles.last_active_index > i)
-					{
-						--particles.last_active_index;
-					}
+                        while (!particles.pfd[particles.last_active_index].is_active(current_time) && particles.last_active_index > i)
+                        {
+                            --particles.last_active_index;
+                        }
 
-					if (particles.last_active_index <= i)
-					{
-						valid_particle = false; // If this is false then all particles have been updated, no need to copy, continue on non-wide path
-					}
-					else
-					{
-						assert(particles.pfd[particles.last_active_index].is_active(current_time));
-						pvd = particles.pvd[particles.last_active_index];
-						pfd = particles.pfd[particles.last_active_index];
-						particles.pfd[particles.last_active_index].lifetime = 0;
-						--particles.last_active_index;
-					}
-				}
-			}
+                        if (particles.last_active_index <= i)
+                        {
+                            valid_particle = false; // If this is false then all particles have been updated, no need to copy, continue on non-wide path
+                        }
+                        else
+                        {
+                            assert(particles.pfd[particles.last_active_index].is_active(current_time));
+                            pvd = particles.pvd[particles.last_active_index];
+                            pfd = particles.pfd[particles.last_active_index];
+                            particles.pfd[particles.last_active_index].lifetime = 0;
+                            --particles.last_active_index;
+                        }
+                    }
+                }
 
-			if(!valid_particle) break;
-		}
-		if (!valid_particle) break;
-		update_particle_wide(j, frame_gravity, dt, current_time, delta_p, wide_count);
-		j = i;
-	}
+                if(!valid_particle) break;
+            }
+            if (!valid_particle) break;
+            update_particle_wide(j, frame_gravity, dt, current_time, delta_p, wide_count);
+            j = i;
+        }
 
-	// TODO(cgenova): update remaining particles here.
-	assert((int32)particles.last_active_index - (int32)j < 4);
-	while(j <= particles.last_active_index)
-	{
-		bool valid_particle = true;
-		if(!particles.pfd[j].is_active(current_time))
-		{
-			if (j >= particles.last_active_index)
-						break;
-			while (!particles.pfd[particles.last_active_index].is_active(current_time) && particles.last_active_index > j)
-			{
-				--particles.last_active_index;
-			}
-			if (particles.last_active_index <= j) break;
-			assert(particles.pfd[particles.last_active_index].is_active(current_time));
-			particles.pvd[j] = particles.pvd[particles.last_active_index];
-			particles.pfd[j] = particles.pfd[particles.last_active_index];
-			particles.pfd[particles.last_active_index].lifetime = 0;
-			update_particle(particles.pvd[j], particles.pfd[j], frame_gravity, dt, current_time, delta_p);
-			--particles.last_active_index;
-		}
-		else
-		{
-			update_particle(particles.pvd[j], particles.pfd[j], frame_gravity, dt, current_time, delta_p);
-		}
-		j++;
-	}
-	active_particles = j;
-}
-else
-// #else
-{
-	uint32 i;
-	for(i = 0; i < max_particles; ++i)
-	{
-		ParticleVertexData& pvd = particles.pvd[i];
-		ParticleFrameData& pfd = particles.pfd[i];
+        // TODO(cgenova): update remaining particles here.
+        assert((int32)particles.last_active_index - (int32)j < 4);
+        while(j <= particles.last_active_index)
+        {
+            bool valid_particle = true;
+            if(!particles.pfd[j].is_active(current_time))
+            {
+                if (j >= particles.last_active_index)
+                    break;
+                while (!particles.pfd[particles.last_active_index].is_active(current_time) && particles.last_active_index > j)
+                {
+                    --particles.last_active_index;
+                }
+                if (particles.last_active_index <= j) break;
+                assert(particles.pfd[particles.last_active_index].is_active(current_time));
+                particles.pvd[j] = particles.pvd[particles.last_active_index];
+                particles.pfd[j] = particles.pfd[particles.last_active_index];
+                particles.pfd[particles.last_active_index].lifetime = 0;
+                update_particle(particles.pvd[j], particles.pfd[j], frame_gravity, dt, current_time, delta_p);
+                --particles.last_active_index;
+            }
+            else
+            {
+                update_particle(particles.pvd[j], particles.pfd[j], frame_gravity, dt, current_time, delta_p);
+            }
+            j++;
+        }
+        active_particles = j;
+    }
+    else
+        // #else
+    {
+        uint32 i;
+        for(i = 0; i < max_particles; ++i)
+        {
+            ParticleVertexData& pvd = particles.pvd[i];
+            ParticleFrameData& pfd = particles.pfd[i];
 
-		if(pfd.is_active(current_time))
-		{
-			update_particle(pvd, pfd, frame_gravity, dt, current_time, delta_p);
-		}
-		else // Create particle in this new slot
-		{
-			if(new_particles > 0) // If there is a new particle to create this frame, put it here;
-			{
-				--new_particles;
-				create_particle(pvd, pfd, current_time);
-				particles.last_active_index = max(particles.last_active_index, i);
-			}
-			else // otherwise pack the particle data tightly
-			{
-				if (i >= particles.last_active_index)
-					break;
-				while (!particles.pfd[particles.last_active_index].is_active(current_time) && particles.last_active_index > i)
-				{
-					--particles.last_active_index;
-				}
-				if (particles.last_active_index <= i) break;
-				assert(particles.pfd[particles.last_active_index].is_active(current_time));
-				pvd = particles.pvd[particles.last_active_index];
-				pfd = particles.pfd[particles.last_active_index];
-				particles.pfd[particles.last_active_index].lifetime = 0;
-				update_particle(pvd, pfd, frame_gravity, dt, current_time, delta_p);
-				--particles.last_active_index;
-			}
-		}
-	}
-	active_particles = i;
-// #endif
-}
+            if(pfd.is_active(current_time))
+            {
+                update_particle(pvd, pfd, frame_gravity, dt, current_time, delta_p);
+            }
+            else // Create particle in this new slot
+            {
+                if(new_particles > 0) // If there is a new particle to create this frame, put it here;
+                {
+                    --new_particles;
+                    create_particle(pvd, pfd, current_time);
+                    particles.last_active_index = max(particles.last_active_index, i);
+                }
+                else // otherwise pack the particle data tightly
+                {
+                    if (i >= particles.last_active_index)
+                        break;
+                    while (!particles.pfd[particles.last_active_index].is_active(current_time) && particles.last_active_index > i)
+                    {
+                        --particles.last_active_index;
+                    }
+                    if (particles.last_active_index <= i) break;
+                    assert(particles.pfd[particles.last_active_index].is_active(current_time));
+                    pvd = particles.pvd[particles.last_active_index];
+                    pfd = particles.pfd[particles.last_active_index];
+                    particles.pfd[particles.last_active_index].lifetime = 0;
+                    update_particle(pvd, pfd, frame_gravity, dt, current_time, delta_p);
+                    --particles.last_active_index;
+                }
+            }
+        }
+        active_particles = i;
+        // #endif
+    }
 
 #if 0
-	uint64 cycle_end = __rdtsc();
+	uint64 cycle_end = GetCycleCount();
 	uint64 cycle_count = cycle_end - cycle_start;
 	avg_cycles += cycle_count;
 	avg_cycles = avg_cycles >> 1;
@@ -268,6 +271,8 @@ else
 	std::string message("Particle count: " + std::to_string(active_particles));
 	Console::get()->log_message(message);
 #endif
+
+    ProfileEndSection(Profile_ParticleUpdate);
 }
 
 inline void ParticleSystem::update_particle(ParticleVertexData& pvd, ParticleFrameData& pfd, Vec2& frame_gravity, float dt, float current_time, Vec2& delta_p)

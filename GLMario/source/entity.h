@@ -17,7 +17,6 @@ enum EntityType
     EntityType_Count
 };
 
-
 struct Transform
 {
     Vec2 position;

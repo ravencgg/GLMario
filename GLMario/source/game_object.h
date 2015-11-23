@@ -13,7 +13,7 @@ struct Transform
 
 class GameObject
 {
-	
+
 public:
 	Transform transform;
 	bool delete_this_frame = false;

@@ -70,11 +70,11 @@ SceneManager::SceneManager()
 	 input(Input::get())
 {
 	//tilemap.fill_checkerboard();
-    tilemap.MakeWalledRoom(rect(-50, -20, 50, 50));
-    tilemap.MakeWalledRoom(rect(-5, -20, 30, 3));
-    tilemap.MakeWalledRoom(rect(-25, -10, 5, 10));
-    tilemap.MakeWalledRoom(rect(20, 20, 10, 10));
-    tilemap.MakeWalledRoom(rect(-5, -2, 10, 2));
+//    tilemap.MakeWalledRoom(rect(-50, -20, 50, 50));
+//    tilemap.MakeWalledRoom(rect(-5, -20, 30, 3));
+//    tilemap.MakeWalledRoom(rect(-25, -10, 5, 10));
+//    tilemap.MakeWalledRoom(rect(20, 20, 10, 10));
+//    tilemap.MakeWalledRoom(rect(-5, -2, 10, 2));
 
     tilemap.AddTile(2, 2);
 //    std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);
@@ -113,9 +113,7 @@ void SceneManager::update_scene()
 {
 	tilemap.draw();
 
-    std::string tileString("Active Tiles: ");
-    tileString.append(std::to_string(tilemap.tiles.size()));
-    Console::get()->log_message(tileString);
+    Console::get()->LogMessage("Active Tiles: %d", tilemap.tiles.size());
 
 	render_random_particles();
 
@@ -149,7 +147,7 @@ void SceneManager::update_scene()
 		}
 	}
 
-	Console::get()->log_message(std::string("Num objects: " + std::to_string(objects.Size())));
+	Console::get()->LogMessage("Num objects: %d", objects.Size());
 
 	bool deleting = objects.Size() > 10;
 
@@ -219,7 +217,7 @@ void SceneManager::update_scene()
     CollisionInfo ci = {};
 	if (physics->RaycastStatics(start, velocity, ci, false))
 	{
-		Console::get()->log_message(std::string("Raycast hit at distance: ") + std::to_string(ci.distance));
+		Console::get()->LogMessage("Raycast hit at distance: %.2f", ci.distance);
 		line.push_back(SimpleVertex(start, red));
 		Vec2 end = start + (Normalize(velocity) * ci.distance);
 		line.push_back(SimpleVertex(end, red));
