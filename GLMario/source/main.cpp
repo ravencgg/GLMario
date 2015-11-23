@@ -8,6 +8,8 @@
 #include "scene_manager.h"
 #include "time.h"
 
+#include <inttypes.h>
+
 #include "containers.h"
 
 // Should be like 16.66666
@@ -110,15 +112,21 @@ int main(int argc, char* argv[])
 			last_fps_time = CurrentTime();
 			fps = frame_count;
 			frame_count = 0;
+            printf("FPS: %d\n", fps);
 		}
 		frame_count++;
-		Console::get()->LogMessage("FPS: \t\t%d Frames: \t%d", fps, FrameCount());
+		Console::get()->LogMessage("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount());
+
+
 		//Console::get()->log_message("Frames: \t%d",  + std::to_string(FrameCount()));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
 		main_camera.Tick(CurrentTime());
+
+        ProfileBeginSection(Profile_SceneUpdate);
 		scene.update_scene();
+        ProfileEndSection(Profile_SceneUpdate);
 
         static std::vector<SimpleVertex> v;
         static bool initialized = false;
@@ -148,26 +156,31 @@ int main(int argc, char* argv[])
             Console::get()->LogMessage("this is a test of the console output performance");
         }
 
-        ProfileBeginSection(Profile_RenderFinish);
 		renderer->Flush();
-        ProfileEndSection(Profile_RenderFinish);
+
+		Console::get()->draw();
 
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(renderer, TARGET_FPS);
 
         // TODO: what are the values for the renderer profiling if this is outputting already?
-		Console::get()->draw();
 
+
+        uint64 pre_swap_time = GetCycleCount();
         renderer->SwapBuffer();
+        uint64 post_swap_time = GetCycleCount();
+
+        Console::get()->LogMessage("Swap time: %"PRIu64"", post_swap_time - pre_swap_time);
+
 		// End rendering
 
 
 		// TODO(cgenova): High granularity sleep function!
-		uint32 delay_time = RemainingTicksInFrame();
-		if(delay_time > 10) {
+//		uint32 delay_time = RemainingTicksInFrame();
+//		if(delay_time > 10) {
 			//std::cout << "Delaying: " << delay_time << " ms" << std::endl;
-			SDL_Delay(delay_time);
-		}
+//			SDL_Delay(delay_time);
+//		}
 		//std::cout << "Delta T : " << delay_time << " ms" << std::endl;
 
 	}// End main loop

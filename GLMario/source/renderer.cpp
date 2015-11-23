@@ -91,11 +91,12 @@ void Renderer::set_camera(Camera* camera)
 void Renderer::begin_frame()
 {
     // Resolution can't change mid frame, although the camera position can
-	frame_resolution = draw_window->get_resolution();
-	glViewport(0, 0, frame_resolution.width, frame_resolution.height); // TODO: check to see if it is rendering into the title bar
-                                                                       // TODO: add a way to get the client rect from the window system
-	glClear(GL_COLOR_BUFFER_BIT);
 
+	//frame_resolution = draw_window->get_resolution();
+
+    SDL_GL_GetDrawableSize(draw_window->sdl_window, &frame_resolution.width, &frame_resolution.height);
+	glViewport(0, 0, frame_resolution.width, frame_resolution.height);
+	glClear(GL_COLOR_BUFFER_BIT);
 	line_buffer_loc = 0;
 }
 
@@ -379,6 +380,7 @@ void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
 
 void Renderer::draw_call(DrawCall data)
 {
+    ProfileBeginSection(Profile_RenderFinish);
     // TODO: set up the shaders once per frame (or once per draw surface)
     // TODO: don't have every draw type specify a shader e.g. lines only have the line shader
     // and text will ony have the text shader. Oh, and TODO: Batch text draws into a buffer.
@@ -401,6 +403,8 @@ void Renderer::draw_call(DrawCall data)
 			glBindTexture(GL_TEXTURE_2D, textures[(uint32)data.image].texture_handle);
 		}
 	}
+
+    if(data.draw_type != DrawType::LINE_BUFFER && 0) goto renderfinish;
 
 	switch(data.draw_type)
 	{
@@ -572,6 +576,8 @@ void Renderer::draw_call(DrawCall data)
 			break;
 	}
 
+    renderfinish:
+    ProfileEndSection(Profile_RenderFinish);
 }
 
 void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, uint8 line_width, DrawLayer dl, uint32 line_draw_options)
@@ -615,9 +621,7 @@ void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, D
     if(line_width)
     {
         lbd->line_draw_options |= LineDrawOptions::CUSTOM_SIZE;
-
         lbd->line_draw_options |= ((uint32)line_width << 24);
-
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);

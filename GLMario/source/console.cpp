@@ -1,6 +1,8 @@
 #include "console.h"
 #include "time.h"
 
+#include <inttypes.h>
+
 Console* Console::s_instance = nullptr;
 
 namespace
@@ -15,19 +17,20 @@ namespace
 
 Vec4 profile_colors[] =
 {
-    vec4(1, 0, 0, 1), // Red        Profile_Input,
-    vec4(0, 1, 0, 1), // Green      Profile_PhysicsStepCollider,
-    vec4(0, 0, 1, 1), // Blue       Profile_PhysicsInnerLoop,
-    vec4(1, 1, 0, 1), // Yellow     Profile_RenderFinish,
-    vec4(1, 1, 1, 1), // White      Profile_ParticleUpdate,
-    vec4(0, 1, 1, 1), // Teal       Profile_Frame,
-    vec4(1, 0, 1, 1), // Magenta    Profile_Console,
+    vec4(1, 0,    0,    1), // Red        Profile_Input,
+    vec4(0, 1,    0,    1), // Green      Profile_PhysicsStepCollider,
+    vec4(0, 0,    1,    1), // Blue       Profile_PhysicsInnerLoop,
+    vec4(1, 1,    0,    1), // Yellow     Profile_RenderFinish,
+    vec4(1, 1,    1,    1), // White      Profile_ParticleUpdate,
+    vec4(0, 1,    1,    1), // Teal       Profile_Frame,
+    vec4(0, 0.5f, 0.5f, 1), // Something  Profile_SceneUpdate,
+    vec4(1, 0,    1,    1), // Magenta    Profile_Console,
 };
 
-std::string GetProfileSectionName(ProfileSectionName name)
+char* GetProfileSectionName(ProfileSectionName name)
 {
 #define Case(input) {case input: \
-                    std::string result(#input); \
+                    char* result = #input; \
                     return result; \
                     }
 
@@ -37,9 +40,12 @@ std::string GetProfileSectionName(ProfileSectionName name)
         Case(Profile_PhysicsStepCollider)
         Case(Profile_PhysicsInnerLoop)
         Case(Profile_RenderFinish)
+        Case(Profile_ParticleUpdate)
+        Case(Profile_Frame)
+        Case(Profile_SceneUpdate)
         Case(Profile_Console)
     }
-    return std::string("Unknown");
+    return "Unknown";
 
 #undef Case
 }
@@ -72,14 +78,12 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
     Console* console = Console::get();
 
-
     // Graph drawing variables
 
     // In screen ratio coords with (0, 0) being the lower left corner
-    Rectf data_box = { 0.01f, 0.01f, 0.33f, 0.33f };
+    Rectf data_box = { 0.55f, 0.01f, 0.33f, 0.33f };
     float res_x = (float)ren->get_resolution().width;
     float res_y = (float)ren->get_resolution().height;
-
 
     for(uint32 i = 0; i < Profile_Count; ++i)
     {
@@ -91,26 +95,22 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         }
 
         // Text output
-//        {
-//            u32 hits = section->hits;
-//            std::string output;
-//            output.reserve(256);
-//            output.append("Function: ");
-//            output.append(GetProfileSectionName((ProfileSectionName) i));
-//            output.append(" Hits: ");
-//            output.append(std::to_string(hits));
-//
-//            if(hits)
-//            {
-//                output.append(" Average Cycles: ");
-//                output.append(std::to_string(section->sum / section->hits));
-//            }
-//
-//            output.append(" Index: ");
-//            output.append(std::to_string(i));
-//
-//            console->log_message(output);
-//        }
+        {
+            u32 hits = section->hits;
+
+            if(hits)
+            {
+                console->LogMessage("Function: (%s) Hits: %d Average Cycles: %"PRIu64"",
+                                        GetProfileSectionName((ProfileSectionName) i),
+                                        hits, (section->sum / section->hits));
+            }
+            else
+            {
+                console->LogMessage("Function: (%s) Hits: %d",
+                                        GetProfileSectionName((ProfileSectionName) i),
+                                        hits);
+            }
+        }
 
         {
             if(section->history.size() < PROFILE_HISTORY_SIZE)
@@ -134,7 +134,7 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
             vertex->position.x = current_pos * screen_width + data_box.x * res_x;
 
-            assert(section->sum < frame_cycles);
+            //assert(section->sum < frame_cycles);
 
             float start_y = data_box.y * res_y;
             vertex->position.y = ((float)(section->sum) / (float)target_cycles) * screen_height;
@@ -150,7 +150,7 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         }
     }
 
-    console->LogMessage("Target cycles: %ll Cycles per second: %ll\n", target_cycles, cycles_per_second);
+    console->LogMessage("Target cycles: %"PRIu64" Cycles per second: %"PRIu64"\n", target_cycles, cycles_per_second);
 
 //    const Vec2 line_start = vec2(data_box.x * res_x, (data_box.y + data_box.height) * res_y);
 //    const Vec2 line_end   = vec2((data_box.x + data_box.width) * res_x, (data_box.y + data_box.height) * res_y);
@@ -163,6 +163,10 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
     const Vec4 color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
     ren->DrawRect(data_box, 2, DrawLayer_UI, color, LineDrawOptions::SCREEN_SPACE);
+
+// NOTE: Second flush of the frame, just to push out the console data;
+// TODO: don't do the performance stuff on that one.
+    ren->Flush();
 }
 
 // Note: won't be thread safe;
@@ -171,9 +175,9 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 void _ProfileBeginSection(ProfileSectionName name, char* file, int line)
 {
     profile_sections[name].hits++;
-    profile_sections[name].clock_start = RealTimeSinceStartup();
 
     // summation will be wrong if this is not true
+    // this means that recursive functions can't be calculated though
     assert(profile_sections[name].cycle_count_start == 0);
     profile_sections[name].cycle_count_start = GetCycleCount();
 }
@@ -181,7 +185,6 @@ void _ProfileBeginSection(ProfileSectionName name, char* file, int line)
 void _ProfileEndSection(ProfileSectionName name, char* file, int line)
 {
     profile_sections[name].sum += GetCycleCount() - profile_sections[name].cycle_count_start;
-    profile_sections[name].clock_end = RealTimeSinceStartup();
     profile_sections[name].cycle_count_start = 0;
 }
 
@@ -201,7 +204,7 @@ void Console::LogMessage(char* format, ... )
     va_start(args, format);
     // NOTE: return value does not count the terminating null
     // NOTE: Windows only, linux OSes can use vsnprintf with a NULL buffer to find the required size
-    int32 input_size = _vscprintf(format, args);
+    int32 input_size = _vscprintf(format, args) + 1; // Add 1 for the '\n'
     va_end(args);
 
     assert(input_size >= 0);
@@ -223,7 +226,11 @@ void Console::LogMessage(char* format, ... )
     input_size = vsnprintf(start_position, remaining_buffer_size, format, args);
     va_end(args);
 
-    this->used_chars += input_size;
+    start_position += input_size;
+    *start_position = '\n'; // This can overwrite the terminating null because the size is tracked through
+                            // to rendering.
+
+    this->used_chars += input_size + 1;
     assert(input_size >= 0);
 }
 

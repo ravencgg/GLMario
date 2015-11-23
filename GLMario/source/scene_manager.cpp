@@ -70,11 +70,11 @@ SceneManager::SceneManager()
 	 input(Input::get())
 {
 	//tilemap.fill_checkerboard();
-//    tilemap.MakeWalledRoom(rect(-50, -20, 50, 50));
-//    tilemap.MakeWalledRoom(rect(-5, -20, 30, 3));
-//    tilemap.MakeWalledRoom(rect(-25, -10, 5, 10));
-//    tilemap.MakeWalledRoom(rect(20, 20, 10, 10));
-//    tilemap.MakeWalledRoom(rect(-5, -2, 10, 2));
+    tilemap.MakeWalledRoom(rect(-50, -20, 50, 50));
+    tilemap.MakeWalledRoom(rect(-5, -20, 30, 3));
+    tilemap.MakeWalledRoom(rect(-25, -10, 5, 10));
+    tilemap.MakeWalledRoom(rect(20, 20, 10, 10));
+    tilemap.MakeWalledRoom(rect(-5, -2, 10, 2));
 
     tilemap.AddTile(2, 2);
 //    std::shared_ptr<ParticleSystem> ps = std::make_shared<ParticleSystem>(this);

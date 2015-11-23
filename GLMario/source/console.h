@@ -18,6 +18,7 @@ enum ProfileSectionName : uint32
     Profile_RenderFinish,
     Profile_ParticleUpdate,
     Profile_Frame,
+    Profile_SceneUpdate,
     Profile_Console,
 
     // NOTE: don't add any more her without adding a new color to the profile_colors array
@@ -33,8 +34,6 @@ struct ProfileSection
     u64 sum;
     u32 hits;
 
-    u32 clock_start;
-    u32 clock_end;
     std::vector<SimpleVertex> history;
 };
 
@@ -48,7 +47,7 @@ void _ProfileEndSection(ProfileSectionName name, char* file, int line);
 void _ProfileBeginSection(ProfileSectionName name, char* file, int line);
 void ProfileEndFrame(Renderer* ren, uint32 desired_frame_time);
 void ProfileBeginFrame();
-std::string GetProfileSectionName(ProfileSectionName name);
+char* GetProfileSectionName(ProfileSectionName name);
 
 
 

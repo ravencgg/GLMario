@@ -7,8 +7,8 @@
 #include "mathops.h"
 
 
-enum class ScreenMode { WINDOWED   = 0, 
-						FULLSCREEN = SDL_WINDOW_FULLSCREEN, 
+enum class ScreenMode { WINDOWED   = 0,
+						FULLSCREEN = SDL_WINDOW_FULLSCREEN,
 						BORDERLESS = SDL_WINDOW_FULLSCREEN_DESKTOP };
 
 class Window
@@ -24,8 +24,6 @@ public:
 	Dimension get_resolution();
 	void set_resolution(uint32, uint32);
 
-private:
-	
 	SDL_Window* sdl_window;
-	SDL_GLContext sdl_gl_context; 
+	SDL_GLContext sdl_gl_context;
 };
