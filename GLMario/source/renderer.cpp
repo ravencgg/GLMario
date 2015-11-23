@@ -352,7 +352,7 @@ TextDrawResult Renderer::DrawString(char* string, uint32 string_size, uint32 sta
     glBindBuffer(GL_ARRAY_BUFFER, textVBO);
     glBindVertexArray(textVAO);
 
-    glEnableVertexArrayAttrib(textVAO, 0);
+    glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
 	glBufferData(GL_ARRAY_BUFFER, array_pos * sizeof(text_array[0]), text_array, GL_STREAM_DRAW);
 
