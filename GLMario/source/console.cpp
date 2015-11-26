@@ -84,8 +84,6 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
     // In screen ratio coords with (0, 0) being the lower left corner
     Rectf data_box = { 0.55f, 0.01f, 0.33f, 0.33f };
-    float res_x = (float)ren->get_resolution().width;
-    float res_y = (float)ren->get_resolution().height;
 
     for(uint32 i = 0; i < Profile_Count; ++i)
     {
@@ -134,21 +132,15 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
                     section->history[j].position.y = section->history[j + 1].position.y;
                 }
             }
-
             SimpleVertex* vertex = &section->history.back();
 
             float current_pos  = section->history.size() / (float)PROFILE_HISTORY_SIZE;
-            float screen_width = data_box.w * res_x;
-            float screen_height = data_box.h * res_y;
 
-            vertex->position.x = current_pos * screen_width + data_box.x * res_x;
+            vertex->position.x = current_pos * data_box.w + data_box.x;
 
             //assert(section->sum < frame_cycles);
-
-            float start_y = data_box.y * res_y;
-            vertex->position.y = ((float)(section->sum) / (float)target_cycles) * screen_height;
-
-            vertex->position.y += start_y;
+            vertex->position.y = ((float)(section->sum) / (float)target_cycles) * data_box.h;
+            vertex->position.y += data_box.y;
 
             assert(i < ArrayCount(profile_colors));
             vertex->color = profile_colors[i];
@@ -161,20 +153,12 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
     console->LogMessage("Target cycles: %"PRIu64" Cycles per second: %"PRIu64"\n", target_cycles, cycles_per_second);
 
-//    const Vec2 line_start = vec2(data_box.x * res_x, (data_box.y + data_box.height) * res_y);
-//    const Vec2 line_end   = vec2((data_box.x + data_box.width) * res_x, (data_box.y + data_box.height) * res_y);
-//    ren->DrawLine(line_start, line_end, color, 2, DrawLayer_UI, LineDrawOptions::SCREEN_SPACE);
-
-    data_box.x *= res_x;
-    data_box.w *= res_x;
-    data_box.y *= res_y;
-    data_box.h *= res_y;
-
     const Vec4 color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
     ren->DrawRect(data_box, 2, DrawLayer_UI, color, LineDrawOptions::SCREEN_SPACE);
 
 // NOTE: Second flush of the frame, just to push out the console data;
-// TODO: don't do the performance stuff on that one.
+// TODO: don't do the performance stuff on that one, it will just get cleared at the beginning of the
+// frame anyway.
     ren->Flush();
 }
 

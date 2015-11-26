@@ -378,6 +378,14 @@ void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
 	draw_buffer[(uint32) layer].AddBack(draw_call);
 }
 
+void ConvertToGLRect(Rectf* rect)
+{
+    rect->x = rect->x * 2.f - 1.f;
+    rect->y = rect->y * 2.f - 1.f;
+    rect->w *= 2.f;
+    rect->h *= 2.f;
+}
+
 void Renderer::draw_call(DrawCall data)
 {
     ProfileBeginSection(Profile_RenderFinish);
@@ -503,7 +511,6 @@ void Renderer::draw_call(DrawCall data)
 			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
 			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
 
-
             if(data.lbd.line_draw_options & LineDrawOptions::SMOOTH)
             {
                 glEnable(GL_LINE_SMOOTH);
@@ -527,18 +534,17 @@ void Renderer::draw_call(DrawCall data)
 
             if(data.lbd.line_draw_options & LineDrawOptions::SCREEN_SPACE)
             {
-                GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
-                glUniform2f(cam_pos_loc, (float)frame_resolution.width / 2.f, (float)frame_resolution.height / 2.f);
-
-                GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
-                glUniform2f(viewport_loc, (float)frame_resolution.width, (float)frame_resolution.height);
+                // Screen space drawing is in range [0,1];
+                GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, 0.5f, 0.5f);
+                GLint viewport_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, 1, 1);
             }
             else
             {
-                GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+                GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
                 glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-
-                GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+                GLint viewport_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "viewport");
                 glUniform2f(viewport_loc, viewport.x, viewport.y);
             }
 

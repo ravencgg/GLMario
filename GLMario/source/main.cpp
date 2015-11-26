@@ -19,7 +19,7 @@
 int main(int argc, char* argv[])
 {
 	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
-	Window window("Title", 1400, 900);
+	Window window("Title", 1200, 700);
 
     InitializeTime(MS_PER_FRAME);
 

@@ -14,8 +14,8 @@ void main()
     new_pos.x -= cam_pos.x;
     new_pos.y -= cam_pos.y;
 
-    new_pos.x = (((new_pos.x + (viewport.x / 2)) / viewport.x) * 2) - 1;
-    new_pos.y = (((new_pos.y + (viewport.y / 2)) / viewport.y) * 2) - 1;
+    new_pos.x = (new_pos.x * 2.f / viewport.x);
+    new_pos.y = (new_pos.y * 2.f / viewport.y);
 
     gl_Position = vec4(new_pos, 0, 1.0f);
 }

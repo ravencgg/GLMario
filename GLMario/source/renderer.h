@@ -38,9 +38,9 @@ namespace LineDrawOptions
     enum : uint32 {
         NONE          = 0x0,
         LOOPED        = 0x1,
-        SCREEN_SPACE  = 0x2, // Uses resolution coordinates instead of world coords
+        SCREEN_SPACE  = 0x2, // Uses [0,1] coords instead of world space coordinates
         CUSTOM_SIZE   = 0x4, // top byte of the uint32 holding these flags data is the size in pixels of the line;
-        SMOOTH        = 0x8
+        SMOOTH        = 0x8,
     };
 }
 
