@@ -112,13 +112,12 @@ int main(int argc, char* argv[])
 			last_fps_time = CurrentTime();
 			fps = frame_count;
 			frame_count = 0;
+#if _DEBUG
             printf("FPS: %d\n", fps);
+#endif
 		}
 		frame_count++;
 		Console::get()->LogMessage("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount());
-
-
-		//Console::get()->log_message("Frames: \t%d",  + std::to_string(FrameCount()));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
@@ -151,20 +150,12 @@ int main(int argc, char* argv[])
         renderer->DrawLine(v, 3, DrawLayer_UI, LineDrawOptions::SMOOTH);
 		//renderer->render_draw_buffer();
 
-        for(int i = 0; i < 10; ++i)
-        {
-            Console::get()->LogMessage("this is a test of the console output performance");
-        }
-
 		renderer->Flush();
 
 		Console::get()->draw();
 
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(renderer, TARGET_FPS);
-
-        // TODO: what are the values for the renderer profiling if this is outputting already?
-
 
         uint64 pre_swap_time = GetCycleCount();
         renderer->SwapBuffer();

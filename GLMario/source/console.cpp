@@ -59,6 +59,8 @@ void ProfileBeginFrame()
         ps->cycle_count_start = 0;
         ps->sum = 0;
         ps->hits = 0;
+        ps->min_cycles = -1;
+        ps->max_cycles = 0;
 
         if(ps->history.size() == 0)
         {
@@ -98,7 +100,14 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         {
             u32 hits = section->hits;
 
-            if(hits)
+            if(hits > 1)
+            {
+                console->LogMessage("Function: (%s) Hits: %d Average: %"PRIu64" Min: %"PRIu64" Max: %"PRIu64"",
+                                        GetProfileSectionName((ProfileSectionName) i),
+                                        hits, (section->sum / section->hits),
+                                        section->min_cycles, section->max_cycles);
+            }
+            else if(hits == 1)
             {
                 console->LogMessage("Function: (%s) Hits: %d Average Cycles: %"PRIu64"",
                                         GetProfileSectionName((ProfileSectionName) i),
@@ -174,18 +183,23 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 // Put a sum in there so that the average can be found with a division
 void _ProfileBeginSection(ProfileSectionName name, char* file, int line)
 {
-    profile_sections[name].hits++;
+    ProfileSection* section = &profile_sections[name];
+    section->hits++;
 
     // summation will be wrong if this is not true
     // this means that recursive functions can't be calculated though
-    assert(profile_sections[name].cycle_count_start == 0);
-    profile_sections[name].cycle_count_start = GetCycleCount();
+    assert(section->cycle_count_start == 0);
+    section->cycle_count_start = GetCycleCount();
 }
 
 void _ProfileEndSection(ProfileSectionName name, char* file, int line)
 {
-    profile_sections[name].sum += GetCycleCount() - profile_sections[name].cycle_count_start;
-    profile_sections[name].cycle_count_start = 0;
+    ProfileSection* section = &profile_sections[name];
+    u64 cycle_count = GetCycleCount() - section->cycle_count_start;;
+    section->min_cycles = MIN(section->min_cycles, cycle_count);
+    section->max_cycles = MAX(section->max_cycles, cycle_count);
+    section->sum += cycle_count;
+    section->cycle_count_start = 0;
 }
 
 #define CONSOLE_STRING_START_SIZE 20

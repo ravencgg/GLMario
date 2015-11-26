@@ -39,6 +39,9 @@ typedef int32_t b32;
 #define MEGABYTES(mb) (1024ull * KILOBYTES(mb))
 #define GIGABYTES(gb) (1024ull * MEGABYTES(gb))
 
+#define MIN(a, b) ( (a) < (b) ? (a) : (b) )
+#define MAX(a, b) ( (a) > (b) ? (a) : (b) )
+
 #define NO_MATRICES 1
 
 struct Dimension

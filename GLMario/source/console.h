@@ -32,6 +32,8 @@ struct ProfileSection
 {
     u64 cycle_count_start;
     u64 sum;
+    u64 min_cycles;
+    u64 max_cycles;
     u32 hits;
 
     std::vector<SimpleVertex> history;
