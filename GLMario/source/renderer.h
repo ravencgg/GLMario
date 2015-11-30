@@ -92,6 +92,8 @@ struct ArrayBufferData
 	GLuint vbo;
 	GLuint draw_method;
 	uint32 num_vertices;
+    bool screen_space;  // @cleanup Combine array and line buffer drawing? Possibly
+                        // even particle buffer stuff, use flags to control it all
 };
 
 struct LineBufferData
@@ -146,7 +148,7 @@ struct Animation
 struct TextDrawResult
 {
 	uint32 lines_drawn;
-	Point2 bottom_right;
+	Vec2 bottom_right;
 };
 
 // TODO: break this up into logical components
@@ -181,9 +183,9 @@ public:
 	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
 
 private:
-	void DrawCharacter(TextVertex*, char, int32, int32, Dimension);
+	void DrawCharacter(TextVertex*, char, float, float, Vec2);
 public:
-	TextDrawResult DrawString(char* string, uint32 string_size, uint32 start_x, uint32 start_y);
+	TextDrawResult DrawString(char* string, uint32 string_size, float start_x, float start_y);
 
 	struct TextData
 	{

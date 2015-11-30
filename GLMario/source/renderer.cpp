@@ -227,38 +227,44 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 //
 // This will allow strings to be drawn with a ARRAY_BUFFER style instead of drawing
 // outside of the control of the renderer
-void Renderer::DrawCharacter(TextVertex* start_vertex, char c, int32 x, int32 y, Dimension screen_size)
+void Renderer::DrawCharacter(TextVertex* start_vertex, char c, float x, float y, Vec2 char_size)
 {
     int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
     int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
 
     // NOTE: this assumes valid characters are being rendered
     uint32 ascii_position = c - ' ';
+    assert(c >= ' ' && c <= '~');
+    if(c < ' ' || c > '~')
+    {
+		ascii_position = c - ' ';
+    }
 
-    Rectf rect = {};
-    rect.left = (float)(x / (float)screen_size.width) * 2.0f - 1.0f;
-    rect.width = (float)(tw / (float)screen_size.width) / 4.0f;
-    rect.top = (float)y / (float)screen_size.height * 2.0f - 1.0f;
-    rect.height = (float)(th / (float)screen_size.height) / 2.0f;
+    Rectf draw_rect = {};
+    draw_rect.left = x;
+    draw_rect.width = char_size.x; //(float)(tw / (float)screen_size.width) / 4.0f;
+    draw_rect.top = y;// (float)y / (float)screen_size.height * 2.0f - 1.0f;
+    draw_rect.height = char_size.y;  // (float)(th / (float)screen_size.height) / 2.0f;
 
+// Char coords
     Point2 char_pos;
     char_pos.x = ascii_position % text_data.chars_per_line;
     char_pos.x *= text_data.char_size.width;
     char_pos.y = ascii_position / text_data.chars_per_line;
     char_pos.y *= text_data.char_size.height;
 
+// Texture coords
     float left = (float)char_pos.x / tw;
     float right = (float)(char_pos.x + text_data.char_size.width) / tw;
     float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
     float top = (float)(th - char_pos.y) / th;
 
-
-    *start_vertex++ =  { rect.left, rect.top, left, bot };
-    *start_vertex++ =  { rect.left, rect.top + rect.height, left, top };
-    *start_vertex++ =  { rect.left + rect.width, rect.top, right, bot };
-    *start_vertex++ =  { rect.left, rect.top + rect.height, left, top };
-    *start_vertex++ =  { rect.left + rect.width, rect.top, right, bot };
-    *start_vertex++ =  { rect.left + rect.width, rect.top + rect.height, right, top };
+    *start_vertex++ = { draw_rect.left, draw_rect.top, left, bot };
+    *start_vertex++ = { draw_rect.left, draw_rect.top + draw_rect.height, left, top };
+    *start_vertex++ = { draw_rect.left + draw_rect.width, draw_rect.top, right, bot };
+    *start_vertex++ = { draw_rect.left, draw_rect.top + draw_rect.height, left, top };
+    *start_vertex++ = { draw_rect.left + draw_rect.width, draw_rect.top, right, bot };
+    *start_vertex++ = { draw_rect.left + draw_rect.width, draw_rect.top + draw_rect.height, right, top };
 }
 
 /*  Text drawing TODO(cgenova):
@@ -271,10 +277,8 @@ void Renderer::DrawCharacter(TextVertex* start_vertex, char c, int32 x, int32 y,
         *      -> needs dynamic vao/vbo for this to happen
 		*/
 
-TextDrawResult Renderer::DrawString(char* string, uint32 string_size, uint32 start_x, uint32 start_y)
+TextDrawResult Renderer::DrawString(char* string, uint32 string_size, float start_x, float start_y)
 {
-//    if(1) return { };
-
     // TODO: more sane way of storing these
     static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
     static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
@@ -287,21 +291,21 @@ TextDrawResult Renderer::DrawString(char* string, uint32 string_size, uint32 sta
         text_array_size = new_size;
     }
 
+    Vec2 char_size = { 0.01f, 0.02f };
+
     uint32 array_pos = 0;
 
-	uint32 x = start_x;
-	uint32 y = start_y;
+	float x = start_x;
+	float y = start_y;
 	uint32 ld = 0;
-	const uint32 tab_size = 4;
-	int32 char_height = text_data.char_size.height;
-	uint32 y_spacing = 10;
+	const float tab_size = char_size.x * 4.f;
+	float y_spacing = char_size.y * 1.1f;
 
-
-#define NEW_LINE()                      \
-		y -= (char_height + y_spacing); \
+#define NEW_LINE()      \
+		y -= y_spacing; \
 		x = start_x
 
-    Dimension screen_size = this->draw_window->get_resolution();
+//    Dimension screen_size = this->draw_window->get_resolution();
 
 	for (uint32 i = 0; i < string_size; ++i)
 	{
@@ -312,19 +316,19 @@ TextDrawResult Renderer::DrawString(char* string, uint32 string_size, uint32 sta
 		}
 		else if (string[i] == '\t')
 		{
-			x += tab_size * text_data.char_size.width;
+			x += tab_size;
             continue;
 		}
 
-		if (x + text_data.char_size.width > (uint32)frame_resolution.width)
+		if (x + char_size.x > 1.f)
 		{
             NEW_LINE();
 			ld++;
 		}
 
-		DrawCharacter(text_array + array_pos, string[i], x, y, screen_size);
+		DrawCharacter(text_array + array_pos, string[i], x, y, char_size);
         array_pos += 6;
-		x += (uint32)(text_data.char_size.width * 1.5f); // @cleanup why is this size not right pre-multiplication?
+		x += char_size.x; // (uint32)(text_data.char_size.width * 1.5f); // @cleanup why is this size not right pre-multiplication?
 	}
 
 	NEW_LINE();
@@ -355,6 +359,11 @@ TextDrawResult Renderer::DrawString(char* string, uint32 string_size, uint32 sta
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
 	glBufferData(GL_ARRAY_BUFFER, array_pos * sizeof(text_array[0]), text_array, GL_STREAM_DRAW);
+
+    GLint cam_pos_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "cam_pos");
+    glUniform2f(cam_pos_loc, 0.5f, 0.5f);
+    GLint viewport_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "viewport");
+    glUniform2f(viewport_loc, 1, 1);
 
     glDrawArrays(GL_TRIANGLES, 0, array_pos);
 

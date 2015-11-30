@@ -236,9 +236,8 @@ void Console::draw()
 {
 	Renderer* ren = Renderer::get();
 
-	uint32 draw_y = (uint32)((float)ren->get_resolution().height * screen_start.y);
-	uint32 draw_x = (uint32)((float)ren->get_resolution().width * screen_start.x);
-
+	float draw_y = screen_start.y;
+	float draw_x = screen_start.x;
 	uint32 num_chars = 0;
 
     ren->DrawString(this->output_string, this->used_chars, draw_x, draw_y);

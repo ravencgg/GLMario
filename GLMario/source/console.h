@@ -51,8 +51,6 @@ void ProfileEndFrame(Renderer* ren, uint32 desired_frame_time);
 void ProfileBeginFrame();
 char* GetProfileSectionName(ProfileSectionName name);
 
-
-
 // Immediate mode text output / per frame rendering
 class Console
 {
@@ -61,7 +59,7 @@ public:
     uint32 used_chars;
     uint32 array_size;
 
-	Vec2 screen_start = vec2( 0.01f, 0.9f);
+	Vec2 screen_start = vec2( 0.01f, 0.95f);
 
 	void LogMessage(char* format, ...);
 	void draw();
