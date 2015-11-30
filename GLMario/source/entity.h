@@ -28,12 +28,10 @@ class Entity
 {
 public:
     Transform transform;
-    bool delete_this_frame = false;
     SceneManager* parent_scene;
     EntityType entity_type;
-
     LIST_LINK(Entity) entity_group;
-
+    bool delete_this_frame = false;
 
     Entity(SceneManager* sm) { parent_scene = sm; }
     virtual ~Entity() {}

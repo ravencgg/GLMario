@@ -6,12 +6,13 @@
 #include "renderer.h"
 #include "console.h"
 #include "physics.h"
+#include "containers.h"
 
 #include <vector>
 
 enum TileType : uint32 { EMPTY, BRICK, COUNT };
 
-struct Tile 
+struct Tile
 {
     Vec2 position;
     Vec2 size;
@@ -33,8 +34,8 @@ public:
 	void update();
 	void draw();
 
-    std::vector<Tile> tiles;
-    
+    Array<Tile> tiles;
+
 private:
 	void init();
 

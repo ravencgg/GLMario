@@ -209,7 +209,10 @@ public:
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
     void DrawLine(Vec2, Vec2, Vec4, uint8 line_width, DrawLayer dl = DrawLayer_UI, uint32 line_draw_options = 0);
+    // TODO: Get rid of the std::vector version of this and just use the Array one.
     void DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
+
+    void DrawLine(Array<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
 	void DrawRect(Rectf&, uint8 line_width = 4, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1), uint32 line_draw_options = 0);
 
 private:

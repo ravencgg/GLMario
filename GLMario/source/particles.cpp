@@ -442,7 +442,6 @@ void ParticleSystem::create_particle(ParticleVertexData& pvd, ParticleFrameData&
 
 void ParticleSystem::render()
 {
-#if 1
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleVertexData) * active_particles, particles.pvd);
 
@@ -457,37 +456,6 @@ void ParticleSystem::render()
 	draw_call.abd.num_vertices = active_particles;
 
 	ren->push_draw_call(draw_call, draw_layer);
-#else
-	ren->activate_texture(ImageFiles::PARTICLE_IMAGE);
-	ren->activate_shader(ShaderTypes::PARTICLE_SHADER);
-
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_POINT_SPRITE);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleVertexData) * active_particles, particles.pvd);
-
-	glBindVertexArray(vao);
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-
-	// Position
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)0);
-	// Color
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)(2 * sizeof(float)));
-	// Scale
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)(6 * sizeof(float)));
-
-	GLint mat_loc = glGetUniformLocation(ren->shaders[(uint32)ShaderTypes::PARTICLE_SHADER].shader_handle, "mvp");
-	glUniformMatrix4fv(mat_loc, 1, GL_FALSE, (GLfloat*)&Renderer::vp_matrix);
-
-	float world_scale = ren->viewport_width();
-	GLint scl_loc = glGetUniformLocation(ren->shaders[(uint32)ShaderTypes::PARTICLE_SHADER].shader_handle, "w_scale");
-	glUniform1f(scl_loc, world_scale);
-
-	glDrawArrays(GL_POINTS, 0, active_particles);
-#endif
 }
 
 void ParticleSystem::Tick(float dt)

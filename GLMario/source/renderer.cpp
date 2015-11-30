@@ -597,13 +597,12 @@ void Renderer::draw_call(DrawCall data)
 
 void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, uint8 line_width, DrawLayer dl, uint32 line_draw_options)
 {
-    std::vector<SimpleVertex> v;
-    SimpleVertex s;
-    s.position = start;
-    s.color = color;
-    v.push_back(s);
-    s.position = end;
-    v.push_back(s);
+    Array<SimpleVertex> v(2);
+    v.AddEmpty(2);
+    v[0].position = start;
+    v[0].color = color;
+    v[1].position = end;
+    v[1].color = color;
     DrawLine(v, line_width, dl, line_draw_options);
 }
 
@@ -641,6 +640,45 @@ void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, D
 
     glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(SimpleVertex), &vertices[0], GL_STREAM_DRAW);
+    dc.lbd = *lbd;
+    push_draw_call(dc, dl);
+}
+
+// Collapse this one with the std::vector version
+void Renderer::DrawLine(Array<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options)
+{
+	DrawCall dc = {};
+	dc.draw_type = DrawType::LINE_BUFFER;
+    dc.shader = Shader_Line;
+
+    if(line_buffer_loc == line_buffer.size())
+    {
+		LineBufferData a = {};
+		glGenBuffers(1, &a.vbo);
+		glGenVertexArrays(1, &a.vao);
+		glBindVertexArray(a.vao);
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
+
+        line_buffer.push_back(a);
+    }
+
+    LineBufferData* lbd = &line_buffer[line_buffer_loc++];
+    lbd->num_vertices = vertices.Size();
+
+    lbd->draw_method = (line_draw_options & LineDrawOptions::LOOPED) ? GL_LINE_LOOP : GL_LINE_STRIP;
+    lbd->line_draw_options = line_draw_options;
+
+    if(line_width)
+    {
+        lbd->line_draw_options |= LineDrawOptions::CUSTOM_SIZE;
+        lbd->line_draw_options |= ((uint32)line_width << 24);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.Size() * sizeof(SimpleVertex), &vertices[0], GL_STREAM_DRAW);
     dc.lbd = *lbd;
     push_draw_call(dc, dl);
 }

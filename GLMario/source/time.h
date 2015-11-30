@@ -53,9 +53,10 @@ uint32 RealTimeSinceStartup();
 
 Timer* CreateTimer(float dur);
 
-void StartTimer(Timer* timer, float new_duration = 0);
-
 void DestroyTimer(Timer* timer);
+
+// If new_duration is 0, then the timer is restarted with the old duration.
+void StartTimer(Timer* timer, float new_duration = 0);
 
 bool TimerIsFinished(Timer* timer);
 

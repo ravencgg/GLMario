@@ -10,7 +10,6 @@ class Array
 {
 public:
     typedef int (*CompareFunction)(const void* left, const void* right);
-
     CompareFunction arrayCompareFunction;
 
     Array(uint32 start_size = 16)
@@ -27,7 +26,25 @@ public:
 
     T& operator[](uint32 loc)
     {
+        assert(loc < write_pos);
         return this->Get(loc);
+    }
+
+    void AddEmpty(uint32 num_to_add)
+    {
+        assert(write_pos <= capacity);
+        if (write_pos + (num_to_add - 1) >= capacity)
+        {
+            reallocate(num_to_add);
+        }
+        size_t clear_size = sizeof(T) * num_to_add;
+        memset(&data[write_pos], 0, clear_size);
+        write_pos += num_to_add;
+    }
+
+    void Add(T value)
+    {
+        AddBack(value);
     }
 
     void AddBack(T value)
@@ -72,27 +89,33 @@ public:
     {
         assert(position < write_pos);
 
-        //TODO(chris): Replace this with a memmove call!
-        for (uint32 i = position; i < write_pos; ++i)
-        {
-            data[i] = data[i + 1];
-        }
+        //TODO: Replace this with a memmove call!
+        //for (uint32 i = position; i < write_pos; ++i)
+        //{
+        //    data[i] = data[i + 1];
+        //}
 
+        if(position == write_pos - 1)
+        {
+            size_t move_size = (write_pos - position) * sizeof(T);
+            memmove(&data[position], &data[position + 1], move_size);
+        }
         --write_pos;
     }
 
     int32 Find(T element)
     {
+        int32 result = -1;
         for(uint32 i = 0; i < Size(); ++i)
         {
             if(data[i] == element)
             {
-                return i;
+                result = i;
+                break;
             }
         }
-        return -1;
+        return result;
     }
-
 
     // NOTE: does not clear, only removes access
     void RemoveBack()
@@ -121,6 +144,12 @@ public:
 	{
 		return write_pos;
 	}
+
+    bool IsEmpty()
+    {
+        bool result = (write_pos == 0);
+        return result;
+    }
 
     bool Sort(CompareFunction acf)
     {
@@ -164,11 +193,16 @@ public:
 
 private:
 
-	void reallocate()
+	void reallocate(uint32 new_element_count = 1)
 	{
 		T* temp = data;
 		uint32 old_size = capacity;
-		capacity *= 2;
+
+        do
+        {
+            capacity *= 2;
+        }while(capacity < write_pos + new_element_count);
+
 		data = new T[capacity] {};
 
 		//TODO(chris): Replace this with a memcopy call!

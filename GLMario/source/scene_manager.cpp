@@ -113,7 +113,7 @@ void SceneManager::update_scene()
 {
 	tilemap.draw();
 
-    Console::get()->LogMessage("Active Tiles: %d", tilemap.tiles.size());
+    Console::get()->LogMessage("Active Tiles: %d", tilemap.tiles.Size());
 
 	render_random_particles();
 

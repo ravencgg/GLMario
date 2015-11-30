@@ -6,7 +6,7 @@ Tile MakeTile(Physics* physics, Vec2 position, Vec2 size, TileType tile_type)
     assert(physics);
     Tile result = {};
     result.position = position;
-    result.size = size; 
+    result.size = size;
     result.tile_type = tile_type;
 
     Rectf collider = { (float) position.x - size.x / 2.f, (float) position.y - size.y / 2.f, size.x, size.y };
@@ -32,24 +32,24 @@ void Tilemap::MakeCheckerboard(Rect r)
 		{
 			if(y & 1)
 			{
-				if(!(x & 1)) 
+				if(!(x & 1))
                 {
                     Vec2 p = vec2((float) x, (float) y);
                     Vec2 s = vec2(1, 1);
-                    tiles.push_back(MakeTile(physics, p, s));
+                    tiles.Add(MakeTile(physics, p, s));
                 }
-			}	
+			}
 			else
 			{
 				if (x & 1)
 				{
                     Vec2 p = vec2((float) x, (float) y);
                     Vec2 s = vec2(1, 1);
-                    tiles.push_back(MakeTile(physics, p, s));
+                    tiles.Add(MakeTile(physics, p, s));
 				}
 			}
 		}
-	}	
+	}
 }
 
 void Tilemap::MakeWalledRoom(Rect r)
@@ -64,13 +64,13 @@ void Tilemap::MakeWalledRoom(Rect r)
 			{
                 Vec2 p = vec2((float) x, (float) y);
                 Vec2 s = vec2(1, 1);
-                tiles.push_back(MakeTile(physics, p, s));
+                tiles.Add(MakeTile(physics, p, s));
 			}
 			else if(x == r.x || i == (r.width - 1))
 			{
                 Vec2 p = vec2((float) x, (float) y);
                 Vec2 s = vec2(1, 1);
-                tiles.push_back(MakeTile(physics, p, s));
+                tiles.Add(MakeTile(physics, p, s));
 				// tiles.back().collider.data->active = false;
 			}
 		}
@@ -81,8 +81,8 @@ void Tilemap::AddTile(float x, float y)
 {
     Vec2 p = vec2(x, y);
     Vec2 s = vec2(1, 1);
-    tiles.push_back(MakeTile(physics, p, s));
-    tiles.back().collider->active = true;
+    tiles.Add(MakeTile(physics, p, s));
+    tiles.GetBack().collider->active = true;
 }
 
 void Tilemap::update()
@@ -92,9 +92,9 @@ void Tilemap::update()
 void Tilemap::draw()
 {
 	static Rect brick_rect = { 85, 0, tile_width, tile_height };
-	static Rect ground_rect = { 0, 0, tile_width, tile_height }; 
+	static Rect ground_rect = { 0, 0, tile_width, tile_height };
 
-    for(uint32 i = 0; i < tiles.size(); ++i)
+    for(uint32 i = 0; i < tiles.Size(); ++i)
     {
         draw_call.sd.world_position = tiles[i].position;
         draw_call.sd.world_size = tiles[i].size;
@@ -104,17 +104,17 @@ void Tilemap::draw()
 
 void Tilemap::init()
 {
-	ren = Renderer::get();	
+	ren = Renderer::get();
 	tile_width = 16;
 	tile_height = 16;
 
 	draw_call = {};
 	draw_call.draw_type = DrawType::SINGLE_SPRITE;
-	draw_call.image = ImageFiles::MAIN_IMAGE; 
+	draw_call.image = ImageFiles::MAIN_IMAGE;
 	draw_call.shader = Shader_Default;
 	draw_call.options = DrawOptions::TEXTURE_RECT;
 	draw_call.sd.tex_rect = get_sprite_rect(SpriteRect::STONE);
-	
+
 	draw_call.sd.world_size = vec2(1.f, 1.f);
 	draw_call.sd.world_position = { 0, 0 };
 	draw_call.sd.draw_angle = 0;

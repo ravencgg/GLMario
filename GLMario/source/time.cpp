@@ -18,6 +18,15 @@ namespace
 	uint32 frame_count;
 }
 
+/****************************
+ *
+ * Time functions
+ *
+ ******/
+
+#define MAX_FRAME_TIME 0.25f
+
+
 double CurrentTimePrecise()
 {
     return current_time;
@@ -30,6 +39,8 @@ float CurrentTime()
 
 float FrameTime()
 {
+    // TODO: This is really debug only
+    float result = MIN((float)delta_time, MAX_FRAME_TIME);
     return (float)delta_time;
 }
 
@@ -76,12 +87,23 @@ uint32 RealTimeSinceStartup()
     return result;
 }
 
+/****************************
+ *
+ * Timer functions
+ *
+ ******/
+
 Timer* CreateTimer(float dur)
 {
     NEW_ZERO(result, Timer);
 	assert(dur >= 0);
     StartTimer(result, dur);
     return result;
+}
+
+void DestroyTimer(Timer* timer)
+{
+    delete timer;
 }
 
 void StartTimer(Timer* timer, float new_duration)
@@ -91,11 +113,6 @@ void StartTimer(Timer* timer, float new_duration)
 		timer->duration = new_duration;
     }
     timer->start_time = CurrentTime();
-}
-
-void DestroyTimer(Timer* timer)
-{
-    delete timer;
 }
 
 bool TimerIsFinished(Timer* timer)

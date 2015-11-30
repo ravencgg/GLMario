@@ -48,7 +48,6 @@ int main(int argc, char* argv[])
         ProfileBeginSection(Profile_Input);
 
 		input->begin_frame();
-#if 1
 		while (SDL_PollEvent(&e))
 		{
 			//If user closes the window
@@ -83,7 +82,6 @@ int main(int argc, char* argv[])
         Vec2 mouse_pos = input->mouse_world_position();
         Console::get()->LogMessage("Mouse World Position: (%.2f, %.2f)",  mouse_pos.x, mouse_pos.y);
 
-#endif
 		if(input->on_down(SDLK_ESCAPE))
 		{
 			running = false;
@@ -127,7 +125,7 @@ int main(int argc, char* argv[])
 		scene.update_scene();
         ProfileEndSection(Profile_SceneUpdate);
 
-        static std::vector<SimpleVertex> v;
+        static Array<SimpleVertex> v;
         static bool initialized = false;
         if(!initialized)
         {
@@ -137,12 +135,12 @@ int main(int argc, char* argv[])
                 SimpleVertex verts = {};
                 verts.position = vec2((float) (i / 50.f) - 2.f, (float) i);
                 verts.color = vec4(1, 1, 0, 1.f);
-                v.push_back(verts);
+                v.Add(verts);
             }
         }
         else
         {
-            for(uint32 i = 0; i < v.size(); ++i)
+            for(uint32 i = 0; i < v.Size(); ++i)
             {
 				v[i].position.y = sin(CurrentTime() + i / (PI * 20));
             }
