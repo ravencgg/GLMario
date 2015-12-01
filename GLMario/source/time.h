@@ -1,25 +1,7 @@
 #pragma once
 
 #include "types.h"
-
-
-struct GameTime
-{
-	double current_time;
-	double delta_time;
-
-	uint32 last_frame_ticks;
-	uint32 current_frame_ticks;
-	uint32 ticks_per_frame;
-
-	uint32 frame_count;
-};
-
-struct Timer
-{
-	float start_time;
-	float duration;
-};
+#include "game_types.h"
 
 /****************************
  *
@@ -27,22 +9,21 @@ struct Timer
  *
  ******/
 
+double CurrentTimePrecise(GameState*);
 
-double CurrentTimePrecise();
+float CurrentTime(GameState*);
 
-float CurrentTime();
+float FrameTime(GameState*);
 
-float FrameTime();
+uint32 FrameCount(GameState*);
 
-uint32 FrameCount();
+void InitializeTime(GameState*, uint32 ms_per_frame);
 
-void InitializeTime(uint32 ms_per_frame);
+void TimeBeginFrame(GameState*);
 
-void TimeBeginFrame();
+uint32 RemainingTicksInFrame(GameState*);
 
-uint32 RemainingTicksInFrame();
-
-uint32 RealTimeSinceStartup();
+uint32 RealTimeSinceStartup(GameState*);
 
 
 /****************************
@@ -53,11 +34,12 @@ uint32 RealTimeSinceStartup();
 
 Timer* CreateTimer(float dur);
 
-void DestroyTimer(Timer* timer);
+void DestroyTimer(Timer*);
 
 // If new_duration is 0, then the timer is restarted with the old duration.
-void StartTimer(Timer* timer, float new_duration = 0);
+void StartTimer(GameState*, Timer*, float new_duration = 0);
 
-bool TimerIsFinished(Timer* timer);
+bool TimerIsFinished(GameState*, Timer*);
 
-float RemainingTime(Timer* timer);
+float RemainingTime(GameState*, Timer*);
+

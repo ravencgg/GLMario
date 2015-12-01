@@ -51,11 +51,12 @@ Player::~Player()
     parent_scene->physics->DestroyCollider(collider);
 }
 
-void Player::Tick(float dt)
+void Player::Tick(GameState* game_state)
 {
 	const float gravity = -20.f;
 	static uint32 count = 0;
 	Input* input = Input::get();
+    float dt = FrameTime(game_state);
 
 	if(input->is_down(SDLK_SPACE))
 	{
@@ -82,7 +83,6 @@ void Player::Tick(float dt)
 		velocity.x = 0;
 	}
 
-
 	if(input->is_down(SDLK_1))
     {
         delete_this_frame = true;
@@ -94,14 +94,14 @@ void Player::Tick(float dt)
 
     Vec2 old_velocity = velocity;
 
-    transform.position = parent_scene->physics->StepCollider(collider, velocity, dt);
+    transform.position = parent_scene->physics->StepCollider(collider, velocity, FrameTime(game_state));
 
     const uint8 line_width = 3;
     Renderer::get()->DrawLine(transform.position,  transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
 
     Console::get()->LogMessage("Player collider.data->velocity: (%.2f, %.2f)", velocity.x, velocity.y);
 
-    ps.update(this->transform.position);
+    ps.update(game_state, this->transform.position);
 	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
 	//Console::get()->log_message(p_info);
 	//draw_call.sd.draw_angle += 0.1f;

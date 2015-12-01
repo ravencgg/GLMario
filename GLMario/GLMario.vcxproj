@@ -92,7 +92,6 @@
     <ClCompile Include="source\scene_manager.cpp" />
     <ClCompile Include="source\tilemap.cpp" />
     <ClCompile Include="source\time.cpp" />
-    <ClCompile Include="source\window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\camera.h" />
@@ -110,7 +109,6 @@
     <ClInclude Include="source\tilemap.h" />
     <ClInclude Include="source\time.h" />
     <ClInclude Include="source\types.h" />
-    <ClInclude Include="source\window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -34,7 +34,7 @@ Enemy::Enemy(SceneManager* sm)
 	velocity = vec2(-1.0f, 0);
 }
 
-void Enemy::Tick(float dt)
+void Enemy::Tick(GameState* game_state)
 {
 	velocity.y = -1.f;
 
@@ -42,7 +42,7 @@ void Enemy::Tick(float dt)
 
     const uint8 line_width = 3;
     Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1), line_width);
-    transform.position = parent_scene->physics->StepCollider(collider, velocity, dt);
+    transform.position = parent_scene->physics->StepCollider(collider, velocity, FrameTime(game_state));
 }
 
 void Enemy::Draw()
@@ -63,9 +63,9 @@ Spawner::Spawner(SceneManager* sm)
 
 Spawner::~Spawner() {}
 
-void Spawner::Tick(float dt)
+void Spawner::Tick(GameState* game_state)
 {
-    float current_time = CurrentTime();
+    float current_time = CurrentTime(game_state);
 
     if (current_time - last_spawn_time > time_between_spawns)
     {

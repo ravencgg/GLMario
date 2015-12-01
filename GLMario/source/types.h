@@ -122,4 +122,3 @@ inline Rectf rectf(float x, float y, float w, float h)
 	result.h = h;
 	return result;
 }
-

@@ -2,9 +2,9 @@
 #include <vector>
 
 #include "glew.h"
-#include "types.h"
 #include "mathops.h"
-#include "window.h"
+#include "types.h"
+#include "game_types.h"
 #include "utility.h"
 #include "containers.h"
 
@@ -151,6 +151,23 @@ struct TextDrawResult
 	Vec2 bottom_right;
 };
 
+struct TextData
+{
+    uint32 chars_per_line;
+    Dimension char_size;
+};
+
+struct Texture
+{
+    int32 w, h, bytes_per_color;
+    GLuint texture_handle;
+};
+
+struct Shader
+{
+    GLuint shader_handle;
+};
+
 // TODO: break this up into logical components
 //  -> Text drawing
 //  -> Particles?
@@ -187,21 +204,6 @@ private:
 public:
 	TextDrawResult DrawString(char* string, uint32 string_size, float start_x, float start_y);
 
-	struct TextData
-	{
-		uint32 chars_per_line;
-		Dimension char_size;
-	};
-	struct Texture
-	{
-		int32 w, h, bytes_per_color;
-		GLuint texture_handle;
-	};
-
-	struct Shader
-	{
-		GLuint shader_handle;
-	};
 
 	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
 	Shader shaders[Shader_Count];
@@ -234,3 +236,4 @@ private:
 	static Renderer* s_instance;
 };
 
+void SwapBuffer(GameState*);

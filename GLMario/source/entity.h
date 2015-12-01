@@ -36,7 +36,7 @@ public:
     Entity(SceneManager* sm) { parent_scene = sm; }
     virtual ~Entity() {}
 
-    virtual void Tick(float) {}
+    virtual void Tick(GameState*) {}
     virtual void Draw() {}
     virtual void SetPosition(Vec2 pos) { transform.position = pos; }
     virtual void Translate(Vec2 offset) { transform.position += offset; }
@@ -63,7 +63,7 @@ public:
 	Enemy(SceneManager* sm);
     virtual ~Enemy() {}
 
-    virtual void Tick(float) override;
+    virtual void Tick(GameState*) override;
     virtual void Draw() override;
 };
 
@@ -79,6 +79,6 @@ public:
 	Spawner(SceneManager* sm);
     virtual ~Spawner();
 
-    virtual void Tick(float) override;
+    virtual void Tick(GameState*) override;
     virtual void Draw() override;
 };

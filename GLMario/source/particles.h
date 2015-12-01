@@ -124,14 +124,14 @@ public:
 	DrawLayer draw_layer;
 
 	void initialize(uint32 max, DrawLayer dl);
-	void init_random(uint32);
-	void update(Vec2 p = vec2(0, 0));
+	void init_random(float, uint32);
+	void update(GameState*, Vec2 p = vec2(0, 0));
 	void render();
 
 	void create_particle(ParticleVertexData&, ParticleFrameData&, float);
 	void create_particle_burst(uint32);
 
-    virtual void Tick(float) override;
+    virtual void Tick(GameState*) override;
 
 private:
 	void allocate();

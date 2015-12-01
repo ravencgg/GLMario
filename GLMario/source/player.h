@@ -20,6 +20,6 @@ public:
     Player(SceneManager* sm);
     virtual ~Player() override;
 
-    void Tick(float) override;
+    void Tick(GameState*) override;
     void Draw() override;
 };

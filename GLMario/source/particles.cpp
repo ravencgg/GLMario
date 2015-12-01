@@ -65,7 +65,7 @@ ParticleSystem::~ParticleSystem()
 	particles.destroy();
 }
 
-void ParticleSystem::init_random(uint32 count)
+void ParticleSystem::init_random(float current_time, uint32 count)
 {
 	active_particles = min(count, max_particles);
 	particles.last_active_index = active_particles;
@@ -77,7 +77,7 @@ void ParticleSystem::init_random(uint32 count)
 		particles.pvd[i].scale = 1.0f;
 
 		particles.pfd[i].lifetime = random_float(0.5f, 3.0f);
-		particles.pfd[i].start_time = CurrentTime();
+		particles.pfd[i].start_time = current_time;
 	}
 }
 
@@ -97,15 +97,15 @@ void ParticleSystem::create_particle_burst(uint32 num_particles)
 	// }
 }
 
-void ParticleSystem::update(Vec2 new_position)
+void ParticleSystem::update(GameState* game_state, Vec2 new_position)
 {
     ProfileBeginSection(Profile_ParticleUpdate);
 
 	uint64 cycle_start = GetCycleCount();
 	static uint64 avg_cycles = 0;
 
-	float current_time = CurrentTime();
-	float dt = FrameTime();
+	float current_time = CurrentTime(game_state);
+	float dt = FrameTime(game_state);
 	Vec2 frame_gravity = ptd.gravity * dt;
 	uint32 new_particles = (uint32)((float)ped.spawn_rate * dt);
 	new_particles = max(new_particles + burst_particles, (uint32)1);
@@ -458,9 +458,9 @@ void ParticleSystem::render()
 	ren->push_draw_call(draw_call, draw_layer);
 }
 
-void ParticleSystem::Tick(float dt)
+void ParticleSystem::Tick(GameState* game_state)
 {
-    update(this->transform.position);
+    update(game_state, this->transform.position);
     render();
 }
 

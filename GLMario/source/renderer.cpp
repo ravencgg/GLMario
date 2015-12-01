@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "game_types.h"
 
 #include "camera.h"
 
@@ -27,6 +28,11 @@ struct ShaderLoadData
 ShaderLoadData shaderLoadData[Shader_Count];
 Rect sprite_rects[(uint32) SpriteRect::RECT_COUNT] = {};
 Renderer* Renderer::s_instance = nullptr;
+
+void SwapBuffer(GameState* game_state)
+{
+	SDL_GL_SwapWindow(game_state->window.sdl_window);
+}
 
 void initialize_sprite_rects()
 {
@@ -117,16 +123,6 @@ void Renderer::Flush()
 	{
 		draw_buffer[i].Clear();
 	}
-}
-
-void Renderer::SwapBuffer()
-{
-	draw_window->swap_buffer();
-}
-
-Dimension Renderer::get_resolution()
-{
-	return draw_window->get_resolution();
 }
 
 float Renderer::viewport_width()

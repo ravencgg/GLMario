@@ -52,7 +52,7 @@ void ProfileBeginFrame();
 char* GetProfileSectionName(ProfileSectionName name);
 
 // Immediate mode text output / per frame rendering
-class Console
+struct Console
 {
 public:
     char* output_string;
@@ -70,3 +70,12 @@ private:
 	static Console* s_instance;
 	Console();
 };
+
+//void DebugLogMessage(DebugConsole* console, char* format, ...);
+//void DebugDrawConsole(DebugConsole* console);
+//
+//struct DebugState
+//{
+//
+//    DebugConsole console
+//};

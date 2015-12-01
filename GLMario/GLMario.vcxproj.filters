@@ -3,7 +3,6 @@
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\mathops.cpp" />
-    <ClCompile Include="source\window.cpp" />
     <ClCompile Include="source\input.cpp" />
     <ClCompile Include="source\renderer.cpp" />
     <ClCompile Include="source\scene_manager.cpp" />
@@ -20,7 +19,6 @@
   <ItemGroup>
     <ClInclude Include="source\mathops.h" />
     <ClInclude Include="source\types.h" />
-    <ClInclude Include="source\window.h" />
     <ClInclude Include="source\input.h" />
     <ClInclude Include="source\renderer.h" />
     <ClInclude Include="source\player.h" />

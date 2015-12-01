@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <memory>
 
+struct GameState;
 
 class SceneManager
 {
@@ -41,11 +42,11 @@ public:
 	SceneManager();
 	~SceneManager();
 
-	void update_scene();
+	void update_scene(GameState*);
 	void SetMainCamera(Camera*);
 
     // Debug only
-	void render_random_particles();
+	void render_random_particles(GameState*);
 
 	Tilemap* GetTilemap() { return &tilemap; }
     Physics* GetPhysics() { return physics; }

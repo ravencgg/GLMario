@@ -6,18 +6,6 @@
 #include "utility.h"
 
 
-namespace
-{
-	double current_time;
-	double delta_time;
-
-	uint32 last_frame_ticks;
-	uint32 current_frame_ticks;
-	uint32 ticks_per_frame;
-
-	uint32 frame_count;
-}
-
 /****************************
  *
  * Time functions
@@ -27,49 +15,51 @@ namespace
 #define MAX_FRAME_TIME 0.25f
 
 
-double CurrentTimePrecise()
+double CurrentTimePrecise(GameState* game_state)
 {
-    return current_time;
+    return game_state->time.current_time;
 }
 
-float CurrentTime()
+float CurrentTime(GameState* game_state)
 {
-    return (float)current_time;
+    return (float)game_state->time.current_time;
 }
 
-float FrameTime()
+float FrameTime(GameState* game_state)
 {
     // TODO: This is really debug only
-    float result = MIN((float)delta_time, MAX_FRAME_TIME);
-    return (float)delta_time;
+    float result = MIN((float)game_state->time.delta_time, MAX_FRAME_TIME);
+    return result;
 }
 
-uint32 FrameCount()
+uint32 FrameCount(GameState* game_state)
 {
-    return frame_count;
+    return game_state->time.frame_count;
 }
 
-void InitializeTime(uint32 ms_per_frame)
+void InitializeTime(GameState* game_state, uint32 ms_per_frame)
 {
-	ticks_per_frame = 16;
-	current_frame_ticks = SDL_GetTicks();
+    // TODO: convert this to high precision
+	game_state->time.ticks_per_frame = 16;
+	game_state->time.current_frame_ticks = SDL_GetTicks();
 }
 
-void TimeBeginFrame()
+void TimeBeginFrame(GameState* game_state)
 {
-	last_frame_ticks = current_frame_ticks;
-	current_frame_ticks = SDL_GetTicks();
+	game_state->time.last_frame_ticks = game_state->time.current_frame_ticks;
+	game_state->time.current_frame_ticks = SDL_GetTicks();
 
-	current_time = (double)current_frame_ticks / 1000.0;
-	delta_time = (double)(current_frame_ticks - last_frame_ticks) / 1000.0;
+	game_state->time.current_time = (double)game_state->time.current_frame_ticks / 1000.0;
+	game_state->time.delta_time = (double)(game_state->time.current_frame_ticks - game_state->time.last_frame_ticks) / 1000.0;
 
-	++frame_count;
+	++game_state->time.frame_count;
 }
 
-uint32 RemainingTicksInFrame()
+uint32 RemainingTicksInFrame(GameState* game_state)
 {
+    // TODO: Needs to be all high precision
 	uint32 cur_time = SDL_GetTicks();
-	uint32 next_frame_start = current_frame_ticks + ticks_per_frame;
+	uint32 next_frame_start = game_state->time.current_frame_ticks + game_state->time.ticks_per_frame;
 
 	uint32 result = 0;
 
@@ -83,6 +73,7 @@ uint32 RemainingTicksInFrame()
 
 uint32 RealTimeSinceStartup()
 {
+    // TODO: High precision
     uint32 result = SDL_GetTicks();
     return result;
 }
@@ -93,36 +84,23 @@ uint32 RealTimeSinceStartup()
  *
  ******/
 
-Timer* CreateTimer(float dur)
-{
-    NEW_ZERO(result, Timer);
-	assert(dur >= 0);
-    StartTimer(result, dur);
-    return result;
-}
-
-void DestroyTimer(Timer* timer)
-{
-    delete timer;
-}
-
-void StartTimer(Timer* timer, float new_duration)
+void StartTimer(GameState* game_state, Timer* timer, float new_duration)
 {
     if(new_duration > 0)
     {
 		timer->duration = new_duration;
     }
-    timer->start_time = CurrentTime();
+    timer->start_time = CurrentTime(game_state);
 }
 
-bool TimerIsFinished(Timer* timer)
+bool TimerIsFinished(GameState* game_state, Timer* timer)
 {
-	bool result = RemainingTime(timer) <= 0;
+	bool result = RemainingTime(game_state, timer) <= 0;
 	return result;
 }
 
-float RemainingTime(Timer* timer)
+float RemainingTime(GameState* game_state, Timer* timer)
 {
-	float result = timer->duration - (float)(CurrentTime() - timer->start_time);
+	float result = timer->duration - (float)(CurrentTime(game_state) - timer->start_time);
 	return result;
 }

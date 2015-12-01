@@ -1,11 +1,13 @@
 #include "scene_manager.h"
 
+#include "game_types.h"
+
 void SceneManager::SetMainCamera(Camera* camera)
 {
 	this->main_camera = camera;
 }
 
-void SceneManager::render_random_particles()
+void SceneManager::render_random_particles(GameState* game_state)
 {
 #if 1
 	static ParticleSystem ps1(this, 10000);
@@ -45,20 +47,20 @@ void SceneManager::render_random_particles()
 		data[1].end_color   = vec4(1, 1, 0, 0);
 	}
 
-	ps2.ped.start_color = vec4((float)sin(CurrentTime()), (float)cos(CurrentTime()), 1, 1.f);
-	ps2.ped.end_color = vec4(0.2f, sin(CurrentTime()), cos(CurrentTime()), 0.4f);
+	ps2.ped.start_color = vec4((float)sin(CurrentTime(game_state)), (float)cos(CurrentTime(game_state)), 1, 1.f);
+	ps2.ped.end_color = vec4(0.2f, sin(CurrentTime(game_state)), cos(CurrentTime(game_state)), 0.4f);
 
-	static Timer timer = (StartTimer(&timer, 1.0f), timer);
-	if (TimerIsFinished(&timer))
+	static Timer timer = (StartTimer(game_state, &timer, 1.0f), timer);
+	if (TimerIsFinished(game_state, &timer))
 	{
-		StartTimer(&timer);
+		StartTimer(game_state, &timer);
 		active_data ^= 1;
 		ps2.ped = data[active_data];
 	}
 
-	ps1.update();
+	ps1.update(game_state);
 	ps1.render();
-	ps2.update();
+	ps2.update(game_state);
 	ps2.render();
 #endif
 }
@@ -109,13 +111,13 @@ void SceneManager::AddEntity(Entity* p)
     (*obj.ptr)->SetPosition(vec2(0.5f, 4.f));
 }
 
-void SceneManager::update_scene()
+void SceneManager::update_scene(GameState* game_state)
 {
 	tilemap.draw();
 
     Console::get()->LogMessage("Active Tiles: %d", tilemap.tiles.Size());
 
-	render_random_particles();
+	render_random_particles(game_state);
 
 	if (input->on_down(SDLK_n))
 	{
@@ -169,7 +171,7 @@ void SceneManager::update_scene()
     for (uint32 index = 0; counter < max; ++counter, ++index)
   	{
         RArrayRef<Entity*> obj = objects.GetRef(index);
-        (*obj)->Tick(FrameTime());
+        (*obj)->Tick(game_state);
 
         // NOTE: Can I just do a --i and delete in place?
   		if ((*obj)->delete_this_frame)
@@ -190,19 +192,19 @@ void SceneManager::update_scene()
 
 	if (input->is_down(SDLK_k))
 	{
-		velocity.y -= FrameTime();
+		velocity.y -= FrameTime(game_state);
 	}
     if (input->is_down(SDLK_i))
     {
-        velocity.y += FrameTime();
+        velocity.y += FrameTime(game_state);
     }
     if (input->is_down(SDLK_j))
     {
-        velocity.x -= FrameTime();
+        velocity.x -= FrameTime(game_state);
     }
 	if (input->is_down(SDLK_l))
 	{
-		velocity.x += FrameTime();
+		velocity.x += FrameTime(game_state);
 	}
 
     float outDistance = 0;

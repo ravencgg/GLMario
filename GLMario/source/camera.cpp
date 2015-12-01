@@ -20,7 +20,7 @@ void Camera::SetFollowTarget(RArrayRef<Entity*> new_target)
     }
 }
 
-void Camera::Tick(float dt)
+void Camera::Tick(GameState* game_state)
 {
 	static Input* input = Input::get();
 
