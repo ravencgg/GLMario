@@ -3,6 +3,7 @@
 #include "SDL.h"
 #include "types.h"
 #include "utility.h"
+#include "input.h"
 
 enum ScreenMode
 {
@@ -44,7 +45,7 @@ struct Timer
  *
  ******/
 
-void StartupWindow(Window* window, char* title, int32 width, int32 height);
+void InitializeWindow(Window* window, char* title, int32 width, int32 height);
 
 void ShutdownWindow(Window* window);
 
@@ -61,11 +62,10 @@ void WindowSetScreenMode(Window* window, ScreenMode mode);
 
 struct GameState
 {
-    // TODO: INITIALIZE THIS
     MemoryArena temporary_memory;
-    // TODO: THE ABOVE TODO
 
     Window window;
     GameTime time;
+    Input input;
 };
 

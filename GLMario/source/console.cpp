@@ -3,16 +3,28 @@
 
 #include <inttypes.h>
 
-Console* Console::s_instance = nullptr;
+// Immediate mode text output / per frame rendering
+struct DebugConsole
+{
+    char* output_string;
+    uint32 used_chars;
+    uint32 array_size;
+    Array<StringTextColor> text_coloring;
+	Vec2 screen_start = vec2( 0.01f, 0.95f);
+};
+
+#define CONSOLE_STRING_START_SIZE 1024
 
 namespace
 {
+    // Debug Graph
     ProfileSection profile_sections[Profile_Count] = {0};
-
     uint64 profile_frame_clock_start;
     uint64 profile_frame_clock_end;
-
     uint64 cycles_per_second;
+
+    // Console Output
+    DebugConsole console;
 }
 
 Vec4 profile_colors[] =
@@ -78,8 +90,6 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
     uint64 frame_cycles     = profile_frame_clock_end - profile_frame_clock_start;
     uint64 target_cycles    = cycles_per_second / target_fps;
 
-    Console* console = Console::get();
-
     // Graph drawing variables
 
     // In screen ratio coords with (0, 0) being the lower left corner
@@ -100,20 +110,20 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
             if(hits > 1)
             {
-                console->LogMessage("Function: (%s) Hits: %d Average: %"PRIu64" Min: %"PRIu64" Max: %"PRIu64"",
+                DebugPrintf("Function: (%s) Hits: %d Average: %"PRIu64" Min: %"PRIu64" Max: %"PRIu64"",
                                         GetProfileSectionName((ProfileSectionName) i),
                                         hits, (section->sum / section->hits),
                                         section->min_cycles, section->max_cycles);
             }
             else if(hits == 1)
             {
-                console->LogMessage("Function: (%s) Hits: %d Average Cycles: %"PRIu64"",
+                DebugPrintf("Function: (%s) Hits: %d Average Cycles: %"PRIu64"",
                                         GetProfileSectionName((ProfileSectionName) i),
                                         hits, (section->sum / section->hits));
             }
             else
             {
-                console->LogMessage("Function: (%s) Hits: %d",
+                DebugPrintf("Function: (%s) Hits: %d",
                                         GetProfileSectionName((ProfileSectionName) i),
                                         hits);
             }
@@ -151,7 +161,7 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         }
     }
 
-    console->LogMessage("Target cycles: %"PRIu64" Cycles per second: %"PRIu64"\n", target_cycles, cycles_per_second);
+    DebugPrintf("Target cycles: %"PRIu64" Cycles per second: %"PRIu64"\n", target_cycles, cycles_per_second);
 
     const Vec4 color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
     ren->DrawRect(data_box, 2, DrawLayer_UI, color, LineDrawOptions::SCREEN_SPACE);
@@ -186,17 +196,15 @@ void _ProfileEndSection(ProfileSectionName name, char* file, int line)
     section->cycle_count_start = 0;
 }
 
-#define CONSOLE_STRING_START_SIZE 20
-Console::Console()
-:   used_chars(0),
-    array_size(CONSOLE_STRING_START_SIZE)
+void InitializeDebugConsole()
 {
-    this->output_string = new char[this->array_size];
+    console.array_size = CONSOLE_STRING_START_SIZE;
+    console.output_string = new char[console.array_size];
 }
 
-void Console::LogMessage(char* format, ... )
+void DebugPrintf(char* format, ... )
 {
-    uint32 remaining_buffer_size = this->array_size - this->used_chars;
+    uint32 remaining_buffer_size = console.array_size - console.used_chars;
 
     va_list args;
     va_start(args, format);
@@ -211,14 +219,14 @@ void Console::LogMessage(char* format, ... )
     if((uint32) input_size >= remaining_buffer_size)
     {
         uint32 needed_space = input_size - remaining_buffer_size;
-        uint32 new_size = (needed_space < this->array_size) ? this->array_size * 2 : needed_space * 2 + this->array_size;
-        this->output_string = ExpandArray<char>(this->output_string, this->array_size, new_size);
-        this->array_size = new_size;
+        uint32 new_size = (needed_space < console.array_size) ? console.array_size * 2 : needed_space * 2 + console.array_size;
+        console.output_string = ExpandArray<char>(console.output_string, console.array_size, new_size);
+        console.array_size = new_size;
 
-        remaining_buffer_size = this->array_size - this->used_chars;
+        remaining_buffer_size = console.array_size - console.used_chars;
     }
 
-    char* start_position = this->output_string + used_chars;
+    char* start_position = console.output_string + console.used_chars;
 
     va_start(args, format);
     input_size = vsnprintf(start_position, remaining_buffer_size, format, args);
@@ -228,20 +236,29 @@ void Console::LogMessage(char* format, ... )
     *start_position = '\n'; // This can overwrite the terminating null because the size is tracked through
                             // to rendering.
 
-    this->used_chars += input_size + 1;
+    console.used_chars += input_size + 1;
     assert(input_size >= 0);
 }
 
-void Console::draw()
+void DebugDrawConsole(Renderer* ren)
 {
-	Renderer* ren = Renderer::get();
-
-	float draw_y = screen_start.y;
-	float draw_x = screen_start.x;
+	float draw_y = console.screen_start.y;
+	float draw_x = console.screen_start.x;
 	uint32 num_chars = 0;
 
-    ren->DrawString(this->output_string, this->used_chars, draw_x, draw_y);
+// TODO: replace with real system from the input
+    const size_t array_size = 2;
+    StringTextColor colors[array_size];
+    colors[0].start = 0;
+    colors[0].end   = console.used_chars / 2;
+    colors[0].color = { 1.f, 0.f, 1.f, 1.f };
+
+    colors[1].start = colors[0].end;
+    colors[1].end   = console.used_chars;
+    colors[1].color = { 1.f, 0, 0, 1.f };
+
+    ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y, colors, array_size);
     //ren->DrawString(this->output_string, 100, 100, this->used_chars);
-    this->used_chars = 0;
+    console.used_chars = 0;
 }
 

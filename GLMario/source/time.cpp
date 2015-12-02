@@ -40,6 +40,7 @@ uint32 FrameCount(GameState* game_state)
 void InitializeTime(GameState* game_state, uint32 ms_per_frame)
 {
     // TODO: convert this to high precision
+    memset(&game_state->time, 0, sizeof(game_state->time));
 	game_state->time.ticks_per_frame = 16;
 	game_state->time.current_frame_ticks = SDL_GetTicks();
 }

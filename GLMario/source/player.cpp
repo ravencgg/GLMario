@@ -55,10 +55,9 @@ void Player::Tick(GameState* game_state)
 {
 	const float gravity = -20.f;
 	static uint32 count = 0;
-	Input* input = Input::get();
     float dt = FrameTime(game_state);
 
-	if(input->is_down(SDLK_SPACE))
+	if(KeyIsDown(SDLK_SPACE))
 	{
 		velocity.y = 10.f;
 	}
@@ -68,12 +67,12 @@ void Player::Tick(GameState* game_state)
         velocity.y = max(velocity.y, -100.0f);
     }
 
-	if(input->is_down(SDLK_d))
+	if(KeyIsDown(SDLK_d))
 	{
 		velocity.x += 50.f * dt;
         velocity.x = min(velocity.x, 5.0f);
 	}
-	else if(input->is_down(SDLK_a))
+	else if(KeyIsDown(SDLK_a))
 	{
 		velocity.x -= 50.f * dt;
         velocity.x = max(velocity.x, -5.0f);
@@ -83,14 +82,14 @@ void Player::Tick(GameState* game_state)
 		velocity.x = 0;
 	}
 
-	if(input->is_down(SDLK_1))
+	if(KeyIsDown(SDLK_1))
     {
         delete_this_frame = true;
     }
 
-	Console::get()->LogMessage("Player collider.data->velocity: (%.2f, %.2f)", velocity.x, velocity.y);
+	DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", velocity.x, velocity.y);
 
-    Console::get()->LogMessage("Player position: (%.2f, %.2f)", transform.position.x, transform.position.y);
+    DebugPrintf("Player position: (%.2f, %.2f)", transform.position.x, transform.position.y);
 
     Vec2 old_velocity = velocity;
 
@@ -99,31 +98,25 @@ void Player::Tick(GameState* game_state)
     const uint8 line_width = 3;
     Renderer::get()->DrawLine(transform.position,  transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
 
-    Console::get()->LogMessage("Player collider.data->velocity: (%.2f, %.2f)", velocity.x, velocity.y);
+    DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", velocity.x, velocity.y);
 
     ps.update(game_state, this->transform.position);
 	//std::string p_info("Player x: " + std::to_string(transform.position.x) + "\nPlayer y: " + std::to_string(transform.position.y));
 	//Console::get()->log_message(p_info);
 	//draw_call.sd.draw_angle += 0.1f;
+
+    if(KeyFrameDown(SDLK_p))
+    {
+        ps.create_particle_burst(500);
+    }
 }
 
 void Player::Draw()
 {
-    static bool draw_player = true;
-    if(Input::get()->on_down(SDLK_p))
-    {
-        draw_player = !draw_player;
-        ps.create_particle_burst(500);
-    }
-
     ps.render();
 
-    if(draw_player)
-    {
-        draw_call.sd.world_position = transform.position;
-        Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
-        // ren->draw_sprite(&sprite, transform.position);
-    }
+    draw_call.sd.world_position = transform.position;
+    Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
 }
 
 #endif

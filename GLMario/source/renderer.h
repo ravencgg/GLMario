@@ -56,9 +56,17 @@ struct SpriteVertex
     Vec2 uv;
 };
 
+struct StringTextColor
+{
+    uint32 start;
+    uint32 end;
+    Vec4 color; // = { 1.0f, 1.0f, 1.0f, 1.0f };
+};
+
 struct TextVertex
 {
     float x, y, tx, ty;
+    Vec4 color;
 };
 
 struct Vertex
@@ -199,10 +207,8 @@ public:
 	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }
 	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
 
-private:
-	void DrawCharacter(TextVertex*, char, float, float, Vec2);
-public:
-	TextDrawResult DrawString(char* string, uint32 string_size, float start_x, float start_y);
+	TextDrawResult DrawString(char* string, uint32 string_size, float start_x, float start_y,
+                                StringTextColor* = 0, size_t = 0);
 
 
 	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];

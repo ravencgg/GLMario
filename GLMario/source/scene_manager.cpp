@@ -68,8 +68,7 @@ void SceneManager::render_random_particles(GameState* game_state)
 SceneManager::SceneManager()
 	:renderer(Renderer::get()),
 	 physics(new Physics()),
-	 tilemap(physics),
-	 input(Input::get())
+	 tilemap(physics)
 {
 	//tilemap.fill_checkerboard();
     tilemap.MakeWalledRoom(rect(-50, -20, 50, 50));
@@ -115,19 +114,19 @@ void SceneManager::update_scene(GameState* game_state)
 {
 	tilemap.draw();
 
-    Console::get()->LogMessage("Active Tiles: %d", tilemap.tiles.Size());
+    DebugPrintf("Active Tiles: %d", tilemap.tiles.Size());
 
 	render_random_particles(game_state);
 
-	if (input->on_down(SDLK_n))
+	if (KeyFrameDown(SDLK_n))
 	{
         // TODO: is created inside of a rect and throws an assert. Make spawning check for collisions
 		//objects.push_back(std::make_shared<Enemy>(this));
 		objects.Add(new Enemy(this));
 	}
-	if (input->on_down(SDLK_m))
+	if (KeyFrameDown(SDLK_m))
 	{
-        if(input->is_down(SDLK_LSHIFT))
+        if(KeyIsDown(SDLK_LSHIFT))
         {
 //			std::shared_ptr<Enemy> p = std::make_shared<Enemy>(this);
             Entity* p = new Enemy(this);
@@ -149,7 +148,7 @@ void SceneManager::update_scene(GameState* game_state)
 		}
 	}
 
-	Console::get()->LogMessage("Num objects: %d", objects.Size());
+	DebugPrintf("Num objects: %d", objects.Size());
 
 	bool deleting = objects.Size() > 10;
 
@@ -190,19 +189,19 @@ void SceneManager::update_scene(GameState* game_state)
 	static Vec2 start = { -3.5f, 4.0f };
     static Vec2 velocity = { 0, -1.f };
 
-	if (input->is_down(SDLK_k))
+	if (KeyIsDown(SDLK_k))
 	{
 		velocity.y -= FrameTime(game_state);
 	}
-    if (input->is_down(SDLK_i))
+    if (KeyIsDown(SDLK_i))
     {
         velocity.y += FrameTime(game_state);
     }
-    if (input->is_down(SDLK_j))
+    if (KeyIsDown(SDLK_j))
     {
         velocity.x -= FrameTime(game_state);
     }
-	if (input->is_down(SDLK_l))
+	if (KeyIsDown(SDLK_l))
 	{
 		velocity.x += FrameTime(game_state);
 	}
@@ -219,7 +218,7 @@ void SceneManager::update_scene(GameState* game_state)
     CollisionInfo ci = {};
 	if (physics->RaycastStatics(start, velocity, ci, false))
 	{
-		Console::get()->LogMessage("Raycast hit at distance: %.2f", ci.distance);
+		DebugPrintf("Raycast hit at distance: %.2f", ci.distance);
 		line.push_back(SimpleVertex(start, red));
 		Vec2 end = start + (Normalize(velocity) * ci.distance);
 		line.push_back(SimpleVertex(end, red));
@@ -254,7 +253,7 @@ void SceneManager::update_scene(GameState* game_state)
 
     static bool draw_colliders = false;
 
-    if(input->on_down(SDLK_b)) draw_colliders = !draw_colliders;
+    if(KeyFrameDown(SDLK_b)) draw_colliders = !draw_colliders;
 
     if(draw_colliders)
     {

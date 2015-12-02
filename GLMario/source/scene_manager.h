@@ -20,7 +20,6 @@ class SceneManager
 {
 public:
     Renderer* renderer;
-    Input* input;
     Camera* main_camera;
     Physics* physics;
 

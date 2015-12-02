@@ -18,7 +18,6 @@ public:
 
     void SetFollowTarget(RArrayRef<Entity*> new_target);
 
-    Vec2 ScreenToWorldPoint(Point2 input);
 	virtual void Tick(GameState*) override;
 	void update_matrices();
 

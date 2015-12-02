@@ -38,7 +38,7 @@ void Enemy::Tick(GameState* game_state)
 {
 	velocity.y = -1.f;
 
-	Console::get()->LogMessage("Enemy position:  (%.2f, %.2f)", transform.position.x, transform.position.y);
+	DebugPrintf("Enemy position:  (%.2f, %.2f)", transform.position.x, transform.position.y);
 
     const uint8 line_width = 3;
     Renderer::get()->DrawLine(transform.position, transform.position + velocity, vec4(0, 1, 1, 1), line_width);

@@ -51,31 +51,7 @@ void ProfileEndFrame(Renderer* ren, uint32 desired_frame_time);
 void ProfileBeginFrame();
 char* GetProfileSectionName(ProfileSectionName name);
 
-// Immediate mode text output / per frame rendering
-struct Console
-{
-public:
-    char* output_string;
-    uint32 used_chars;
-    uint32 array_size;
+void InitializeDebugConsole();
+void DebugDrawConsole(Renderer* renderer);
+void DebugPrintf(char* format, ...);
 
-	Vec2 screen_start = vec2( 0.01f, 0.95f);
-
-	void LogMessage(char* format, ...);
-	void draw();
-
-	static Console* get() { if (!s_instance) s_instance = new Console(); return s_instance; }
-
-private:
-	static Console* s_instance;
-	Console();
-};
-
-//void DebugLogMessage(DebugConsole* console, char* format, ...);
-//void DebugDrawConsole(DebugConsole* console);
-//
-//struct DebugState
-//{
-//
-//    DebugConsole console
-//};

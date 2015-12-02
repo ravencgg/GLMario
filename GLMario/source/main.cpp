@@ -16,6 +16,8 @@
 #define MS_PER_FRAME 16
 #define TARGET_FPS (1000 / MS_PER_FRAME)
 
+#define FRAME_TEMPORARY_MEMORY_SIZE MEGABYTES(256)
+
 void StartupWindow(Window* window, char* title, int32 width, int32 height)
 {
 	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
@@ -63,20 +65,31 @@ void WindowSetScreenMode(Window* window, ScreenMode mode)
 	SDL_SetWindowFullscreen(window->sdl_window, (uint32)mode);
 }
 
+static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
+{
+    GameState* result = new GameState;
+
+    AllocateMemoryArena(&result->temporary_memory, FRAME_TEMPORARY_MEMORY_SIZE);
+    StartupWindow(&result->window, window_title, res_x, res_y);
+    InitializeTime(result, MS_PER_FRAME);
+    return result;
+}
+
 int main(int argc, char* argv[])
 {
 	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 
-    GameState* game_state = new GameState;
+    GameState* game_state = CreateNewGameState("EnGen", 1200, 700);
 
-    StartupWindow(&game_state->window, "Title", 1200, 700);
-
-    InitializeTime(game_state, MS_PER_FRAME);
-
+// Global initialization
 	Renderer::create_instance(&game_state->window);
+    InitializeInput();
+    InitializeDebugConsole();
+// End Global initialization
+
+// TODO: no more singletons!
 	Renderer* renderer = Renderer::get();
 
-	Input* input = Input::get();
 	SceneManager scene;
 	Camera main_camera(&scene);
 
@@ -97,7 +110,7 @@ int main(int argc, char* argv[])
         ProfileBeginSection(Profile_Frame);
         ProfileBeginSection(Profile_Input);
 
-		input->begin_frame();
+		InputBeginFrame();
 		while (SDL_PollEvent(&e))
 		{
 			//If user closes the window
@@ -108,42 +121,42 @@ int main(int argc, char* argv[])
 			//If user presses any key
 			if (e.type == SDL_KEYDOWN)
 			{
-				input->process_key_press(e.key.keysym.sym);
+				ProcessKeyPress(e.key.keysym.sym);
 			}
 			if (e.type == SDL_KEYUP)
 			{
-				input->process_key_release(e.key.keysym.sym);
+				ProcessKeyRelease(e.key.keysym.sym);
 			}
 
 			if(e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP)
 			{
-				input->mouse_button_event();
+				MouseButtonEvent();
 			}
 			if(e.type == SDL_MOUSEMOTION)
 			{
-				input->update_mouse_position();
+				UpdateMousePosition();
 			}
 		}
 
-        input->update_mouse_world_position(game_state->window.resolution, main_camera.viewport_size, main_camera.transform.position);
+        UpdateMouseWorldPosition(game_state->window.resolution, main_camera.viewport_size, main_camera.transform.position);
 
         ProfileEndSection(Profile_Input);
 
-        Vec2 mouse_pos = input->mouse_world_position();
-        Console::get()->LogMessage("Mouse World Position: (%.2f, %.2f)",  mouse_pos.x, mouse_pos.y);
+        Vec2 mouse_pos = MouseWorldPosition();
+        DebugPrintf("Mouse World Position: (%.2f, %.2f)",  mouse_pos.x, mouse_pos.y);
 
-		if(input->on_down(SDLK_ESCAPE))
+		if(KeyFrameDown(SDLK_ESCAPE))
 		{
 			running = false;
 			break;
 		}
 
-		if(input->on_down(SDLK_z))
+		if(KeyFrameDown(SDLK_z))
 		{
 			WindowSetScreenMode(&game_state->window, ScreenMode_Windowed);
 			renderer->force_color_clear();
 		}
-		else if(input->on_down(SDLK_c))
+		else if(KeyFrameDown(SDLK_c))
 		{
             WindowSetScreenMode(&game_state->window, ScreenMode_Borderless);
 			renderer->force_color_clear();
@@ -165,7 +178,7 @@ int main(int argc, char* argv[])
 #endif
 		}
 		frame_count++;
-		Console::get()->LogMessage("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount(game_state));
+		DebugPrintf("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount(game_state));
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
@@ -196,11 +209,10 @@ int main(int argc, char* argv[])
             }
         }
         renderer->DrawLine(v, 3, DrawLayer_UI, LineDrawOptions::SMOOTH);
-		//renderer->render_draw_buffer();
 
 		renderer->Flush();
 
-		Console::get()->draw();
+        DebugDrawConsole(renderer);
 
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(renderer, TARGET_FPS);
@@ -209,9 +221,7 @@ int main(int argc, char* argv[])
         SwapBuffer(game_state);
         uint64 post_swap_time = GetCycleCount();
 
-        Console::get()->LogMessage("Swap time: %"PRIu64"", post_swap_time - pre_swap_time);
-
-		// End rendering
+        DebugPrintf("Swap time: %"PRIu64"", post_swap_time - pre_swap_time);
 
 
 		// TODO(cgenova): High granularity sleep function!

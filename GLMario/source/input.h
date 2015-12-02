@@ -4,6 +4,7 @@
 #include "mathops.h"
 #include <string.h> // memset
 #include "SDL.h"
+
 #define NUM_KEYS 256
 
 enum class MouseButton { LEFT, MIDDLE, RIGHT, COUNT };
@@ -17,48 +18,38 @@ struct Mouse
 	KeyState buttons[(int32)MouseButton::COUNT];
 };
 
-class Input
+struct Input
 {
-public:
-
-	Input();
-	~Input() {};
-	static Input* get();
-
-	void begin_frame();
-
-// Keyboard handling
-	void process_key_press(int32 key);
-	void process_key_release(int32 key);
-
-	bool on_down(int32 key);
-	bool on_up(int32 key);
-	bool is_down(int32 key);
-	bool is_up(int32 key);
-
-// Mouse handling
-	void update_mouse_position();
-	void update_mouse_world_position(Dimension screen_resolution, Vec2 viewport_size, Vec2 camera_pos);
-    void update_mouse_world_position();
-	void mouse_button_event();
-
-	Point2 mouse_loc();
-	Point2 mouse_delta();
-    Vec2 mouse_world_position();
-
-	bool mouse_on_down(MouseButton);
-	bool mouse_on_up(MouseButton);
-	bool mouse_is_down(MouseButton);
-	bool mouse_is_up(MouseButton); 
-
-private:
-
-	static Input* s_input;
-
-	void update_keys();
-	void update_mouse();
-
 	KeyState key_states[NUM_KEYS];
 	Mouse mouse;
 	bool mouse_loc_updated_this_frame = false;
 };
+
+void InitializeInput();
+
+void InputBeginFrame();
+
+// Keyboard handling
+void ProcessKeyPress(int32 key);
+void ProcessKeyRelease(int32 key);
+
+bool KeyFrameDown(int32 key);
+bool KeyFrameUp(int32 key);
+bool KeyIsDown(int32 key);
+bool KeyIsUp(int32 key);
+
+// Mouse handling
+void UpdateMousePosition();
+void UpdateMouseWorldPosition(Dimension screen_resolution, Vec2 viewport_size, Vec2 camera_pos);
+void UpdateMouseWorldPosition();
+void MouseButtonEvent();
+
+Point2 MouseFrameDelta();
+Point2 MouseScreenPoint();
+Vec2 MouseWorldPosition();
+
+bool MouseFrameDown(MouseButton);
+bool MouseFrameUp(MouseButton);
+bool MouseIsDown(MouseButton);
+bool MouseIsUp(MouseButton);
+

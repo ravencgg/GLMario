@@ -66,8 +66,8 @@ T* ExpandArray(T* array, uint32 start_count, uint32 new_count)
 
 struct MemoryArena
 {
-    uint32 size;
-    uint32 used;
+    size_t size;
+    size_t used;
     uint8* base;
 };
 

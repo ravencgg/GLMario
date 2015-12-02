@@ -223,45 +223,6 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 //
 // This will allow strings to be drawn with a ARRAY_BUFFER style instead of drawing
 // outside of the control of the renderer
-void Renderer::DrawCharacter(TextVertex* start_vertex, char c, float x, float y, Vec2 char_size)
-{
-    int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
-    int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
-
-    // NOTE: this assumes valid characters are being rendered
-    uint32 ascii_position = c - ' ';
-    assert(c >= ' ' && c <= '~');
-    if(c < ' ' || c > '~')
-    {
-		ascii_position = c - ' ';
-    }
-
-    Rectf draw_rect = {};
-    draw_rect.left = x;
-    draw_rect.width = char_size.x; //(float)(tw / (float)screen_size.width) / 4.0f;
-    draw_rect.top = y;// (float)y / (float)screen_size.height * 2.0f - 1.0f;
-    draw_rect.height = char_size.y;  // (float)(th / (float)screen_size.height) / 2.0f;
-
-// Char coords
-    Point2 char_pos;
-    char_pos.x = ascii_position % text_data.chars_per_line;
-    char_pos.x *= text_data.char_size.width;
-    char_pos.y = ascii_position / text_data.chars_per_line;
-    char_pos.y *= text_data.char_size.height;
-
-// Texture coords
-    float left = (float)char_pos.x / tw;
-    float right = (float)(char_pos.x + text_data.char_size.width) / tw;
-    float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
-    float top = (float)(th - char_pos.y) / th;
-
-    *start_vertex++ = { draw_rect.left, draw_rect.top, left, bot };
-    *start_vertex++ = { draw_rect.left, draw_rect.top + draw_rect.height, left, top };
-    *start_vertex++ = { draw_rect.left + draw_rect.width, draw_rect.top, right, bot };
-    *start_vertex++ = { draw_rect.left, draw_rect.top + draw_rect.height, left, top };
-    *start_vertex++ = { draw_rect.left + draw_rect.width, draw_rect.top, right, bot };
-    *start_vertex++ = { draw_rect.left + draw_rect.width, draw_rect.top + draw_rect.height, right, top };
-}
 
 /*  Text drawing TODO(cgenova):
 		* Character width is not correct
@@ -271,9 +232,15 @@ void Renderer::DrawCharacter(TextVertex* start_vertex, char c, float x, float y,
         *
         * No more immediate mode! Make this use the ARRAY_BUFFER path
         *      -> needs dynamic vao/vbo for this to happen
+        *
+        *      Read whole words in to judge whether a new line is needed
+        * instead of splitting words up as soon as they hit the edge
+        * of the screen
 		*/
 
-TextDrawResult Renderer::DrawString(char* string, uint32 string_size, float start_x, float start_y)
+TextDrawResult
+Renderer::DrawString(char* string, uint32 string_size, float start_x, float start_y,
+                     StringTextColor* text_colors, size_t text_color_size)
 {
     // TODO: more sane way of storing these
     static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
@@ -288,56 +255,136 @@ TextDrawResult Renderer::DrawString(char* string, uint32 string_size, float star
     }
 
     Vec2 char_size = { 0.01f, 0.02f };
-
     uint32 array_pos = 0;
-
 	float x = start_x;
 	float y = start_y;
-	uint32 ld = 0;
-	const float tab_size = char_size.x * 4.f;
 	float y_spacing = char_size.y * 1.1f;
+	uint32 lines_drawn = 0;
+    const uint32 tab_advance = 3;
+    uint32 chars_drawn_this_line = 0; // NOTE: Unused;
 
-#define NEW_LINE()      \
-		y -= y_spacing; \
-		x = start_x
+    // Defaults to green text?
+    StringTextColor default_color;
+    default_color.start = 0;
+    default_color.end   = string_size;
+    default_color.color = vec4(0, 1.0f, 0, 1.0f);
 
-//    Dimension screen_size = this->draw_window->get_resolution();
+    StringTextColor* current_color = &default_color;
+    StringTextColor* next_color = &default_color;
 
-	for (uint32 i = 0; i < string_size; ++i)
-	{
-		if(string[i] == '\n')
+    size_t text_color_index = 0;
+
+    if(text_colors && text_color_size)
+    {
+        current_color = text_colors;
+    }
+
+#define NEW_LINE()                  \
+		y -= y_spacing;             \
+		x = start_x;                \
+        chars_drawn_this_line = 0;
+
+#define TAB() x += (tab_advance - (chars_drawn_this_line % tab_advance)) * char_size.x
+
+
+    for (uint32 i = 0; i < string_size; ++i)
+    {
+        // TODO: Lerp color to blend between color changes
+        // TODO: Put lerp information in the string color struct
+        // Check for next color;
+        if(current_color->end == i)
+        {
+            if(text_color_index < text_color_size)
+            {
+                ++text_color_index;
+                current_color++;
+            }
+        }
+
+        char c = string[i];
+
+		if(c == '\n')
 		{
 			NEW_LINE();
 			continue;
 		}
-		else if (string[i] == '\t')
+		else if (c == '\t')
 		{
-			x += tab_size;
+            TAB();
             continue;
 		}
+        else if(c == ' ')
+        {
+            // No need to submit vertices to draw empty space
+            x += char_size.x;
+            continue;
+        }
 
 		if (x + char_size.x > 1.f)
 		{
             NEW_LINE();
-			ld++;
+			lines_drawn++;
 		}
 
-		DrawCharacter(text_array + array_pos, string[i], x, y, char_size);
-        array_pos += 6;
-		x += char_size.x; // (uint32)(text_data.char_size.width * 1.5f); // @cleanup why is this size not right pre-multiplication?
+        // Add a character to the array of vertices
+        {
+            //DrawCharacter(text_array + array_pos, string[i], x, y, char_size);
+
+            int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
+            int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
+
+            // NOTE: this assumes valid characters are being rendered
+            uint32 ascii_position = c - ' ';
+            assert(c >= ' ' && c <= '~');
+            if(c < ' ' || c > '~')
+            {
+                ascii_position = c - ' ';
+            }
+
+            Rectf rect = {};
+            rect.left = x;
+            rect.width = char_size.x;
+            rect.top = y;
+            rect.height = char_size.y;
+
+            // Char coords
+            Point2 char_pos;
+            char_pos.x = ascii_position % text_data.chars_per_line;
+            char_pos.x *= text_data.char_size.width;
+            char_pos.y = ascii_position / text_data.chars_per_line;
+            char_pos.y *= text_data.char_size.height;
+
+            // Texture coords
+            float left = (float)char_pos.x / tw;
+            float right = (float)(char_pos.x + text_data.char_size.width) / tw;
+            float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
+            float top = (float)(th - char_pos.y) / th;
+
+            TextVertex* current_vertex = text_array + array_pos;
+            Vec4* vert_color = &current_color->color;
+
+            *current_vertex++ = { rect.left              , rect.top               , left , bot, *vert_color };
+            *current_vertex++ = { rect.left              , rect.top + rect.height , left , top, *vert_color };
+            *current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
+            *current_vertex++ = { rect.left              , rect.top + rect.height , left , top, *vert_color };
+            *current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
+            *current_vertex++ = { rect.left + rect.width , rect.top + rect.height , right, top, *vert_color };
+
+            array_pos += 6;
+            x += char_size.x;
+
+        }
 	}
 
 	NEW_LINE();
 	TextDrawResult result;
 	result.bottom_right = { x, y };
-	result.lines_drawn = ld;
+	result.lines_drawn = lines_drawn;
 
 	glUseProgram(shaders[Shader_Text].shader_handle);
 
-    Vec4 color = vec4(0, 1.0f, 0, 1.0f);
-
-    GLint color_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "color_modifier");
-    glUniform4f(color_loc, color.x, color.y, color.z, color.w);
+    //GLint color_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "color_modifier");
+    //glUniform4f(color_loc, color.x, color.y, color.z, color.w);
 
 	{
         // TODO(cgenova): convert to function and pull this and the one in draw_call out
@@ -353,7 +400,11 @@ TextDrawResult Renderer::DrawString(char* string, uint32 string_size, float star
     glBindVertexArray(textVAO);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(4 * sizeof(float)));
+
 	glBufferData(GL_ARRAY_BUFFER, array_pos * sizeof(text_array[0]), text_array, GL_STREAM_DRAW);
 
     GLint cam_pos_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "cam_pos");
@@ -365,6 +416,7 @@ TextDrawResult Renderer::DrawString(char* string, uint32 string_size, float star
 
 	return result;
 #undef NEW_LINE
+#undef TAB
 }
 
 void Renderer::render_draw_buffer()
