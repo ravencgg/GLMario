@@ -30,7 +30,7 @@ public:
         return this->Get(loc);
     }
 
-    void AddEmpty(uint32 num_to_add)
+    void AddEmpty(uint32 num_to_add = 1)
     {
         assert(write_pos <= capacity);
         if (write_pos + (num_to_add - 1) >= capacity)
@@ -80,6 +80,11 @@ public:
         return data[position];
     }
 
+    T* GetBackPtr()
+    {
+        return &data[write_pos - 1];
+    }
+
     T& GetBack()
     {
         return data[write_pos - 1];
@@ -120,7 +125,10 @@ public:
     // NOTE: does not clear, only removes access
     void RemoveBack()
     {
-        --write_pos;
+        if(write_pos > 0)
+        {
+            --write_pos;
+        }
     }
 
     void SwapRemove(uint32 loc)

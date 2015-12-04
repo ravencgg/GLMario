@@ -23,7 +23,6 @@ enum ProfileSectionName : uint32
 
     // NOTE: don't add any more her without adding a new color to the profile_colors array
     // TODO: Fix that note
-    // TODO: Output color table at runtime
 
     Profile_Count,
 };
@@ -53,5 +52,8 @@ char* GetProfileSectionName(ProfileSectionName name);
 
 void InitializeDebugConsole();
 void DebugDrawConsole(Renderer* renderer);
+void DebugPrintPushGradient(Vec4 start_color, Vec4 end_color);
+void DebugPrintPushColor(Vec4 solid_color);
+void DebugPrintPopColor();
 void DebugPrintf(char* format, ...);
 

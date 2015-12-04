@@ -9,7 +9,8 @@ struct DebugConsole
     char* output_string;
     uint32 used_chars;
     uint32 array_size;
-    Array<StringTextColor> text_coloring;
+    Array<StringTextColor> text_color_stack;
+    Array<StringTextColor> text_format_array;
 	Vec2 screen_start = vec2( 0.01f, 0.95f);
 };
 
@@ -37,6 +38,7 @@ Vec4 profile_colors[] =
     vec4(0, 1,    1,    1), // Teal       Profile_Frame,
     vec4(0, 0.5f, 0.5f, 1), // Something  Profile_SceneUpdate,
     vec4(1, 0,    1,    1), // Magenta    Profile_Console,
+    vec4(1, 1,    1,    1), // White      Unused,
 };
 
 char* GetProfileSectionName(ProfileSectionName name)
@@ -108,6 +110,9 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         {
             u32 hits = section->hits;
 
+//            DebugPrintPushColor(profile_colors[i]);
+            DebugPrintPushGradient(profile_colors[i], profile_colors[i + 1]);
+
             if(hits > 1)
             {
                 DebugPrintf("Function: (%s) Hits: %d Average: %"PRIu64" Min: %"PRIu64" Max: %"PRIu64"",
@@ -127,6 +132,8 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
                                         GetProfileSectionName((ProfileSectionName) i),
                                         hits);
             }
+
+            DebugPrintPopColor();
         }
 
         {
@@ -200,11 +207,62 @@ void InitializeDebugConsole()
 {
     console.array_size = CONSOLE_STRING_START_SIZE;
     console.output_string = new char[console.array_size];
+
+    const Vec4 default_color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    DebugPrintPushColor(default_color);
+}
+
+void DebugPrintPushGradient(Vec4 start_color, Vec4 end_color)
+{
+    console.text_color_stack.AddEmpty();
+    StringTextColor* stc = console.text_color_stack.GetBackPtr();
+
+    stc->c.gradient_start = start_color;
+    stc->c.gradient_end   = end_color;
+    stc->color_options = StringColorOptions_Gradient;
+}
+
+void DebugPrintPushColor(Vec4 solid_color)
+{
+    console.text_color_stack.AddEmpty();
+    StringTextColor* stc = console.text_color_stack.GetBackPtr();
+
+    stc->c.solid_color = solid_color;
+    stc->color_options = StringColorOptions_Solid;
+}
+
+void DebugPrintPopColor()
+{
+    // Don't delete the default color
+    if(console.text_color_stack.Size() > 1)
+    {
+        console.text_color_stack.RemoveBack();
+    }
 }
 
 void DebugPrintf(char* format, ... )
 {
     uint32 remaining_buffer_size = console.array_size - console.used_chars;
+
+    console.text_format_array.AddEmpty();
+    StringTextColor* current_color = console.text_format_array.GetBackPtr();
+    current_color->color_options = console.text_color_stack.GetBack().color_options;
+
+    if(current_color->color_options == StringColorOptions_Solid)
+    {
+        current_color->c.solid_color = console.text_color_stack.GetBack().c.solid_color;
+        current_color->start = console.used_chars;
+    }
+    else if(current_color->color_options == StringColorOptions_Gradient)
+    {
+        current_color->c.gradient_start = console.text_color_stack.GetBack().c.gradient_start;
+        current_color->c.gradient_end   = console.text_color_stack.GetBack().c.gradient_end;
+    }
+    else
+    {
+        assert(!"Unknown color option");
+    }
+    current_color->start = console.used_chars;
 
     va_list args;
     va_start(args, format);
@@ -238,6 +296,7 @@ void DebugPrintf(char* format, ... )
 
     console.used_chars += input_size + 1;
     assert(input_size >= 0);
+    current_color->end = console.used_chars;
 }
 
 void DebugDrawConsole(Renderer* ren)
@@ -247,18 +306,28 @@ void DebugDrawConsole(Renderer* ren)
 	uint32 num_chars = 0;
 
 // TODO: replace with real system from the input
-    const size_t array_size = 2;
-    StringTextColor colors[array_size];
-    colors[0].start = 0;
-    colors[0].end   = console.used_chars / 2;
-    colors[0].color = { 1.f, 0.f, 1.f, 1.f };
+//    const size_t array_size = 2;
+//    StringTextColor colors[array_size];
+//    colors[0].start = 0;
+//    colors[0].end   = console.used_chars / 2;
+//    colors[0].color = { 1.f, 0.f, 1.f, 1.f };
+//
+//    colors[1].start = colors[0].end;
+//    colors[1].end   = console.used_chars;
+//    colors[1].color = { 1.f, 0, 0, 1.f };
 
-    colors[1].start = colors[0].end;
-    colors[1].end   = console.used_chars;
-    colors[1].color = { 1.f, 0, 0, 1.f };
-
-    ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y, colors, array_size);
+// TODO: passing the raw array in here is dangerous
+    ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y,
+                    &console.text_format_array[0], console.text_format_array.Size());
+    //ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y, colors, array_size);
     //ren->DrawString(this->output_string, 100, 100, this->used_chars);
     console.used_chars = 0;
+
+    console.text_format_array.Clear();
+
+    while(console.text_color_stack.Size() > 1)
+    {
+        console.text_color_stack.RemoveBack();
+    }
 }
 

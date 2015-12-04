@@ -265,9 +265,10 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 
     // Defaults to green text?
     StringTextColor default_color;
+    default_color.color_options = StringColorOptions_Solid;
     default_color.start = 0;
     default_color.end   = string_size;
-    default_color.color = vec4(0, 1.0f, 0, 1.0f);
+    default_color.c.solid_color = vec4(0, 1.0f, 0, 1.0f);
 
     StringTextColor* current_color = &default_color;
     StringTextColor* next_color = &default_color;
@@ -287,6 +288,9 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 #define TAB() x += (tab_advance - (chars_drawn_this_line % tab_advance)) * char_size.x
 
 
+    Vec4 start_color = current_color->c.solid_color;
+    Vec4 end_color   = current_color->c.solid_color;
+
     for (uint32 i = 0; i < string_size; ++i)
     {
         // TODO: Lerp color to blend between color changes
@@ -298,7 +302,25 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
             {
                 ++text_color_index;
                 current_color++;
+
+                start_color = current_color->c.solid_color;
+                end_color = current_color->c.solid_color;
             }
+        }
+
+        if(current_color->color_options == StringColorOptions_Gradient)
+        {
+            uint32 start        = current_color->start;
+            uint32 end          = current_color->end;
+            uint32 size         = end - start;
+            uint32 relative_pos = i - start;
+
+            assert(size > 0);
+            assert(i > 0);
+            float start_t = (float) ((float) i / (float)size);
+            float end_t   = (float) (((float)i + 1.f) / (float)size);
+            start_color = lerp(current_color->c.gradient_start, current_color->c.gradient_end, start_t);
+            end_color   = lerp(current_color->c.gradient_start, current_color->c.gradient_end, end_t);
         }
 
         char c = string[i];
@@ -361,14 +383,21 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
             float top = (float)(th - char_pos.y) / th;
 
             TextVertex* current_vertex = text_array + array_pos;
-            Vec4* vert_color = &current_color->color;
+//            Vec4* vert_color = &current_color->color;
 
-            *current_vertex++ = { rect.left              , rect.top               , left , bot, *vert_color };
-            *current_vertex++ = { rect.left              , rect.top + rect.height , left , top, *vert_color };
-            *current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
-            *current_vertex++ = { rect.left              , rect.top + rect.height , left , top, *vert_color };
-            *current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
-            *current_vertex++ = { rect.left + rect.width , rect.top + rect.height , right, top, *vert_color };
+            //*current_vertex++ = { rect.left              , rect.top               , left , bot, *vert_color };
+            //*current_vertex++ = { rect.left              , rect.top + rect.height , left , top, *vert_color };
+            //*current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
+            //*current_vertex++ = { rect.left              , rect.top + rect.height , left , top, *vert_color };
+            //*current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
+            //*current_vertex++ = { rect.left + rect.width , rect.top + rect.height , right, top, *vert_color };
+
+            *current_vertex++ = { rect.left              , rect.top               , left , bot, start_color };
+            *current_vertex++ = { rect.left              , rect.top + rect.height , left , top, start_color };
+            *current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, end_color   };
+            *current_vertex++ = { rect.left              , rect.top + rect.height , left , top, start_color };
+            *current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, end_color   };
+            *current_vertex++ = { rect.left + rect.width , rect.top + rect.height , right, top, end_color   };
 
             array_pos += 6;
             x += char_size.x;

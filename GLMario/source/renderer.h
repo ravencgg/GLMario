@@ -56,11 +56,30 @@ struct SpriteVertex
     Vec2 uv;
 };
 
+enum StringColorOptions
+{
+    StringColorOptions_Solid,
+    StringColorOptions_Gradient,
+};
+
 struct StringTextColor
 {
+    uint32 color_options;
     uint32 start;
     uint32 end;
-    Vec4 color; // = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+    union
+    {
+        struct
+        {
+            Vec4 solid_color; // = { 1.0f, 1.0f, 1.0f, 1.0f };
+        };
+        struct
+        {
+            Vec4 gradient_start;
+            Vec4 gradient_end;
+        };
+    } c;
 };
 
 struct TextVertex
