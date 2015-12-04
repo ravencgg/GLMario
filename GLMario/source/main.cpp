@@ -212,16 +212,17 @@ int main(int argc, char* argv[])
 
 		renderer->Flush();
 
-        DebugDrawConsole(renderer);
-
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(renderer, TARGET_FPS);
+
+
+//        DebugPrintf("Swap time: %"PRIu64"", post_swap_time - pre_swap_time);
+
+        DebugDrawConsole(renderer);
 
         uint64 pre_swap_time = GetCycleCount();
         SwapBuffer(game_state);
         uint64 post_swap_time = GetCycleCount();
-
-        DebugPrintf("Swap time: %"PRIu64"", post_swap_time - pre_swap_time);
 
 
 		// TODO(cgenova): High granularity sleep function!

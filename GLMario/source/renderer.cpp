@@ -287,7 +287,6 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 
 #define TAB() x += (tab_advance - (chars_drawn_this_line % tab_advance)) * char_size.x
 
-
     Vec4 start_color = current_color->c.solid_color;
     Vec4 end_color   = current_color->c.solid_color;
 
@@ -303,6 +302,7 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
                 ++text_color_index;
                 current_color++;
 
+                // Set up the solid color if it isn't a gradient;
                 start_color = current_color->c.solid_color;
                 end_color = current_color->c.solid_color;
             }
@@ -317,8 +317,8 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 
             assert(size > 0);
             assert(i > 0);
-            float start_t = (float) ((float) i / (float)size);
-            float end_t   = (float) (((float)i + 1.f) / (float)size);
+            float start_t = (float) ((float) relative_pos / (float)size);
+            float end_t   = (float) (((float)relative_pos + 1.f) / (float)size);
             start_color = lerp(current_color->c.gradient_start, current_color->c.gradient_end, start_t);
             end_color   = lerp(current_color->c.gradient_start, current_color->c.gradient_end, end_t);
         }

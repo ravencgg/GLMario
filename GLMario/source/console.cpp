@@ -103,7 +103,7 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
         if(i == Profile_Console)
         {
-            ProfileEndSection(Profile_Console);
+//            ProfileEndSection(Profile_Console);
         }
 
         // Text output

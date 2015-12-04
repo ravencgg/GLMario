@@ -2,9 +2,10 @@
 
 Console/Rendering:
     Multi color text on a per letter basis 
-        -> (or per sentence so the whole sentence can have a gradient?)
-
-
+        -> should the "start" variable be taken out of the StringTextColor struct?
+           it is implied if there is always a StringTextColor object during drawing
+           which there will be because if one is not supplied, then a default one is used.
+        
 Optimization:
     Cull draws out of viewport
 
