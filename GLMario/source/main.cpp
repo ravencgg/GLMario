@@ -17,6 +17,10 @@
 #define TARGET_FPS (1000 / MS_PER_FRAME)
 
 #define FRAME_TEMPORARY_MEMORY_SIZE MEGABYTES(256)
+#define GAME_PERMANENT_MEMORY_SIZE  MEGABYTES(128)
+
+#define MAX_GAME_ENTITES 500
+#define MAX_GAME_OBJECTS 500
 
 void StartupWindow(Window* window, char* title, int32 width, int32 height)
 {
@@ -70,8 +74,21 @@ static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
     GameState* result = new GameState;
 
     AllocateMemoryArena(&result->temporary_memory, FRAME_TEMPORARY_MEMORY_SIZE);
+    AllocateMemoryArena(&result->permanent_memory, GAME_PERMANENT_MEMORY_SIZE);
     StartupWindow(&result->window, window_title, res_x, res_y);
     InitializeTime(result, MS_PER_FRAME);
+    return result;
+}
+
+static Scene* PushScene(MemoryArena* arena, uint32 num_entities, uint32 num_objects)
+{
+    Scene* result = PushStruct(arena, Scene);
+
+    result->max_entities = num_entities;
+    result->max_objects  = num_objects;
+    result->entities = PushStructs(arena, GameEntity, num_entities);
+    result->objects  = PushStructs(arena, GameObject, num_objects);
+
     return result;
 }
 
@@ -80,6 +97,7 @@ int main(int argc, char* argv[])
 	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 
     GameState* game_state = CreateNewGameState("EnGen", 1200, 700);
+    CreateScene(&game_state->active_scene, MAX_GAME_ENTITES, MAX_GAME_OBJECTS);
 
 // Global initialization
 	Renderer::create_instance(&game_state->window);

@@ -63,6 +63,9 @@ void WindowSetScreenMode(Window* window, ScreenMode mode);
 struct GameState
 {
     MemoryArena temporary_memory;
+    MemoryArena permanent_memory;
+
+    Scene* active_scene;
 
     Window window;
     GameTime time;

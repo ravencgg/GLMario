@@ -53,7 +53,8 @@ T* ExpandArray(T* array, uint32 start_count, uint32 new_count)
     return result;
 }
 
-
+#define PushStructs(arena, type, count) (type*) PushSize(arena, sizeof(type) * count, true)
+#define PuhsStruct(arena, type)        (type*) PushSize(arena, sizeof(type), true)
 
 #define ArrayCount(array) sizeof(array) / sizeof(array[0])
 

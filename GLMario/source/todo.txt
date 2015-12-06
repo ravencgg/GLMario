@@ -5,8 +5,18 @@ Console/Rendering:
         -> should the "start" variable be taken out of the StringTextColor struct?
            it is implied if there is always a StringTextColor object during drawing
            which there will be because if one is not supplied, then a default one is used.
+
+     Remove console from the debug profiling
+     Remove the Flush from the draw console 
         
 Optimization:
     Cull draws out of viewport
 
     Broad phase collision detection
+
+
+To figure out:
+
+    Should there be "Scene" types? 
+        -> cutsene, game, menu
+        -> each could have their own memory and entities, multiple could be active at a time

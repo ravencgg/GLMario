@@ -73,7 +73,6 @@ uint8* PushSize(MemoryArena* arena, size_t size, bool clear)
     return nullptr;
 }
 
-
 /**********************************************
  *
  * Clock Functions

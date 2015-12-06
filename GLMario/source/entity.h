@@ -8,6 +8,23 @@
 
 class SceneManager;
 
+enum SceneType
+{
+    SceneType_Menu,
+    SceneType_Cutscene,
+    SceneType_Level,
+}
+
+
+struct Scene
+{
+    SceneType type;
+    GameEntity* entities;
+    uint32 max_entities;
+    GameObject* objects;
+    uint32 max_objects;
+};
+
 enum EntityType
 {
     EntityType_Player,
@@ -22,6 +39,46 @@ struct Transform
     Vec2 position;
     Vec2 scale;
     float rotation;
+};
+
+struct Sprite
+{
+};
+struct EntityPlayer
+{
+};
+struct EntityEnemy
+{
+    uint32 health;
+};
+struct EntitySpawner
+{
+    float last_spawn_time;
+    float time_between_spawns;
+};
+
+struct GameEntity
+{
+    uint32 id;
+    EntityType type;
+    Transform transform;
+    Sprite sprite;
+
+    union
+    {
+        EntityPlayer  player;
+        EntityEnemy   enemy;
+        EntitySpawner spawner;
+    };
+};
+
+void UpdateGameEntities(GameEntity* entities, uint32 num_entities, float dt);
+
+void DrawGameEntities(GameEntity* entities, uint32 num_entities);
+
+struct GameObject // particle system, parallax background
+{
+
 };
 
 class Entity

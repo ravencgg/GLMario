@@ -44,6 +44,8 @@ typedef int32_t b32;
 
 #define NO_MATRICES 1
 
+#define InvalidDefaultCase assert(!"Invalid default case!");
+
 struct Dimension
 {
 	int32 width, height;
