@@ -53,9 +53,6 @@ T* ExpandArray(T* array, uint32 start_count, uint32 new_count)
     return result;
 }
 
-#define PushStructs(arena, type, count) (type*) PushSize(arena, sizeof(type) * count, true)
-#define PuhsStruct(arena, type)        (type*) PushSize(arena, sizeof(type), true)
-
 #define ArrayCount(array) sizeof(array) / sizeof(array[0])
 
 #define NEW_ZERO(var, type) type* var = new type; \
@@ -72,14 +69,14 @@ struct MemoryArena
     uint8* base;
 };
 
-
 void AllocateMemoryArena(MemoryArena*, size_t);
 
 void FreeMemoryArena(MemoryArena*);
 
-#define PushStruct(type, arena, clear) (type*) PushSize(arena, sizeof(type), clear)
+uint8* PushSize(MemoryArena* arena, size_t size, bool clear = true);
 
-uint8* PushSize(MemoryArena* arena, bool clear);
+#define PushStructs(arena, type, count) (type*) PushSize(arena, sizeof(type) * count)
+#define PushStruct(arena, type)         (type*) PushSize(arena, sizeof(type))
 
 
 /**********************************************

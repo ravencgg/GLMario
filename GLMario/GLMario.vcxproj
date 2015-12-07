@@ -78,7 +78,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="source\camera.cpp" />
     <ClCompile Include="source\console.cpp" />
     <ClCompile Include="source\entity.cpp" />
     <ClCompile Include="source\utility.cpp" />
@@ -94,7 +93,6 @@
     <ClCompile Include="source\time.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\camera.h" />
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\containers.h" />
     <ClInclude Include="source\entity.h" />

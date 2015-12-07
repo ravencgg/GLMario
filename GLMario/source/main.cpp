@@ -7,6 +7,7 @@
 #include "scene_manager.h"
 #include "time.h"
 #include "game_types.h"
+#include "entity.h"
 
 #include <inttypes.h> // For 64 bit int printf output
 
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
 	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 
     GameState* game_state = CreateNewGameState("EnGen", 1200, 700);
-    CreateScene(&game_state->active_scene, MAX_GAME_ENTITES, MAX_GAME_OBJECTS);
+    game_state->active_scene = PushScene(&game_state->permanent_memory, MAX_GAME_ENTITES, MAX_GAME_OBJECTS);
 
 // Global initialization
 	Renderer::create_instance(&game_state->window);
@@ -108,10 +109,10 @@ int main(int argc, char* argv[])
 // TODO: no more singletons!
 	Renderer* renderer = Renderer::get();
 
-	SceneManager scene;
-	Camera main_camera(&scene);
+//	SceneManager scene;
+	Camera main_camera;
 
-	scene.SetMainCamera(&main_camera);
+//	scene.SetMainCamera(&main_camera);
 	renderer->set_camera(&main_camera);
 
 	uint32 frame_count = 0;
@@ -172,7 +173,8 @@ int main(int argc, char* argv[])
 		if(KeyFrameDown(SDLK_z))
 		{
 			WindowSetScreenMode(&game_state->window, ScreenMode_Windowed);
-			renderer->force_color_clear();
+			renderer->force_color_clear(); // TODO: useless if it doesn't swap the buffers
+                                            // but that may look bad with vsync
 		}
 		else if(KeyFrameDown(SDLK_c))
 		{
@@ -200,10 +202,10 @@ int main(int argc, char* argv[])
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
-		main_camera.Tick(game_state);
+//		main_camera.Tick(game_state);
 
         ProfileBeginSection(Profile_SceneUpdate);
-		scene.update_scene(game_state);
+//		scene.update_scene(game_state);
         ProfileEndSection(Profile_SceneUpdate);
 
         static Array<SimpleVertex> v;
@@ -233,15 +235,12 @@ int main(int argc, char* argv[])
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(renderer, TARGET_FPS);
 
-
-//        DebugPrintf("Swap time: %"PRIu64"", post_swap_time - pre_swap_time);
-
+//        debugprintf("swap time: %"priu64"", post_swap_time - pre_swap_time);
         DebugDrawConsole(renderer);
 
         uint64 pre_swap_time = GetCycleCount();
         SwapBuffer(game_state);
         uint64 post_swap_time = GetCycleCount();
-
 
 		// TODO(cgenova): High granularity sleep function!
 //		uint32 delay_time = RemainingTicksInFrame();
@@ -257,3 +256,4 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
+

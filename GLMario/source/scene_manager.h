@@ -5,7 +5,7 @@
 #include "containers.h"
 #include "player.h"
 #include "input.h"
-#include "camera.h"
+//#include "camera.h"
 #include "tilemap.h"
 #include "physics.h"
 #include "particles.h"

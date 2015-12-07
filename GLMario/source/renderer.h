@@ -4,15 +4,15 @@
 #include "glew.h"
 #include "mathops.h"
 #include "types.h"
-#include "game_types.h"
 #include "utility.h"
 #include "containers.h"
 
-class Camera;
+struct Camera;
+struct Window;
+struct GameState;
 struct Sprite;
-struct Animation;
-struct Transform;
-
+struct Animation; // @cleanup remove?
+struct Transform; // @cleanup remove?
 
 enum ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT };
  // TODO(cgenova): text shader -> simple, with color option

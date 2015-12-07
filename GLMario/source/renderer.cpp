@@ -1,8 +1,6 @@
 #include "renderer.h"
 #include "game_types.h"
 
-#include "camera.h"
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "..\Dependencies\stb_image.h"
 

@@ -5,6 +5,8 @@
 #include "utility.h"
 #include "input.h"
 
+#include "entity.h"
+
 enum ScreenMode
 {
     ScreenMode_Windowed   = 0,
@@ -52,6 +54,34 @@ void ShutdownWindow(Window* window);
 void WindowSetResolution(Window* window, uint32 w, uint32 h);
 
 void WindowSetScreenMode(Window* window, ScreenMode mode);
+
+/****************************
+ *
+ * Scene State
+ *
+ ******/
+
+
+struct Scene
+{
+    SceneType type;
+
+    uint32 max_entities;
+    uint32 next_entity_id;
+    int32  first_entity_index;
+    GameEntity* entities;
+
+    int32 first_object_index;
+    uint32 max_objects;
+    uint32 next_object_id;
+    GameObject* objects;
+};
+
+struct Camera
+{
+    Transform transform;
+    Vec2 viewport_size;
+};
 
 
 /****************************

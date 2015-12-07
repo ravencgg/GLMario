@@ -7,7 +7,6 @@
     <ClCompile Include="source\renderer.cpp" />
     <ClCompile Include="source\scene_manager.cpp" />
     <ClCompile Include="source\player.cpp" />
-    <ClCompile Include="source\camera.cpp" />
     <ClCompile Include="source\tilemap.cpp" />
     <ClCompile Include="source\console.cpp" />
     <ClCompile Include="source\particles.cpp" />
@@ -23,7 +22,6 @@
     <ClInclude Include="source\renderer.h" />
     <ClInclude Include="source\player.h" />
     <ClInclude Include="source\scene_manager.h" />
-    <ClInclude Include="source\camera.h" />
     <ClInclude Include="source\tilemap.h" />
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\particles.h" />

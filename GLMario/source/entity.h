@@ -6,6 +6,7 @@
 #include "physics.h"
 #include "containers.h"
 
+struct GameState;
 class SceneManager;
 
 enum SceneType
@@ -13,22 +14,13 @@ enum SceneType
     SceneType_Menu,
     SceneType_Cutscene,
     SceneType_Level,
-}
-
-
-struct Scene
-{
-    SceneType type;
-    GameEntity* entities;
-    uint32 max_entities;
-    GameObject* objects;
-    uint32 max_objects;
 };
 
 enum EntityType
 {
     EntityType_Player,
     EntityType_Enemy,
+    EntityType_Spawner,
     EntityType_Tile,
 
     EntityType_Count
@@ -41,14 +33,13 @@ struct Transform
     float rotation;
 };
 
-struct Sprite
-{
-};
 struct EntityPlayer
 {
+    Vec2 velocity;
 };
 struct EntityEnemy
 {
+    Vec2 velocity;
     uint32 health;
 };
 struct EntitySpawner
@@ -63,6 +54,11 @@ struct GameEntity
     EntityType type;
     Transform transform;
     Sprite sprite;
+
+    bool delete_this_frame; // TODO: new thing for this
+
+    GameEntity* prev;
+    GameEntity* next;
 
     union
     {
@@ -80,6 +76,7 @@ struct GameObject // particle system, parallax background
 {
 
 };
+
 
 class Entity
 {

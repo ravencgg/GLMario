@@ -1,14 +1,35 @@
 #include "entity.h"
 
 #include "scene_manager.h"
+#include "game_types.h"
 
-void SpawnEnemy(GameEntity* entity)
+uint32 AssignNextEntityID(Scene* scene, GameEntity* entity)
 {
-    //Entity* p = new Enemy(parent_scene);
-    //p->SetPosition(vec2(0, 0));
-    //parent_scene->AddEntity(p);
+    uint32 result = scene->next_entity_id++;
+    entity->id = result;
+    return result;
+}
 
-    assert(!"Not written");
+// TODO: remove entity from scene
+//          must also clear the prev/next pointers;
+
+Entity* FindEntityWithID(Scene* scene, uint32 id)
+{
+    // Use the next pointer to find the correct entity
+
+    return 0;
+}
+
+void SpawnEnemy(Scene* scene, Vec2 position)
+{
+    // TODO: find some memory for this new entity
+
+    //AssignNextEntityID(scene, entity);
+
+    //entity->health = 3;
+    //entity->transform.position = position;
+    //entity->transform.rotation = 0.f;
+    //entity->transform.scale = Vec2( 1.f, 1.f);
 }
 
 void SpawnPlayer(GameEntity* new_player)
@@ -21,30 +42,31 @@ void SpawnEnemySpawner(GameEntity* new_spawner)
 
 }
 
-UpdateGameEntities(GameState* game_state, GameEntity* entities, uint32 num_entities, float dt)
+void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entities, uint32 num_entities, float dt)
 {
 // Entities need to be tightly packed?
 // Split entities into smaller groups and update each group?  Groups could be kept to a memory page size
 
-    GameEntity* entity;
-    for(uint32 i = 0, entity = entities; i < num_entities; ++i, ++entities)
+    GameEntity* entity = entities;
+    for(uint32 i = 0; i < num_entities; ++i, ++entities)
     {
         switch(entity->type)
+        {
         case EntityType_Enemy:
         {
-            EntityEnemy* enemy = entity->enemy;
+            EntityEnemy* enemy = &entity->enemy;
 
             enemy->velocity.y = -1.f;
-            DebugPrintf("Enemy position:  (%.2f, %.2f)", enemy->transform.position.x, enemy->transform.position.y);
+            DebugPrintf("Enemy position:  (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
             const uint8 line_width = 3;
-            Renderer::get()->DrawLine(enemy->transform.position, enemy->transform.position + enemy->velocity, vec4(0, 1, 1, 1), line_width);
+            Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + enemy->velocity, vec4(0, 1, 1, 1), line_width);
             //TODO: physics
 //            enemy->transform.position = parent_scene->physics->StepCollider(collider, velocity, FrameTime(game_state));
 
         }break;
         case EntityType_Player:
         {
-            EntityPlayer* player = entity->player;
+            EntityPlayer* player = &entity->player;
             const float gravity = -20.f;
             static uint32 count = 0;
             float dt = FrameTime(game_state);
@@ -74,43 +96,46 @@ UpdateGameEntities(GameState* game_state, GameEntity* entities, uint32 num_entit
             }
             if(KeyIsDown(SDLK_1))
             {
-                player->delete_this_frame = true;
+                entity->delete_this_frame = true;
             }
 
             DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
-            DebugPrintf("Player position: (%.2f, %.2f)", player->transform.position.x, player->transform.position.y);
+            DebugPrintf("Player position: (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
             Vec2 old_velocity = player->velocity;
             //TODO: integrate physics in the new system
 //            transform.position = parent_scene->physics->StepCollider(collider, velocity, FrameTime(game_state));
             const uint8 line_width = 3;
-            Renderer::get()->DrawLine(player->transform.position, player->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
+            Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
             DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
-            ps.update(game_state, player->transform.position);
+//            ps.update(game_state, entity->transform.position);
 
         }break;
         case EntityType_Spawner:
         {
-            EntitySpawner* spawner = entity->spawner;
+            EntitySpawner* spawner = &entity->spawner;
 
             float current_time = CurrentTime(game_state);
 
             if (current_time - spawner->last_spawn_time > spawner->time_between_spawns)
             {
-                SpawnEnemy(); // TODO: Write!
+                SpawnEnemy(scene, entity->transform.position); // TODO: Write!
                 spawner->last_spawn_time = current_time;
             }
 
         }break;
         InvalidDefaultCase;
+        }
     }
 }
 
 void DrawGameEntities(GameEntity* entities, uint32 num_entities)
 {
-    GameEntity* entity = 0;
-    for(uint32 i = 0, entity = entities; i < num_entities; ++i, ++entities)
+    assert(!"not drawing yet");
+    GameEntity* entity = entities;
+    for(uint32 i = 0; i < num_entities; ++i, ++entities)
     {
         switch(entity->type)
+        {
         case EntityType_Enemy:
         {
 
@@ -131,6 +156,7 @@ void DrawGameEntities(GameEntity* entities, uint32 num_entities)
             // Invisible
 
         }break;
+        }
         InvalidDefaultCase;
     }
 
