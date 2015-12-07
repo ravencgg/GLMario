@@ -17,6 +17,9 @@ Optimization:
 
 To figure out:
 
+    New project structure
+        Unity build, with platform_win32.cpp included behind header guards.
+
     Should there be "Scene" types? 
         -> cutsene, game, menu
         -> each could have their own memory and entities, multiple could be active at a time

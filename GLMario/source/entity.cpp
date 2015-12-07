@@ -3,43 +3,101 @@
 #include "scene_manager.h"
 #include "game_types.h"
 
-uint32 AssignNextEntityID(Scene* scene, GameEntity* entity)
-{
-    uint32 result = scene->next_entity_id++;
-    entity->id = result;
-    return result;
-}
-
-// TODO: remove entity from scene
-//          must also clear the prev/next pointers;
-
 Entity* FindEntityWithID(Scene* scene, uint32 id)
 {
-    // Use the next pointer to find the correct entity
+    Entity* entity = scene->entities;
+    for(uint32 i = 0; i < scene->max_entities; ++i, ++entity)
+    {
+        if(entity->id == id)
+        {
+            return entity;
+        }
+    }
+
+    // Purely informational, this isn't a bad thing
+    assert(!"Looking for unkown entity");
+    return 0;
+}
+
+void DespawnEntity(Scene* scene, uint32 id)
+{
+    Entity* entity = FindEntityWithID(id);
+
+    if(entity)
+    {
+        --scene->active_entities;
+        // This resets EntityType to EntityType_Null!
+        memset(entity, 0, sizeof(*entity));
+    }
+    else
+    {
+        assert(!"despawning unknown id?");
+    }
+}
+
+Entity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
+{
+    Entity* entity = scene->entities;
+    uint32 counter = 0;
+
+    bool found = false;
+    for(uint32 i = 0; i < scene->max_entities; ++i)
+    {
+        if(entity->type == EntityType_Null)
+        {
+            entity++;
+            continue;
+        }
+        else
+        {
+            entity->id = ++scene->next_entity_id;
+            entity->type = new_type;
+            assert(entity->id != 0); // NOTE: handle wrapping?
+            entity->flags |= EntityFlag_Enabled;
+
+            ++scene->active_entities;
+            return entity;
+        }
+    }
 
     return 0;
 }
 
 void SpawnEnemy(Scene* scene, Vec2 position)
 {
-    // TODO: find some memory for this new entity
+    Entity* entity = NextFreeEntitySlot(scene, EntityType_Enemy);
+    assert(entity);
 
-    //AssignNextEntityID(scene, entity);
-
-    //entity->health = 3;
-    //entity->transform.position = position;
-    //entity->transform.rotation = 0.f;
-    //entity->transform.scale = Vec2( 1.f, 1.f);
+    if(entity)
+    {
+        entity->type = EntityType_Enemy;
+        entity->health = 3;
+        entity->transform.position = position;
+        entity->transform.rotation = 0.f;
+        entity->transform.scale = Vec2( 1.f, 1.f );
+    }
 }
 
-void SpawnPlayer(GameEntity* new_player)
+void SpawnPlayer(Scene* scene, Vec2 position)
 {
+    Entity* entity = NextFreeEntitySlot(scene, EntityType_Player);
+    assert(entity);
 
+    if(entity)
+    {
+        entity->type = EntityType_Enemy;
+    }
 }
 
-void SpawnEnemySpawner(GameEntity* new_spawner)
+void SpawnEnemySpawner(Scene* scene, Vec2 position)
 {
+    Entity* entity = NextFreeEntitySlot(scene, EntityType_Spawner);
+    assert(entity);
 
+    if(entity)
+    {
+        entity->type = EntityType_Enemy;
+    }
 }
 
 void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entities, uint32 num_entities, float dt)
@@ -48,8 +106,14 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
 // Split entities into smaller groups and update each group?  Groups could be kept to a memory page size
 
     GameEntity* entity = entities;
-    for(uint32 i = 0; i < num_entities; ++i, ++entities)
+    uint32 updated_entities = 0;
+    for(uint32 i = 0; i < num_entities; ++i, ++entity)
     {
+        if(entity & ~EntityFlag_Enabled)
+        {
+            continue;
+        }
+
         switch(entity->type)
         {
         case EntityType_Enemy:
@@ -125,6 +189,11 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
         }break;
         InvalidDefaultCase;
         }
+
+        if(++updated_entities == scene->active_entities)
+        {
+            break;
+        }
     }
 }
 
@@ -132,8 +201,13 @@ void DrawGameEntities(GameEntity* entities, uint32 num_entities)
 {
     assert(!"not drawing yet");
     GameEntity* entity = entities;
-    for(uint32 i = 0; i < num_entities; ++i, ++entities)
+    for(uint32 i = 0; i < num_entities; ++i, ++entity)
     {
+        if(entity & ~EntityFlag_Enabled)
+        {
+            continue;
+        }
+
         switch(entity->type)
         {
         case EntityType_Enemy:
@@ -158,6 +232,11 @@ void DrawGameEntities(GameEntity* entities, uint32 num_entities)
         }break;
         }
         InvalidDefaultCase;
+
+        if(++updated_entities == scene->active_entities)
+        {
+            break;
+        }
     }
 
 }

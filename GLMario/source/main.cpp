@@ -72,6 +72,7 @@ void WindowSetScreenMode(Window* window, ScreenMode mode)
 
 static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
 {
+    // TODO: allocate the permanent memory first and place a GameState at the front of it?
     GameState* result = new GameState;
 
     AllocateMemoryArena(&result->temporary_memory, FRAME_TEMPORARY_MEMORY_SIZE);

@@ -109,10 +109,6 @@ struct ParticleTransformData
 class ParticleSystem : public Entity
 {
 public:
-	ParticleSystem(SceneManager*);
-	ParticleSystem(SceneManager*, uint32 max, DrawLayer dl = DrawLayer_Foreground);
-	~ParticleSystem();
-
 	uint32 max_particles;
 	uint32 active_particles;
 	uint32 burst_particles;
@@ -122,6 +118,16 @@ public:
 	ParticleTransformData ptd;
 	ParticleEmissionData ped;
 	DrawLayer draw_layer;
+
+private:
+	Renderer* ren;
+	GLuint vbo;
+	GLuint vao;
+
+public:
+	ParticleSystem(SceneManager*);
+	ParticleSystem(SceneManager*, uint32 max, DrawLayer dl = DrawLayer_Foreground);
+	~ParticleSystem();
 
 	void initialize(uint32 max, DrawLayer dl);
 	void init_random(float, uint32);
@@ -143,8 +149,4 @@ private:
 	void update_particle_wide(uint32, Vec2&, float, float, Vec2&, uint32 count = 4);
 #endif
 
-	Renderer* ren;
-
-	GLuint vbo;
-	GLuint vao;
 };

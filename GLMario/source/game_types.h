@@ -64,15 +64,15 @@ void WindowSetScreenMode(Window* window, ScreenMode mode);
 
 struct Scene
 {
-    SceneType type;
+//    SceneType type;
 
     uint32 max_entities;
+    uint32 active_entities;
     uint32 next_entity_id;
-    int32  first_entity_index;
     GameEntity* entities;
 
-    int32 first_object_index;
     uint32 max_objects;
+    uint32 active_objects;
     uint32 next_object_id;
     GameObject* objects;
 };

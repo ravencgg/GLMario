@@ -18,6 +18,7 @@ enum SceneType
 
 enum EntityType
 {
+    EntityType_Null = 0,
     EntityType_Player,
     EntityType_Enemy,
     EntityType_Spawner,
@@ -25,6 +26,13 @@ enum EntityType
 
     EntityType_Count
 };
+
+enum EntityFlags
+{
+    EntityFlag_Enabled  = 0x1;
+    EntityFlag_Removing = 0x2;
+
+}
 
 struct Transform
 {
@@ -50,15 +58,13 @@ struct EntitySpawner
 
 struct GameEntity
 {
+    uint32 flags;
     uint32 id;
     EntityType type;
     Transform transform;
     Sprite sprite;
 
     bool delete_this_frame; // TODO: new thing for this
-
-    GameEntity* prev;
-    GameEntity* next;
 
     union
     {
