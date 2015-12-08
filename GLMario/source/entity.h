@@ -29,10 +29,10 @@ enum EntityType
 
 enum EntityFlags
 {
-    EntityFlag_Enabled  = 0x1;
-    EntityFlag_Removing = 0x2;
+    EntityFlag_Enabled  = 0x1,
+    EntityFlag_Removing = 0x2,
 
-}
+};
 
 struct Transform
 {
@@ -78,12 +78,12 @@ void UpdateGameEntities(GameEntity* entities, uint32 num_entities, float dt);
 
 void DrawGameEntities(GameEntity* entities, uint32 num_entities);
 
-struct GameObject // particle system, parallax background
+struct GameObject // particle system, parallax background, Tilemap?
 {
 
 };
 
-
+#if 0
 class Entity
 {
 public:
@@ -142,3 +142,5 @@ public:
     virtual void Tick(GameState*) override;
     virtual void Draw() override;
 };
+
+#endif

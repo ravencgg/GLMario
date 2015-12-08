@@ -4,6 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "..\Dependencies\stb_image.h"
 
+
 char* default_vert_shader = "..\\res\\default_vert.glsl";
 char* default_frag_shader = "..\\res\\default_frag.glsl";
 char* particle_vert_shader = "..\\res\\particle_vert.glsl";
@@ -24,25 +25,11 @@ struct ShaderLoadData
 };
 
 ShaderLoadData shaderLoadData[Shader_Count];
-Rect sprite_rects[(uint32) SpriteRect::RECT_COUNT] = {};
 Renderer* Renderer::s_instance = nullptr;
 
 void SwapBuffer(GameState* game_state)
 {
 	SDL_GL_SwapWindow(game_state->window.sdl_window);
-}
-
-void initialize_sprite_rects()
-{
-	sprite_rects[(uint32) SpriteRect::BRICK] = rect( 85, 0, 16, 16 );
-	sprite_rects[(uint32) SpriteRect::STONE] = rect( 0, 0, 16, 16 );
-}
-
-Rect get_sprite_rect(SpriteRect r)
-{
-	assert((uint32) r < (uint32) SpriteRect::RECT_COUNT);
-	Rect result = sprite_rects[(uint32)r];
-	return result;
 }
 
 Renderer::Renderer(Window* w, Vec4 clear_color)
@@ -77,7 +64,6 @@ Renderer::Renderer(Window* w, Vec4 clear_color)
 void Renderer::create_instance(Window* w)
 {
 	if(s_instance) return;
-	initialize_sprite_rects();
 	s_instance = new Renderer(w);
 }
 
@@ -446,6 +432,11 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 #undef TAB
 }
 
+void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
+{
+	draw_buffer[(uint32) layer].AddBack(draw_call);
+}
+
 void Renderer::render_draw_buffer()
 {
 	for (uint32 layer = 0; layer < DrawLayer_Count; ++layer)
@@ -455,11 +446,6 @@ void Renderer::render_draw_buffer()
 			draw_call(draw_buffer[layer][i]);
 		}
 	}
-}
-
-void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
-{
-	draw_buffer[(uint32) layer].AddBack(draw_call);
 }
 
 void ConvertToGLRect(Rectf* rect)
@@ -480,8 +466,7 @@ void Renderer::draw_call(DrawCall data)
 	static GLuint vao = (glGenVertexArrays(1, &vao), vao);
 	static GLuint vbo = (glGenBuffers(1, &vbo), vbo);
 
-
-    Vec2 cam_position = { main_camera->transform.position.x, main_camera->transform.position.y };
+    Vec2 cam_position = { main_camera->position.x, main_camera->position.y };
     Vec2 viewport     = { main_camera->viewport_size.x, main_camera->viewport_size.y };
 
 	glUseProgram(shaders[(uint32)data.shader].shader_handle);
@@ -778,9 +763,4 @@ void Renderer::DrawRect(Rectf& rect, uint8 line_width, DrawLayer layer, Vec4 col
 	verts.push_back(v);
 
 	DrawLine(verts, line_width, layer, LineDrawOptions::LOOPED | line_draw_options);
-}
-
-void Renderer::draw_animation(Animation* animation, Transform* t, float time)
-{
-	assert(animation && t && time > 1);
 }

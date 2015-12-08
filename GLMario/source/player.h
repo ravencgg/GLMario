@@ -7,6 +7,8 @@
 #include "particles.h"
 #include "physics.h"
 
+
+#if 0
 class SceneManager;
 
 class Player : public Actor
@@ -23,3 +25,5 @@ public:
     void Tick(GameState*) override;
     void Draw() override;
 };
+
+#endif

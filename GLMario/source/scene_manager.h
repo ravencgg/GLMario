@@ -1,11 +1,12 @@
 #pragma once
-#include <vector>
 
+#if 0
+
+#include <vector>
 #include "entity.h"
 #include "containers.h"
 #include "player.h"
 #include "input.h"
-//#include "camera.h"
 #include "tilemap.h"
 #include "physics.h"
 #include "particles.h"
@@ -13,6 +14,7 @@
 
 #include <algorithm>
 #include <memory>
+
 
 struct GameState;
 
@@ -50,3 +52,5 @@ public:
 	Tilemap* GetTilemap() { return &tilemap; }
     Physics* GetPhysics() { return physics; }
 };
+
+#endif

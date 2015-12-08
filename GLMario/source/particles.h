@@ -106,9 +106,11 @@ struct ParticleTransformData
 	uint32 options = ParticleOptions::NONE;
 };
 
-class ParticleSystem : public Entity
+class ParticleSystem
 {
 public:
+    Transform transform;
+
 	uint32 max_particles;
 	uint32 active_particles;
 	uint32 burst_particles;
@@ -125,8 +127,8 @@ private:
 	GLuint vao;
 
 public:
-	ParticleSystem(SceneManager*);
-	ParticleSystem(SceneManager*, uint32 max, DrawLayer dl = DrawLayer_Foreground);
+	ParticleSystem();
+	ParticleSystem(uint32 max, DrawLayer dl = DrawLayer_Foreground);
 	~ParticleSystem();
 
 	void initialize(uint32 max, DrawLayer dl);
@@ -137,7 +139,7 @@ public:
 	void create_particle(ParticleVertexData&, ParticleFrameData&, float);
 	void create_particle_burst(uint32);
 
-    virtual void Tick(GameState*) override;
+    virtual void Tick(GameState*);
 
 private:
 	void allocate();
@@ -148,5 +150,5 @@ private:
 #ifdef UPDATE_PARTICLE_WIDE
 	void update_particle_wide(uint32, Vec2&, float, float, Vec2&, uint32 count = 4);
 #endif
-
 };
+

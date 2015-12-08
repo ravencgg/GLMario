@@ -6,6 +6,7 @@
 #include "input.h"
 
 #include "entity.h"
+#include "tilemap.h"
 
 enum ScreenMode
 {
@@ -65,7 +66,6 @@ void WindowSetScreenMode(Window* window, ScreenMode mode);
 struct Scene
 {
 //    SceneType type;
-
     uint32 max_entities;
     uint32 active_entities;
     uint32 next_entity_id;
@@ -75,11 +75,13 @@ struct Scene
     uint32 active_objects;
     uint32 next_object_id;
     GameObject* objects;
+
+    TileMap tilemap;
 };
 
 struct Camera
 {
-    Transform transform;
+    Vec2 position;
     Vec2 viewport_size;
 };
 

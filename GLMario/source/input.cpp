@@ -136,7 +136,7 @@ void UpdateMouseWorldPosition(Dimension screen_resolution, Vec2 viewport_size, V
 	int x, y;
 	uint32 m = SDL_GetMouseState(&x, &y);
 
-    Vec2 relative = vec2( (float) x / (float)screen_resolution.width , (float) y / (float)screen_resolution.height);
+    Vec2 relative = vec2( (float) x / (float)screen_resolution.width , 1.f - (float) y / (float)screen_resolution.height);
 
     relative.x -= 0.5f;
     relative.y -= 0.5f;

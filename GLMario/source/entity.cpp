@@ -2,10 +2,11 @@
 
 #include "scene_manager.h"
 #include "game_types.h"
+#include "time.h"
 
-Entity* FindEntityWithID(Scene* scene, uint32 id)
+GameEntity* FindEntityWithID(Scene* scene, uint32 id)
 {
-    Entity* entity = scene->entities;
+    GameEntity* entity = scene->entities;
     for(uint32 i = 0; i < scene->max_entities; ++i, ++entity)
     {
         if(entity->id == id)
@@ -21,7 +22,7 @@ Entity* FindEntityWithID(Scene* scene, uint32 id)
 
 void DespawnEntity(Scene* scene, uint32 id)
 {
-    Entity* entity = FindEntityWithID(id);
+    GameEntity* entity = FindEntityWithID(scene, id);
 
     if(entity)
     {
@@ -35,9 +36,9 @@ void DespawnEntity(Scene* scene, uint32 id)
     }
 }
 
-Entity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
+GameEntity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
 {
-    Entity* entity = scene->entities;
+    GameEntity* entity = scene->entities;
     uint32 counter = 0;
 
     bool found = false;
@@ -65,33 +66,35 @@ Entity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
 
 void SpawnEnemy(Scene* scene, Vec2 position)
 {
-    Entity* entity = NextFreeEntitySlot(scene, EntityType_Enemy);
+    GameEntity* entity = NextFreeEntitySlot(scene, EntityType_Enemy);
     assert(entity);
 
     if(entity)
     {
         entity->type = EntityType_Enemy;
-        entity->health = 3;
         entity->transform.position = position;
         entity->transform.rotation = 0.f;
-        entity->transform.scale = Vec2( 1.f, 1.f );
+        entity->transform.scale = vec2( 1.f, 1.f );
+
+        EntityEnemy* enemy = &entity->enemy;
+        enemy->health = 3;
     }
 }
 
 void SpawnPlayer(Scene* scene, Vec2 position)
 {
-    Entity* entity = NextFreeEntitySlot(scene, EntityType_Player);
+    GameEntity* entity = NextFreeEntitySlot(scene, EntityType_Player);
     assert(entity);
 
     if(entity)
     {
-        entity->type = EntityType_Enemy;
+        entity->type = EntityType_Player;
     }
 }
 
 void SpawnEnemySpawner(Scene* scene, Vec2 position)
 {
-    Entity* entity = NextFreeEntitySlot(scene, EntityType_Spawner);
+    GameEntity* entity = NextFreeEntitySlot(scene, EntityType_Spawner);
     assert(entity);
 
     if(entity)
@@ -109,7 +112,7 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
     uint32 updated_entities = 0;
     for(uint32 i = 0; i < num_entities; ++i, ++entity)
     {
-        if(entity & ~EntityFlag_Enabled)
+        if(entity->flags & ~EntityFlag_Enabled || entity->type == EntityType_Null)
         {
             continue;
         }
@@ -197,13 +200,16 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
     }
 }
 
-void DrawGameEntities(GameEntity* entities, uint32 num_entities)
+void DrawGameEntities(Scene* scene, uint32 num_entities)
 {
     assert(!"not drawing yet");
-    GameEntity* entity = entities;
+
+    GameEntity* entity = scene->entities;
+
+    uint32 drawn_entities = 0;
     for(uint32 i = 0; i < num_entities; ++i, ++entity)
     {
-        if(entity & ~EntityFlag_Enabled)
+        if(entity->flags & ~EntityFlag_Enabled || entity->type == EntityType_Null)
         {
             continue;
         }
@@ -228,19 +234,18 @@ void DrawGameEntities(GameEntity* entities, uint32 num_entities)
         {
 
             // Invisible
-
         }break;
         }
         InvalidDefaultCase;
 
-        if(++updated_entities == scene->active_entities)
+        if(++drawn_entities == scene->active_entities)
         {
             break;
         }
     }
-
 }
 
+#if 0
 Enemy::Enemy(SceneManager* sm)
 	: Actor(sm)
 {
@@ -291,6 +296,7 @@ void Enemy::Draw()
 }
 
 
+#if 0
 ///////////////////////////////////////////////////
 //  Spawner
 ///////////////////////////////////////////////////
@@ -325,8 +331,5 @@ void Spawner::Draw()
     // Invisible
 }
 
-
-
-
-
-
+#endif
+#endif

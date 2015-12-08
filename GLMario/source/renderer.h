@@ -1,4 +1,5 @@
 #pragma once
+
 #include <vector>
 
 #include "glew.h"
@@ -10,20 +11,10 @@
 struct Camera;
 struct Window;
 struct GameState;
-struct Sprite;
-struct Animation; // @cleanup remove?
-struct Transform; // @cleanup remove?
 
 enum ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT };
- // TODO(cgenova): text shader -> simple, with color option
 enum ShaderTypes : uint32 { Shader_Default, Shader_Text, Shader_Particle, Shader_Line, Shader_Count };
 enum DrawLayer   : uint32 { DrawLayer_Background, DrawLayer_PreTilemap, DrawLayer_Tilemap, DrawLayer_PostTilemap, DrawLayer_Player, DrawLayer_Foreground, DrawLayer_UI, DrawLayer_Count };
-enum class SpriteRect  : uint32 { UNINITIALIZED, STONE, BRICK, MARIO, RECT_COUNT };
-
-Rect sprite_rects[];
-
-void initialize_sprite_rects();
-Rect get_sprite_rect(SpriteRect);
 
 namespace DrawOptions
 {
@@ -48,6 +39,12 @@ namespace DrawType
 {
 	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, LINE_BUFFER, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
 }
+
+struct TexCoord
+{
+    uint16 x;
+    uint16 y;
+};
 
 // Pass color in as a uniform if it is desired
 struct SpriteVertex
@@ -159,19 +156,6 @@ struct Sprite
 	Vec4 color_mod;
 };
 
-enum class AnimationMode { LOOP, PING_PONG, STOP };
-struct Animation
-{
-	ImageFiles image_file;
-	Dimension size;
-	DrawLayer layer;
-	Point2 start_loc;
-
-	uint32 frame_time;
-	uint32 num_frames;
-	AnimationMode animation_mode;
-};
-
 struct TextDrawResult
 {
 	uint32 lines_drawn;
@@ -220,8 +204,6 @@ public:
 	float viewport_width();
 
 	void render_draw_buffer();
-	// void draw_sprite(Sprite*, Vec2);
-	void draw_animation(Animation*, Transform*, float time);
 
 	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }
 	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
@@ -262,3 +244,4 @@ private:
 };
 
 void SwapBuffer(GameState*);
+

@@ -1,7 +1,7 @@
 #include "scene_manager.h"
 
 #include "player.h"
-#if 1
+#if 0
 
 Player::Player(SceneManager* sm)
 	: Actor(sm)

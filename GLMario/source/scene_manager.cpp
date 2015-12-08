@@ -2,6 +2,7 @@
 
 #include "game_types.h"
 
+#if 0
 void SceneManager::SetMainCamera(Camera* camera)
 {
 	this->main_camera = camera;
@@ -261,3 +262,4 @@ void SceneManager::update_scene(GameState* game_state)
     }
 }
 
+#endif

@@ -23,6 +23,43 @@
 #define MAX_GAME_ENTITES 500
 #define MAX_GAME_OBJECTS 500
 
+void DebugControlCamera(Camera* camera)
+{
+	if(KeyIsDown(SDLK_LEFT))
+	{
+		camera->position.x -= 0.1f;
+	}
+
+	if(KeyIsDown(SDLK_RIGHT))
+	{
+		camera->position.x += 0.1f;
+	}
+
+    if(KeyIsDown(SDLK_UP))
+    {
+        if(KeyIsDown(SDLK_RCTRL) || KeyIsDown(SDLK_LCTRL))
+        {
+            camera->position.y += 0.1f;
+        }
+        else
+        {
+            camera->viewport_size *= 1.1f;
+        }
+    }
+
+    if(KeyIsDown(SDLK_DOWN))
+    {
+        if(KeyIsDown(SDLK_RCTRL) || KeyIsDown(SDLK_LCTRL))
+        {
+            camera->position.y -= 0.1f;
+        }
+        else
+        {
+            camera->viewport_size *= 0.9f;
+        }
+    }
+}
+
 void StartupWindow(Window* window, char* title, int32 width, int32 height)
 {
 	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
@@ -91,6 +128,13 @@ static Scene* PushScene(MemoryArena* arena, uint32 num_entities, uint32 num_obje
     result->entities = PushStructs(arena, GameEntity, num_entities);
     result->objects  = PushStructs(arena, GameObject, num_objects);
 
+    // This should be done when loading a level
+
+    const uint32 width = 50; // LOAD FROM FILE!
+    const uint32 height = 50;
+
+    AllocateTileMap(arena, &result->tilemap, width, height);
+
     return result;
 }
 
@@ -111,7 +155,10 @@ int main(int argc, char* argv[])
 	Renderer* renderer = Renderer::get();
 
 //	SceneManager scene;
-	Camera main_camera;
+	Camera main_camera = {}; // maybe put this in game_state?
+    main_camera.position = vec2(0, 0);
+    main_camera.viewport_size.x = 16;
+    main_camera.viewport_size.y = 9;
 
 //	scene.SetMainCamera(&main_camera);
 	renderer->set_camera(&main_camera);
@@ -158,12 +205,13 @@ int main(int argc, char* argv[])
 			}
 		}
 
-        UpdateMouseWorldPosition(game_state->window.resolution, main_camera.viewport_size, main_camera.transform.position);
+        UpdateMouseWorldPosition(game_state->window.resolution, main_camera.viewport_size, main_camera.position);
 
         ProfileEndSection(Profile_Input);
 
         Vec2 mouse_pos = MouseWorldPosition();
         DebugPrintf("Mouse World Position: (%.2f, %.2f)",  mouse_pos.x, mouse_pos.y);
+        DebugPrintf("Main Camera Position: (%.2f, %.2f)",  main_camera.position.x, main_camera.position.y);
 
 		if(KeyFrameDown(SDLK_ESCAPE))
 		{
@@ -201,6 +249,8 @@ int main(int argc, char* argv[])
 		frame_count++;
 		DebugPrintf("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount(game_state));
 
+        DebugControlCamera(&main_camera);
+
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
 //		main_camera.Tick(game_state);
@@ -230,6 +280,8 @@ int main(int argc, char* argv[])
             }
         }
         renderer->DrawLine(v, 3, DrawLayer_UI, LineDrawOptions::SMOOTH);
+
+        DrawTileMap(&game_state->active_scene->tilemap);
 
 		renderer->Flush();
 

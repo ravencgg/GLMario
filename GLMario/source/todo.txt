@@ -1,4 +1,8 @@
 
+TOREDO:
+    Renderer
+        -> convert to individual render groups? draw to framebuffers?
+        -> file static stuff? probably not
 
 Console/Rendering:
     Multi color text on a per letter basis 
@@ -13,6 +17,11 @@ Optimization:
     Cull draws out of viewport
 
     Broad phase collision detection
+    
+    Split the entity array into groups for faster searching
+
+    Make a DebugMemoryArena for console string / debug graph memory storage
+        -> convert all the debug calls to macros so they can be compiled out of non-profiling builds
 
 
 To figure out:
