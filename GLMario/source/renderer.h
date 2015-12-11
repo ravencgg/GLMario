@@ -40,12 +40,6 @@ namespace DrawType
 	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, LINE_BUFFER, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
 }
 
-struct TexCoord
-{
-    uint16 x;
-    uint16 y;
-};
-
 // Pass color in as a uniform if it is desired
 struct SpriteVertex
 {

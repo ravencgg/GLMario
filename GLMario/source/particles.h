@@ -1,6 +1,4 @@
 #pragma once
-#include <random>
-// #include "glew.h"
 
 #include "entity.h"
 #include "types.h"
@@ -144,7 +142,6 @@ public:
 private:
 	void allocate();
 
-	float random_float(float, float);
 	inline void update_particle(ParticleVertexData&, ParticleFrameData&, Vec2&, float, float, Vec2&);
 #define UPDATE_PARTICLE_WIDE
 #ifdef UPDATE_PARTICLE_WIDE

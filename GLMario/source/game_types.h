@@ -36,12 +36,6 @@ struct GameTime
 	uint32 frame_count;
 };
 
-struct Timer
-{
-	float start_time;
-	float duration;
-};
-
 /****************************
  *
  * Window functions
@@ -69,13 +63,19 @@ struct Scene
     uint32 max_entities;
     uint32 active_entities;
     uint32 next_entity_id;
-    GameEntity* entities;
+    Entity* entities;
 
     uint32 max_objects;
     uint32 active_objects;
     uint32 next_object_id;
     GameObject* objects;
 
+// The physics one
+    Tilemap* tmap;
+    Physics* physics;
+
+// TODO: combine tilemap code, or just pick one
+// The grid one
     TileMap tilemap;
 };
 
@@ -101,6 +101,5 @@ struct GameState
 
     Window window;
     GameTime time;
-    Input input;
 };
 

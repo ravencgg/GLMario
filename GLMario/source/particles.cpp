@@ -1,6 +1,7 @@
 #include "particles.h"
 
-#include "scene_manager.h"
+//#include "scene_manager.h"
+#include "utility.h"
 
 ParticleSystem::ParticleSystem()
     : max_particles(0),
@@ -459,16 +460,4 @@ void ParticleSystem::Tick(GameState* game_state)
 {
     update(game_state, this->transform.position);
     render();
-}
-
-float ParticleSystem::random_float(float x_min, float x_max)
-{
-    static std::random_device rd;
-    static std::mt19937 mt(rd());
-    static std::uniform_real_distribution<float> dist(0, 1);
-
-    float result = dist(mt);
-    result *= (x_max - x_min); // range;
-    result += x_min;
-    return result;
 }

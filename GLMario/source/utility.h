@@ -70,11 +70,18 @@ struct MemoryArena
 
 void AllocateMemoryArena(MemoryArena*, size_t);
 
+// Resets the arena without clearing any of the data since it will be cleared on allocation
+void ResetArena(MemoryArena*);
+
 void FreeMemoryArena(MemoryArena*);
 
 uint8* PushSize(MemoryArena* arena, size_t size, bool clear = true);
 
+// Since this is a stack allocation, this will free all allocations made after the supplied pointer's position
+void PopAllocation(MemoryArena* arena, void*);
+
 // Clears the memory as well, since PushSize clears by default
+#define PushArray(arena, type, count)   (type*) PushSize(arena, sizeof(type) * (count))
 #define PushStructs(arena, type, count) (type*) PushSize(arena, sizeof(type) * (count))
 #define PushStruct(arena, type)         (type*) PushSize(arena, sizeof(type))
 
@@ -90,3 +97,11 @@ uint64 GetCycleCount();
 
 uint64 GetCyclesPerSecond();
 
+
+/**********************************************
+ *
+ * Random Number Generation
+ *
+ ***************/
+
+float random_float(float x_min, float x_max);

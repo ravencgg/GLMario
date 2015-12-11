@@ -1,7 +1,8 @@
 #pragma once
 
 #include "types.h"
-#include "game_types.h"
+
+struct GameState;
 
 /****************************
  *
@@ -31,6 +32,13 @@ uint32 RealTimeSinceStartup(GameState*);
  * Timer functions
  *
  ******/
+
+struct Timer
+{
+	float start_time;
+	float duration;
+};
+
 
 Timer* CreateTimer(float dur);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "renderer.h"
 
 #define TILE_GROUP_SIDE_SIZE 4
 #define TILE_GROUP_SIZE (TILE_GROUP_SIDE_SIZE * TILE_GROUP_SIDE_SIZE)
@@ -18,22 +19,28 @@ enum TileCollision : uint8
     TileCollision_HalfRightTriangle,
 };
 
-struct Tile
+struct TileTypeInfo
 {
     uint16 tex_coord_x;
     uint16 tex_coord_y;
+    uint8 collision_type;
+
+    // 3 bytes free?
+};
+
+struct Tile2
+{
+    TileTypeInfo tile_info;
 
     uint16 tile_coord_x;
     uint16 tile_coord_y;
-
-    uint8 collision_type;
 };
 
 struct TileGroup
 {
     uint16 group_coord_x;
     uint16 group_coord_y;
-    Tile tiles[TILE_GROUP_SIZE];
+    Tile2 tiles[TILE_GROUP_SIZE];
 };
 
 struct TileMap
@@ -57,11 +64,14 @@ void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, uint32 map_width, uin
 void MakeCheckerboard(TileMap*, Rect);
 void MakeWalledRoom(TileMap*, Rect);
 void AddTile(TileMap*, float, float);
-Tile* FindTile(TileMap* tilemap, uint32 x, uint32 y);
+Tile2* FindTile(TileMap* tilemap, uint32 x, uint32 y);
 
 void DrawTileMap(TileMap*);
 
-#if 0
+#if 1
+
+#include "physics.h"
+
 enum TileType : uint32 { EMPTY, BRICK, COUNT };
 
 struct Tile
@@ -70,6 +80,9 @@ struct Tile
     Vec2 size;
 	TileType tile_type;
     RArrayRef<StaticCollider> collider;
+
+    Tile()
+    : collider() {}
 };
 
 Tile MakeTile(Physics* physics, Vec2 position, Vec2 size, TileType tile_type = BRICK);

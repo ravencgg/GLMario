@@ -20,7 +20,7 @@
 #define FRAME_TEMPORARY_MEMORY_SIZE MEGABYTES(256)
 #define GAME_PERMANENT_MEMORY_SIZE  MEGABYTES(128)
 
-#define MAX_GAME_ENTITES 500
+#define MAX_GAME_ENTITES 5000
 #define MAX_GAME_OBJECTS 500
 
 void DebugControlCamera(Camera* camera)
@@ -125,14 +125,15 @@ static Scene* PushScene(MemoryArena* arena, uint32 num_entities, uint32 num_obje
 
     result->max_entities = num_entities;
     result->max_objects  = num_objects;
-    result->entities = PushStructs(arena, GameEntity, num_entities);
+    result->entities = PushStructs(arena, Entity, num_entities);
     result->objects  = PushStructs(arena, GameObject, num_objects);
 
     // This should be done when loading a level
 
+
+// This needs to subarena for a quad tree
     const uint32 width = 50; // LOAD FROM FILE!
     const uint32 height = 50;
-
     AllocateTileMap(arena, &result->tilemap, width, height);
 
     return result;
@@ -150,6 +151,15 @@ int main(int argc, char* argv[])
     InitializeInput();
     InitializeDebugConsole();
 // End Global initialization
+
+    game_state->active_scene->physics = new Physics;
+    game_state->active_scene->tmap = new Tilemap(game_state->active_scene->physics);
+
+    game_state->active_scene->tmap->MakeWalledRoom(rect(-50, -20, 50, 50));
+    game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -20, 30, 3));
+    game_state->active_scene->tmap->MakeWalledRoom(rect(-25, -10, 5, 10));
+    game_state->active_scene->tmap->MakeWalledRoom(rect(20, 20, 10, 10));
+    game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 10, 2));
 
 // TODO: no more singletons!
 	Renderer* renderer = Renderer::get();
@@ -253,10 +263,23 @@ int main(int argc, char* argv[])
 
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
+
 //		main_camera.Tick(game_state);
+//		scene.update_scene(game_state);
+
+        game_state->active_scene->tmap->update();
+        game_state->active_scene->tmap->draw();
 
         ProfileBeginSection(Profile_SceneUpdate);
-//		scene.update_scene(game_state);
+
+        UpdateSceneEntities(game_state->active_scene, game_state, FrameTime(game_state));
+
+        DebugPrintPushColor(vec4(1.0f, 0, 0, 1.0f));
+        DebugPrintf("Active scene entitie space: (%d / %d)", game_state->active_scene->active_entities, MAX_GAME_ENTITES);
+        DebugPrintPopColor();
+
+        DrawSceneEntities(game_state->active_scene);
+
         ProfileEndSection(Profile_SceneUpdate);
 
         static Array<SimpleVertex> v;
@@ -302,6 +325,9 @@ int main(int argc, char* argv[])
 //			SDL_Delay(delay_time);
 //		}
 		//std::cout << "Delta T : " << delay_time << " ms" << std::endl;
+        //
+
+        ResetArena(&game_state->temporary_memory);
 
 	}// End main loop
 

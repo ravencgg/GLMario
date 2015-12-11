@@ -4,9 +4,9 @@
 #include "game_types.h"
 #include "time.h"
 
-GameEntity* FindEntityWithID(Scene* scene, uint32 id)
+Entity* FindEntityWithID(Scene* scene, uint32 id)
 {
-    GameEntity* entity = scene->entities;
+    Entity* entity = scene->entities;
     for(uint32 i = 0; i < scene->max_entities; ++i, ++entity)
     {
         if(entity->id == id)
@@ -20,31 +20,26 @@ GameEntity* FindEntityWithID(Scene* scene, uint32 id)
     return 0;
 }
 
-void DespawnEntity(Scene* scene, uint32 id)
+// Only do at the end of the frame to keep pointers valid during entity updating
+void DespawnEntity(Scene* scene, Entity* entity)
 {
-    GameEntity* entity = FindEntityWithID(scene, id);
-
+    assert(entity);
     if(entity)
     {
         --scene->active_entities;
         // This resets EntityType to EntityType_Null!
         memset(entity, 0, sizeof(*entity));
     }
-    else
-    {
-        assert(!"despawning unknown id?");
-    }
 }
 
-GameEntity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
+Entity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
 {
-    GameEntity* entity = scene->entities;
+    Entity* entity = scene->entities;
     uint32 counter = 0;
 
-    bool found = false;
     for(uint32 i = 0; i < scene->max_entities; ++i)
     {
-        if(entity->type == EntityType_Null)
+        if(entity->type != EntityType_Null)
         {
             entity++;
             continue;
@@ -61,41 +56,61 @@ GameEntity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
         }
     }
 
+    assert(!"Ran out of entity storage space");
     return 0;
 }
 
-void SpawnEnemy(Scene* scene, Vec2 position)
+void SpawnEnemy(Scene* scene, GameState* game_state, Vec2 position)
 {
-    GameEntity* entity = NextFreeEntitySlot(scene, EntityType_Enemy);
-    assert(entity);
+    Entity* entity = NextFreeEntitySlot(scene, EntityType_Enemy);
 
     if(entity)
     {
-        entity->type = EntityType_Enemy;
+        EntityEnemy* enemy = &entity->enemy;
+
         entity->transform.position = position;
         entity->transform.rotation = 0.f;
         entity->transform.scale = vec2( 1.f, 1.f );
 
-        EntityEnemy* enemy = &entity->enemy;
+// TODO: don't have this require a game_state?
+        StartTimer(game_state, &enemy->despawn_timer, random_float(1.f, 1.1f));
+
         enemy->health = 3;
     }
 }
 
 void SpawnPlayer(Scene* scene, Vec2 position)
 {
-    GameEntity* entity = NextFreeEntitySlot(scene, EntityType_Player);
-    assert(entity);
+    Entity* entity = NextFreeEntitySlot(scene, EntityType_Player);
 
     if(entity)
     {
-        entity->type = EntityType_Player;
+        EntityPlayer* player = &entity->player;
+
+        entity->transform.position = position;
+        entity->transform.rotation = 0.f;
+        entity->transform.scale = vec2( 1.f, 1.f );
+
+        Vec2 size = vec2(1.0f, 1.5f);
+
+        DynamicCollider col;
+        col.active = true;
+        col.position = entity->transform.position;
+        col.rect = { -size.x / 2.f,
+                    -size.y / 2.f,
+                    size.x,
+                    size.y };
+
+        col.parent = nullptr;
+
+        player->collider = scene->physics->AddDynamicCollider(col);
+        player->collider->position = entity->transform.position; // Should this be offset or actual position?
     }
 }
 
 void SpawnEnemySpawner(Scene* scene, Vec2 position)
 {
-    GameEntity* entity = NextFreeEntitySlot(scene, EntityType_Spawner);
-    assert(entity);
+    Entity* entity = NextFreeEntitySlot(scene, EntityType_Spawner);
 
     if(entity)
     {
@@ -103,14 +118,48 @@ void SpawnEnemySpawner(Scene* scene, Vec2 position)
     }
 }
 
-void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entities, uint32 num_entities, float dt)
+void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
 {
 // Entities need to be tightly packed?
-// Split entities into smaller groups and update each group?  Groups could be kept to a memory page size
+// Split entities into smaller groups and update each group?
 
-    GameEntity* entity = entities;
+    // NOTE: random scene test code
+    {
+
+        if (KeyFrameDown(SDLK_m))
+        {
+            SpawnPlayer(scene, { 1.f, 0 });
+        }
+
+        if (KeyFrameDown(SDLK_n))
+        {
+
+            uint32 random_spawn = (uint32)random_float(1.0f, 1000.f);
+
+            for(uint32 i = 0; i < random_spawn; ++i)
+            {
+                auto multiple = 10.f;
+                auto x = random_float(-5.f * multiple, 5.f * multiple);
+                auto y = random_float(-5.f * multiple, 5.f * multiple);
+                SpawnEnemy(scene, game_state, { x, y });
+            }
+        }
+    }
+
+// TODO: despawn entity by ID
+#define RemoveEntity(entityptr) entityptr->flags |= EntityFlag_Removing; \
+                                entities_to_delete[num_entities_to_delete++] = entityptr
+
+    uint32 num_entities_to_delete = 0;
+    Entity** entities_to_delete = PushArray(&game_state->temporary_memory, Entity*, scene->max_entities);
+
+    DebugPrintf("Temporary memory base: %p", entities_to_delete);
+
+    Entity* entity = scene->entities;
+    uint32 max_entities = scene->max_entities; // The maximum that could be looked for, though the
+                                               // loop will generally early out
     uint32 updated_entities = 0;
-    for(uint32 i = 0; i < num_entities; ++i, ++entity)
+    for(uint32 i = 0; i < max_entities; ++i, ++entity)
     {
         if(entity->flags & ~EntityFlag_Enabled || entity->type == EntityType_Null)
         {
@@ -123,8 +172,13 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
         {
             EntityEnemy* enemy = &entity->enemy;
 
+            if(TimerIsFinished(game_state, &enemy->despawn_timer))
+            {
+                RemoveEntity(entity);
+            }
+
             enemy->velocity.y = -1.f;
-            DebugPrintf("Enemy position:  (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
+//            DebugPrintf("Enemy position:  (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
             const uint8 line_width = 3;
             Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + enemy->velocity, vec4(0, 1, 1, 1), line_width);
             //TODO: physics
@@ -136,10 +190,10 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
             EntityPlayer* player = &entity->player;
             const float gravity = -20.f;
             static uint32 count = 0;
-            float dt = FrameTime(game_state);
 
             if(KeyIsDown(SDLK_SPACE))
             {
+                RemoveEntity(entity);
                 player->velocity.y = 10.f;
             }
             else
@@ -170,11 +224,12 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
             DebugPrintf("Player position: (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
             Vec2 old_velocity = player->velocity;
             //TODO: integrate physics in the new system
-//            transform.position = parent_scene->physics->StepCollider(collider, velocity, FrameTime(game_state));
+
+            entity->transform.position = scene->physics->StepCollider(player->collider, player->velocity, FrameTime(game_state));
+
             const uint8 line_width = 3;
             Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
             DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
-//            ps.update(game_state, entity->transform.position);
 
         }break;
         case EntityType_Spawner:
@@ -185,7 +240,7 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
 
             if (current_time - spawner->last_spawn_time > spawner->time_between_spawns)
             {
-                SpawnEnemy(scene, entity->transform.position); // TODO: Write!
+                SpawnEnemy(scene, game_state, entity->transform.position); // TODO: Write!
                 spawner->last_spawn_time = current_time;
             }
 
@@ -198,16 +253,24 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, GameEntity* entiti
             break;
         }
     }
+
+
+    for(uint32 i = 0; i < num_entities_to_delete; ++i)
+    {
+        DespawnEntity(scene, entities_to_delete[i]);
+    }
+
+    PopAllocation(&game_state->temporary_memory, entities_to_delete);
 }
+#undef RemoveEntity
 
-void DrawGameEntities(Scene* scene, uint32 num_entities)
+void DrawSceneEntities(Scene* scene)
 {
-    assert(!"not drawing yet");
 
-    GameEntity* entity = scene->entities;
-
+    Entity* entity = scene->entities;
+    uint32 max_entities = scene->max_entities;
     uint32 drawn_entities = 0;
-    for(uint32 i = 0; i < num_entities; ++i, ++entity)
+    for(uint32 i = 0; i < max_entities; ++i, ++entity)
     {
         if(entity->flags & ~EntityFlag_Enabled || entity->type == EntityType_Null)
         {
@@ -219,24 +282,42 @@ void DrawGameEntities(Scene* scene, uint32 num_entities)
         case EntityType_Enemy:
         {
 
-// TODO:drawing
-//            draw_call.sd.world_position = transform.position;
-//            Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
+            DrawCall draw_call = {};
+            draw_call.draw_type = DrawType::SINGLE_SPRITE;
+            draw_call.image = ImageFiles::MARIO_IMAGE;
+            draw_call.shader = Shader_Default;
+            draw_call.options = DrawOptions::TEXTURE_RECT;
+            draw_call.sd.tex_rect = { 17, 903, 34, 34 };
+            draw_call.sd.world_size = vec2(1.0f, 1.5f);
+            draw_call.sd.draw_angle = 0;
+
+            draw_call.sd.world_position = entity->transform.position;
+            Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
+
         }break;
         case EntityType_Player:
         {
 
-// TODO:drawing
-//            draw_call.sd.world_position = transform.position;
-//            Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
+            DrawCall draw_call = {};
+            draw_call.draw_type = DrawType::SINGLE_SPRITE;
+            draw_call.image = ImageFiles::MARIO_IMAGE;
+            draw_call.shader = Shader_Default;
+            draw_call.options = DrawOptions::TEXTURE_RECT;
+            draw_call.sd.tex_rect = { 17, 903, 34, 34 };
+            draw_call.sd.world_size = vec2(1.0f, 1.5f);
+            draw_call.sd.draw_angle = 0;
+
+            draw_call.sd.world_position = entity->transform.position;
+            Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
+
         }break;
         case EntityType_Spawner:
         {
 
             // Invisible
         }break;
-        }
         InvalidDefaultCase;
+        }
 
         if(++drawn_entities == scene->active_entities)
         {

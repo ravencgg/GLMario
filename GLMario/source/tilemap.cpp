@@ -25,7 +25,7 @@ void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, uint32 map_width, uin
             group->group_coord_x = x;
             group->group_coord_y = y;
 
-            Tile* tile = group->tiles;
+            Tile2* tile = group->tiles;
             for(uint32 yy = 0; yy < TILE_GROUP_SIDE_SIZE; ++yy)
             {
                 for(uint32 xx = 0; xx < TILE_GROUP_SIDE_SIZE; ++xx)
@@ -52,11 +52,65 @@ void MakeWalledRoom(TileMap*, Rect)
 
 }
 
-void AddTile(TileMap*, float, float)
+void AddTile(TileMap* tilemap, uint32 x, uint32 y)
 {
-
 }
 
+struct TileMapTexture
+{
+    uint16 tile_width;
+    uint16 tile_height;
+
+    uint16 tile_border_x;
+    uint16 tile_border_y;
+
+    uint16 image_border_x;
+    uint16 image_border_y;
+
+    uint16 num_tiles_x;
+    uint16 num_tiles_y;
+
+
+    uint16 num_tiles() { uint16 result = num_tiles_x * num_tiles_y; return result; }
+};
+
+void FillTileTypeInfo(TileTypeInfo* tti, TileMapTexture* tex_info, bool use_default)
+{
+#if 0
+    static bool calculated = false;
+
+    if(use_default)
+    {
+        tex_info->tile_width = 16;
+        tex_info->tile_height = 16;
+        tex_info->tile_border_x = 1;
+        tex_info->tile_border_y = 1;
+        tex_info->image_border_x = 0;
+        tex_info->image_border_y = 0;
+        tex_info->num_tiles_x = 13;
+        tex_info->num_tiles_y = 11;
+    }
+
+    tex_info->num_tiles = tex_info->num_tiles_x * tex_info->num_tiles_y;
+
+    if(!calculated)
+    {
+        for(int y = 0; y < tex_info->num_tiles_y; ++y)
+        {
+            for(int x = 0; x < tex_info->num_tiles_x; ++x)
+            {
+                int index = (y * tex_info->num_tiles_x) + x;
+                tti[index].tex_coord_x = tex_info->image_border_x + (x * (tex_info->image_border_x + tex_info->tile_width));
+                tti[index].tex_coord_y = tex_info->image_border_y + (y * (tex_info->image_border_y + tex_info->tile_height));
+                tti[index].collision_type = 0;
+            }
+        }
+    }
+#endif
+};
+
+
+#if 0
 Tile* FindTile(TileMap* tilemap, uint32 x, uint32 y)
 {
     assert(!"probably bogus with the new numbering system");
@@ -83,6 +137,7 @@ Tile* FindTile(TileMap* tilemap, uint32 x, uint32 y)
     Tile* result = group->tiles + (internal_x + (internal_y * TILE_GROUP_SIDE_SIZE));
     return result;
 }
+#endif
 
 void DrawTileMap(TileMap* tilemap)
 {
@@ -103,14 +158,14 @@ void DrawTileMap(TileMap* tilemap)
     TileGroup* group = tilemap->tile_groups;
     for(uint32 group_num = 0; group_num < num_groups; ++group_num, ++group)
     {
-        Tile* tile = group->tiles;
+        Tile2* tile = group->tiles;
 
         color.e[color_to_mod] += 0.1f;
         if(color.e[color_to_mod] > 1.f)
         {
             color.e[color_to_mod] = 0;
+            color_to_mod ^= 1;
         }
-        color_to_mod ^= 1;
 
         for(uint32 tile_num = 0; tile_num < tiles_per_group; ++tile_num, ++tile)
         {
@@ -126,23 +181,20 @@ void DrawTileMap(TileMap* tilemap)
             {
                 ren->DrawRect(r, 2, DrawLayer_UI, color);
             }
-
         }
     }
-
     const uint8 line_width = 3;
     ren->DrawLine(line_vertices, line_width, DrawLayer_UI, LineDrawOptions::CUSTOM_SIZE);
 }
 
-
-#if 0
+#if 1
 
 #include "physics.h"
 
 Tile MakeTile(Physics* physics, Vec2 position, Vec2 size, TileType tile_type)
 {
     assert(physics);
-    Tile result = {};
+    Tile result = { };
     result.position = position;
     result.size = size;
     result.tile_type = tile_type;
@@ -251,7 +303,7 @@ void Tilemap::init()
 	draw_call.image = ImageFiles::MAIN_IMAGE;
 	draw_call.shader = Shader_Default;
 	draw_call.options = DrawOptions::TEXTURE_RECT;
-	draw_call.sd.tex_rect = get_sprite_rect(SpriteRect::STONE);
+	draw_call.sd.tex_rect = { 0, 0, 16, 16 };
 
 	draw_call.sd.world_size = vec2(1.f, 1.f);
 	draw_call.sd.world_position = { 0, 0 };

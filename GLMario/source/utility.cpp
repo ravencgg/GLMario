@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <assert.h>
+#include <random>
 
 
 /**********************************************
@@ -73,6 +74,22 @@ uint8* PushSize(MemoryArena* arena, size_t size, bool clear)
     return nullptr;
 }
 
+
+// NOTE: Could fill the memory with obvious garbage in these resetting functions
+// to track deallocation problems
+void PopAllocation(MemoryArena* arena, void* position)
+{
+    assert(position >= arena->base && position < (arena->base + arena->size));
+    assert(position < arena->base + arena->used);
+    arena->used = (size_t)position - (size_t)arena->base;
+    assert(arena->used >= 0 && arena->used < arena->size);
+}
+
+void ResetArena(MemoryArena* arena)
+{
+    arena->used = 0;
+}
+
 /**********************************************
  *
  * Clock Functions
@@ -94,5 +111,19 @@ uint64 GetCyclesPerSecond()
 }
 
 
+/**********************************************
+ *
+ * Random Number Generation
+ *
+ ***************/
 
-
+float random_float(float x_min, float x_max)
+{
+    static std::random_device rd;
+    static std::mt19937 mt(rd());
+    static std::uniform_real_distribution<float> dist(0, 1);
+    float result = dist(mt);
+    result *= (x_max - x_min); // range;
+    result += x_min;
+    return result;
+}

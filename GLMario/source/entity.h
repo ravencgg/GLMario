@@ -5,9 +5,9 @@
 #include "types.h"
 #include "physics.h"
 #include "containers.h"
+#include "time.h"
 
 struct GameState;
-class SceneManager;
 
 enum SceneType
 {
@@ -43,11 +43,13 @@ struct Transform
 
 struct EntityPlayer
 {
+    RArrayRef<DynamicCollider> collider;
     Vec2 velocity;
 };
 struct EntityEnemy
 {
     Vec2 velocity;
+    Timer despawn_timer;
     uint32 health;
 };
 struct EntitySpawner
@@ -56,7 +58,7 @@ struct EntitySpawner
     float time_between_spawns;
 };
 
-struct GameEntity
+struct Entity
 {
     uint32 flags;
     uint32 id;
@@ -74,16 +76,19 @@ struct GameEntity
     };
 };
 
-void UpdateGameEntities(GameEntity* entities, uint32 num_entities, float dt);
-
-void DrawGameEntities(GameEntity* entities, uint32 num_entities);
+struct Scene;
+void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt);
+void DrawSceneEntities(Scene* scene);
 
 struct GameObject // particle system, parallax background, Tilemap?
 {
-
+    int unused;
 };
 
 #if 0
+
+class SceneManager;
+
 class Entity
 {
 public:
