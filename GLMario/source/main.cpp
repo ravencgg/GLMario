@@ -18,7 +18,7 @@
 #define TARGET_FPS (1000 / MS_PER_FRAME)
 
 #define FRAME_TEMPORARY_MEMORY_SIZE MEGABYTES(256)
-#define GAME_PERMANENT_MEMORY_SIZE  MEGABYTES(128)
+#define GAME_PERMANENT_MEMORY_SIZE  MEGABYTES(256)
 
 #define MAX_GAME_ENTITES 5000
 #define MAX_GAME_OBJECTS 500
@@ -153,6 +153,9 @@ int main(int argc, char* argv[])
 // End Global initialization
 
     game_state->active_scene->physics = new Physics;
+    // TODO: dynamically figure out max sizes of things like this
+    game_state->active_scene->physics->quadtree_memory = CreateSubArena(&game_state->permanent_memory, MEGABYTES(1));
+    game_state->active_scene->physics->quadtree.aabb = { -100.f, -100.f, 200.f, 200.f };
     game_state->active_scene->tmap = new Tilemap(game_state->active_scene->physics);
 
     game_state->active_scene->tmap->MakeWalledRoom(rect(-50, -20, 50, 50));
@@ -160,6 +163,7 @@ int main(int argc, char* argv[])
     game_state->active_scene->tmap->MakeWalledRoom(rect(-25, -10, 5, 10));
     game_state->active_scene->tmap->MakeWalledRoom(rect(20, 20, 10, 10));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 10, 2));
+    game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 4, 4));
 
 // TODO: no more singletons!
 	Renderer* renderer = Renderer::get();
@@ -190,29 +194,50 @@ int main(int argc, char* argv[])
 		InputBeginFrame();
 		while (SDL_PollEvent(&e))
 		{
-			//If user closes the window
-			if (e.type == SDL_QUIT)
-			{
-				running = false;
-			}
-			//If user presses any key
-			if (e.type == SDL_KEYDOWN)
-			{
-				ProcessKeyPress(e.key.keysym.sym);
-			}
-			if (e.type == SDL_KEYUP)
-			{
-				ProcessKeyRelease(e.key.keysym.sym);
-			}
+            switch(e.type)
+            {
 
-			if(e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP)
-			{
-				MouseButtonEvent();
-			}
-			if(e.type == SDL_MOUSEMOTION)
-			{
-				UpdateMousePosition();
-			}
+            case SDL_QUIT:
+            {
+                running = false;
+            }break;
+
+            case SDL_KEYDOWN:
+            {
+                ProcessKeyPress(e.key.keysym.sym);
+            }break;
+
+            case SDL_KEYUP:
+            {
+                ProcessKeyRelease(e.key.keysym.sym);
+            }break;
+
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONUP:
+            {
+                MouseButtonEvent();
+            }break;
+
+            case SDL_MOUSEMOTION:
+            {
+                UpdateMousePosition();
+            }break;
+
+
+                case SDL_WINDOWEVENT:
+                {
+                    switch(e.window.event)
+                    {
+                    case SDL_WINDOWEVENT_RESIZED:
+                    case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    {
+                        game_state->window.resolution.width  = e.window.data1;
+                        game_state->window.resolution.height = e.window.data2;
+                    }break;
+
+                    }
+                }
+            }
 		}
 
         UpdateMouseWorldPosition(game_state->window.resolution, main_camera.viewport_size, main_camera.position);
@@ -240,7 +265,15 @@ int main(int argc, char* argv[])
             WindowSetScreenMode(&game_state->window, ScreenMode_Borderless);
 			renderer->force_color_clear();
 		}
-		// TODO(cgenova): profiling;
+
+        static bool draw_debug = true;
+        if(KeyFrameDown(SDLK_BACKQUOTE))
+        {
+            draw_debug = !draw_debug;
+        }
+
+        Renderer* debug_renderer = draw_debug ? renderer : 0;
+
 
 	    TimeBeginFrame(game_state);
 
@@ -264,9 +297,6 @@ int main(int argc, char* argv[])
 		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
 		renderer->begin_frame();
 
-//		main_camera.Tick(game_state);
-//		scene.update_scene(game_state);
-
         game_state->active_scene->tmap->update();
         game_state->active_scene->tmap->draw();
 
@@ -275,10 +305,12 @@ int main(int argc, char* argv[])
         UpdateSceneEntities(game_state->active_scene, game_state, FrameTime(game_state));
 
         DebugPrintPushColor(vec4(1.0f, 0, 0, 1.0f));
-        DebugPrintf("Active scene entitie space: (%d / %d)", game_state->active_scene->active_entities, MAX_GAME_ENTITES);
+        DebugPrintf("Active scene entity usage: (%d / %d)", game_state->active_scene->active_entities, MAX_GAME_ENTITES);
         DebugPrintPopColor();
 
         DrawSceneEntities(game_state->active_scene);
+
+        game_state->active_scene->physics->DebugDraw();
 
         ProfileEndSection(Profile_SceneUpdate);
 
@@ -309,21 +341,17 @@ int main(int argc, char* argv[])
 		renderer->Flush();
 
         ProfileEndSection(Profile_Frame);
-        ProfileEndFrame(renderer, TARGET_FPS);
+        ProfileEndFrame(debug_renderer, TARGET_FPS);
+        DebugDrawConsole(debug_renderer);
 
-//        debugprintf("swap time: %"priu64"", post_swap_time - pre_swap_time);
-        DebugDrawConsole(renderer);
-
-        uint64 pre_swap_time = GetCycleCount();
         SwapBuffer(game_state);
-        uint64 post_swap_time = GetCycleCount();
 
 		// TODO(cgenova): High granularity sleep function!
-//		uint32 delay_time = RemainingTicksInFrame();
-//		if(delay_time > 10) {
-			//std::cout << "Delaying: " << delay_time << " ms" << std::endl;
-//			SDL_Delay(delay_time);
-//		}
+		//uint32 delay_time = RemainingTicksInFrame();
+		//if(delay_time > 10) {
+  		  //std::cout << "Delaying: " << delay_time << " ms" << std::endl;
+		//	SDL_Delay(delay_time);
+		//}
 		//std::cout << "Delta T : " << delay_time << " ms" << std::endl;
         //
 

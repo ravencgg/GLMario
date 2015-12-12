@@ -49,6 +49,16 @@ void AllocateMemoryArena(MemoryArena* arena, size_t size)
     arena->base = (uint8*) VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
 }
 
+MemoryArena CreateSubArena(MemoryArena* super, size_t size)
+{
+    MemoryArena result;
+    result.size = size;
+    result.used = 0;
+    result.base = PushSize(super, size, true);
+
+    return result;
+}
+
 void FreeMemoryArena(MemoryArena* arena)
 {
     VirtualFree(arena->base, 0, MEM_RELEASE);

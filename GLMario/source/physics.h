@@ -1,8 +1,6 @@
 #pragma once
 
 #include "types.h"
-#include "mathops.h"
-#include "renderer.h"
 #include "console.h"
 #include <vector>
 #include <algorithm>
@@ -14,6 +12,7 @@
 #define COLLISION_EPSILON 0.001f
 
 class Actor;
+class Renderer;
 struct TStaticCollider;
 struct TDynamicCollider;
 
@@ -34,8 +33,10 @@ struct CollisionInfo
 // Should these get collision messages? They would need a parent pointer!
 struct StaticCollider
 {
+//    uint32 collider_id;
     bool32 active;
     Rectf rect;
+    Rectf aabb;
 };
 
 struct DynamicCollider
@@ -61,12 +62,40 @@ struct Ray
 
 Rectf CanonicalRect(TDynamicCollider*);
 
+// NOTE: rotated rects using 2d rotation matrix?
+
+#define MAX_LEAF_SIZE 4
+#define QUADTREE_CHILDREN 4
+struct PhysicsNode
+{
+    uint16 depth;
+    uint8 contained_colliders;
+    bool is_parent;
+    Rectf aabb;
+
+    union
+    {
+        StaticCollider* colliders[MAX_LEAF_SIZE]; // Colliders are NOT contiguous in memory
+        PhysicsNode* child_nodes;                    // Children  are contiguous in memory
+    };
+};
+
+void AddCollider(PhysicsNode*, MemoryArena*, StaticCollider* collider);
+void DrawBoundingBoxes(PhysicsNode*, Renderer*);
+bool Contains(PhysicsNode*, Rectf rect);
+bool Contains(PhysicsNode*, Vec2 point);
+bool IsLeaf(PhysicsNode*);
+
 class Physics
 {
     RArray<StaticCollider, MAX_STATIC_COLLIDERS> statics;
     RArray<DynamicCollider, MAX_DYNAMIC_COLLIDERS> dynamics;
 
 public:
+
+    PhysicsNode quadtree;
+    MemoryArena quadtree_memory;
+
 
     Physics();
     ~Physics();
@@ -99,13 +128,6 @@ Ray make_ray(Vec2 a, Vec2 b)
 	return result;
 }
 
-inline
-Vec2 rect_center(Rectf r)
-{
-	Vec2 result = { r.x + r.w / 2.f, r.y + r.h / 2.f };
-	return result;
-}
-
 namespace ColliderType
 {
     enum Type { NONE, RECTANGLE, CIRCLE, COLLIDER_TYPE_COUNT };
@@ -114,12 +136,6 @@ namespace ColliderType
 struct PhysicsRect
 {
     Rectf col_rect;
-};
-
-struct PhysicsCircle
-{
-    Vec2 position;
-    float radius;
 };
 
 inline
@@ -133,13 +149,9 @@ Rectf make_rect(Vec2 pos, Vec2 size)
    return result;
 }
 
-inline
-PhysicsCircle make_physics_circle(Vec2 pos, float size)
-{
-    PhysicsCircle result = {};
-    result.position = pos;
-	result.radius = size;
-    return result;
-}
-
 bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out);
+
+
+
+
+

@@ -164,14 +164,21 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
             const uint32 draw_options = LineDrawOptions::SCREEN_SPACE;
             const uint32 line_width = 1;
-            ren->DrawLine(section->history, line_width, DrawLayer_UI, draw_options);
+            if(ren)
+            {
+                ren->DrawLine(section->history, line_width, DrawLayer_UI, draw_options);
+            }
         }
     }
 
     DebugPrintf("Target cycles: %"PRIu64" Cycles per second: %"PRIu64"\n", target_cycles, cycles_per_second);
 
     const Vec4 color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
-    ren->DrawRect(data_box, 2, DrawLayer_UI, color, LineDrawOptions::SCREEN_SPACE);
+
+    if(ren)
+    {
+        ren->DrawRect(data_box, 2, DrawLayer_UI, color, LineDrawOptions::SCREEN_SPACE);
+    }
 
 // NOTE: Second flush of the frame, just to push out the console data;
 // TODO: don't do the performance stuff on that one, it will just get cleared at the beginning of the
@@ -317,8 +324,12 @@ void DebugDrawConsole(Renderer* ren)
 //    colors[1].color = { 1.f, 0, 0, 1.f };
 
 // TODO: passing the raw array in here is dangerous
-    ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y,
-                    &console.text_format_array[0], console.text_format_array.Size());
+//
+    if(ren)
+    {
+        ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y,
+                        &console.text_format_array[0], console.text_format_array.Size());
+    }
     //ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y, colors, array_size);
     //ren->DrawString(this->output_string, 100, 100, this->used_chars);
     console.used_chars = 0;

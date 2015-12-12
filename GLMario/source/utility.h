@@ -70,6 +70,8 @@ struct MemoryArena
 
 void AllocateMemoryArena(MemoryArena*, size_t);
 
+MemoryArena CreateSubArena(MemoryArena* base, size_t size);
+
 // Resets the arena without clearing any of the data since it will be cleared on allocation
 void ResetArena(MemoryArena*);
 

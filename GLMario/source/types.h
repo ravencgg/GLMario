@@ -34,6 +34,7 @@ typedef int8_t b8;
 typedef int16_t b6;
 typedef int32_t b32;
 
+#define NOT_IMPLEMENTED assert(!"Not implemented!");
 
 #define KILOBYTES(kb) (1024ull * kb)
 #define MEGABYTES(mb) (1024ull * KILOBYTES(mb))

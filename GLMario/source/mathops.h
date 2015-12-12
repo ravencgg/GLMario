@@ -742,6 +742,30 @@ inline bool Contains(Rectf rect, Vec2 point)
 	return false;
 }
 
+inline Vec2 rect_center(Rectf r)
+{
+	Vec2 result = { r.x + r.w / 2.f, r.y + r.h / 2.f };
+	return result;
+}
+
+// TODO: Swap the arguments
+inline Rectf MinkowskiSum(Rectf expand, Rectf base)
+{
+	Rectf result = { base.x - expand.w / 2.f,
+					base.y - expand.h / 2.f,
+					expand.w + base.w,
+					expand.h + base.h };
+
+    return result;
+}
+
+inline bool Intersects(Rectf lhs, Rectf rhs)
+{
+	Vec2 center = rect_center(lhs);
+    Rectf mink_sum = MinkowskiSum(lhs, rhs);
+    bool result = Contains(mink_sum, center);
+    return result;
+}
 
 inline __m128 lerp(__m128& a, __m128& b, __m128& t)
 {

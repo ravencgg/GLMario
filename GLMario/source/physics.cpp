@@ -1,5 +1,9 @@
 #include "physics.h"
 
+#include "renderer.h"
+#include "mathops.h"
+#include "input.h"
+
 Rectf CanonicalRect(DynamicCollider* col)
 {
     Rectf result = {};
@@ -19,6 +23,7 @@ Physics::Physics()
 : statics()
 , dynamics()
 {
+    memset(&this->quadtree, 0, sizeof(this->quadtree));
 }
 
 Physics::~Physics()
@@ -36,7 +41,9 @@ RArrayRef<StaticCollider> Physics::AddStaticCollider(Rectf r)
 
 RArrayRef<StaticCollider> Physics::AddStaticCollider(StaticCollider col)
 {
-    return statics.Add(col);
+    auto result = statics.Add(col);
+    AddCollider(&this->quadtree, &this->quadtree_memory, result.RawPointer());
+    return result;
 }
 
 RArrayRef<DynamicCollider> Physics::AddDynamicCollider(DynamicCollider col)
@@ -91,6 +98,8 @@ void Physics::DebugDraw()
     }
 	Physics::minkowski_rects.clear();
 #endif
+
+    DrawBoundingBoxes(&this->quadtree, ren);
 }
 
 bool Physics::RaycastStatics(Vec2 start, Vec2 cast, CollisionInfo& outHit, bool draw)
@@ -340,12 +349,15 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 	Ray motion = { { o.x , o.y },
 					{ o.x + velocity.x, o.y + velocity.y } };
 
-	// Do the Minkowski sum
-	Vec2 center = rect_center(other);
-	Rectf mSum = { other.x - m.w / 2.f,
-					other.y - m.h / 2.f,
-					m.w + other.w,
-					m.h + other.h };
+    // Do the Minkowski sum
+    //Vec2 center = rect_center(other); // unused ?
+    Rectf mSum = MinkowskiSum(m, other);
+#if 0 // moved this to the MinkowskiSum function
+    { other.x - m.w / 2.f,
+        other.y - m.h / 2.f,
+        m.w + other.w,
+        m.h + other.h };
+#endif
 
     out.mSumOther = mSum;
 
@@ -412,3 +424,120 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 	}
 	return result;
 }
+
+/**********************************************
+ *
+ * Physics Quadtree
+ *
+ ***************/
+
+
+static bool Contains(PhysicsNode* physics_node, Rectf rect)
+{
+    bool result = Intersects(physics_node->aabb, rect);
+    return result;
+}
+
+static bool Contains(PhysicsNode* physics_node, Vec2 point)
+{
+    bool result = Contains(physics_node->aabb, point);
+    return result;
+}
+
+static bool IsLeaf(PhysicsNode* physics_node)
+{
+    bool result = !physics_node->is_parent;
+    return result;
+}
+
+static void AddColliderToChildren(PhysicsNode* physics_node, MemoryArena* arena, StaticCollider* col)
+{
+}
+
+void AddCollider(PhysicsNode* physics_node, MemoryArena* arena, StaticCollider* collider)
+{
+    if(IsLeaf(physics_node) && physics_node->contained_colliders < MAX_LEAF_SIZE)
+    {
+        physics_node->colliders[physics_node->contained_colliders] = collider;
+        ++physics_node->contained_colliders;
+    }
+    else if(IsLeaf(physics_node))
+    {
+        // Split the node into 4
+        StaticCollider* temp_colliders[MAX_LEAF_SIZE];
+        memcpy(temp_colliders, physics_node->colliders, sizeof(temp_colliders));
+
+        physics_node->child_nodes = PushArray(arena, PhysicsNode, QUADTREE_CHILDREN);
+
+        if(!physics_node->child_nodes)
+        {
+            volatile int i = 0;
+            physics_node->depth = i;
+        }
+        physics_node->is_parent = true;
+
+        uint16 new_depth = physics_node->depth + 1;
+        PhysicsNode* new_node = physics_node->child_nodes;
+
+        Rectf r = physics_node->aabb;
+        float half_width = r.w / 2.f;
+        float half_height = r.h / 2.f;
+
+        Rectf divided_rects[QUADTREE_CHILDREN] = {
+            { r.x              , r.y              , half_width, half_height },
+            { r.x + half_height, r.y              , half_width, half_height },
+            { r.x              , r.y + half_height, half_width, half_height },
+            { r.x + half_height, r.y + half_height, half_width, half_height },
+        };
+
+        for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i, ++new_node)
+        {
+            new_node->aabb  = divided_rects[i];
+            new_node->depth = new_depth;
+        }
+
+        // Add the original collider that was passed in.
+        AddCollider(physics_node, arena, collider);
+
+        // re-add the old pointers to the new child nodes.
+        StaticCollider* col = temp_colliders[0];
+        for(uint32 i = 0; i < MAX_LEAF_SIZE; ++i, ++col)
+        {
+            AddCollider(physics_node, arena, col);
+        }
+    }
+    else
+    { // Not a leaf, recurse
+        PhysicsNode* child = physics_node->child_nodes;
+        for(uint32 j = 0; j < QUADTREE_CHILDREN; ++j, ++child)
+        {
+            if(Contains(child, collider->rect))
+            {
+                AddCollider(child, arena, collider);
+            }
+        }
+    }
+}
+
+void DrawBoundingBoxes(PhysicsNode* physics_node, Renderer* ren)
+{
+    const uint8 line_width = 2;
+
+    const float blue  = (float)physics_node->depth / 10.f;
+    const float green = Contains(physics_node, MouseWorldPosition()) ? 0.8f : 0.1f;
+
+    Vec4 color = { 0, green, blue, 0.5f };
+    ren->DrawRect(physics_node->aabb, line_width, DrawLayer_UI, color, LineDrawOptions::CUSTOM_SIZE);
+
+    if(!IsLeaf(physics_node))
+    {
+        PhysicsNode* node = physics_node->child_nodes;
+        for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i, ++node)
+        {
+            DrawBoundingBoxes(node, ren);
+        }
+    }
+
+    ren->DrawRect(physics_node->aabb, line_width, DrawLayer_UI, color, LineDrawOptions::CUSTOM_SIZE);
+}
+

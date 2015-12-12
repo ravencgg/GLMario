@@ -9,6 +9,9 @@ Console/Rendering:
         -> should the "start" variable be taken out of the StringTextColor struct?
            it is implied if there is always a StringTextColor object during drawing
            which there will be because if one is not supplied, then a default one is used.
+     
+
+     World space text rendering 
 
      Remove console from the debug profiling
      Remove the Flush from the draw console 
@@ -32,3 +35,7 @@ To figure out:
     Should there be "Scene" types? 
         -> cutsene, game, menu
         -> each could have their own memory and entities, multiple could be active at a time
+
+    Global Unique IDs? or keep ids unique within their own system only?
+
+

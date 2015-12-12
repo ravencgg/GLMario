@@ -42,6 +42,19 @@ public:
         write_pos += num_to_add;
     }
 
+    T* AddNew()
+    {
+        assert(write_pos <= capacity);
+        if (write_pos + (num_to_add - 1) >= capacity)
+        {
+            reallocate(num_to_add);
+        }
+
+        T* result = new(&data[write_pos]);
+        write_pos += 1;
+        return result;
+    }
+
     void Add(T value)
     {
         AddBack(value);
@@ -239,6 +252,8 @@ struct RArrayRef
 
     T& operator*() { return *ptr; }
     T* operator->() { return ptr; }
+
+    T* RawPointer() { return ptr; }
 };
 
 

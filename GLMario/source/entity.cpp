@@ -128,7 +128,7 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
 
         if (KeyFrameDown(SDLK_m))
         {
-            SpawnPlayer(scene, { 1.f, 0 });
+            SpawnPlayer(scene, { 1.f, 2.0f });
         }
 
         if (KeyFrameDown(SDLK_n))
