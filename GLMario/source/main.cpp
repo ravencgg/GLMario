@@ -302,15 +302,15 @@ int main(int argc, char* argv[])
 
         ProfileBeginSection(Profile_SceneUpdate);
 
-        UpdateSceneEntities(game_state->active_scene, game_state, FrameTime(game_state));
-
         DebugPrintPushColor(vec4(1.0f, 0, 0, 1.0f));
         DebugPrintf("Active scene entity usage: (%d / %d)", game_state->active_scene->active_entities, MAX_GAME_ENTITES);
         DebugPrintPopColor();
 
+        UpdateSceneEntities(game_state->active_scene, game_state, FrameTime(game_state));
+
         DrawSceneEntities(game_state->active_scene);
 
-        game_state->active_scene->physics->DebugDraw();
+//        game_state->active_scene->physics->DebugDraw();
 
         ProfileEndSection(Profile_SceneUpdate);
 

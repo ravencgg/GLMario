@@ -243,7 +243,7 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
         Renderer* ren = Renderer::get();
         for(uint32 i = 0; i < collision_list_size; ++i)
         {
-            ren->DrawRect(collision_list[i]->rect, 4, DrawLayer_Debug, { 1.f, 1.f, 0.5f, 1.f });
+            //ren->DrawRect(collision_list[i]->rect, 4, DrawLayer_Debug, { 1.f, 1.f, 0.5f, 1.f });
         }
 #endif
 
@@ -591,27 +591,29 @@ StaticCollider** GetPotentialColliders(PhysicsNode* node, Rectf aabb, StaticColl
 {
     StaticCollider** index = collision_list;
 
-    if(IsLeaf(node))
+    if(Contains(node, aabb))
     {
-        uint8 col_count = node->contained_colliders;
-        if(col_count > 0 && Contains(node, aabb))
+        if(IsLeaf(node))
         {
-            size_t copy_size = col_count * sizeof(node->colliders[0]);
-            memcpy(index, node->colliders, copy_size);
+            uint8 col_count = node->contained_colliders;
+            if(col_count > 0)
+            {
+                size_t copy_size = col_count * sizeof(node->colliders[0]);
+                memcpy(index, node->colliders, copy_size);
 
-            index += col_count;
-            *list_size += col_count;
+                index += col_count;
+                *list_size += col_count;
+            }
+        }
+        else
+        {
+            PhysicsNode* child = node->child_nodes;
+            for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i, ++child)
+            {
+                index = GetPotentialColliders(child, aabb, index, list_size);
+            }
         }
     }
-    else
-    {
-        PhysicsNode* child = node->child_nodes;
-        for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i, ++child)
-        {
-            index = GetPotentialColliders(child, aabb, index, list_size);
-        }
-    }
-
     return index;
 }
 

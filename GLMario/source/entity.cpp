@@ -179,6 +179,10 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
     uint32 updated_entities = 0;
     for(uint32 i = 0; i < max_entities; ++i, ++entity)
     {
+        if(updated_entities == scene->active_entities)
+        {
+            break;
+        }
         if(entity->flags & ~EntityFlag_Enabled || entity->type == EntityType_Null)
         {
             continue;
@@ -266,10 +270,7 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
         InvalidDefaultCase;
         }
 
-        if(++updated_entities == scene->active_entities)
-        {
-            break;
-        }
+        ++updated_entities;
     }
 
 
@@ -290,6 +291,10 @@ void DrawSceneEntities(Scene* scene)
     uint32 drawn_entities = 0;
     for(uint32 i = 0; i < max_entities; ++i, ++entity)
     {
+        if(drawn_entities == scene->active_entities)
+        {
+            break;
+        }
         if(entity->flags & ~EntityFlag_Enabled || entity->type == EntityType_Null)
         {
             continue;
@@ -337,10 +342,7 @@ void DrawSceneEntities(Scene* scene)
         InvalidDefaultCase;
         }
 
-        if(++drawn_entities == scene->active_entities)
-        {
-            break;
-        }
+        ++drawn_entities;
     }
 }
 
