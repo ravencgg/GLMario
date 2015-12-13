@@ -64,7 +64,7 @@ Rectf CanonicalRect(TDynamicCollider*);
 
 // NOTE: rotated rects using 2d rotation matrix?
 
-#define MAX_LEAF_SIZE 4
+#define MAX_LEAF_SIZE 8
 #define QUADTREE_CHILDREN 4
 struct PhysicsNode
 {
@@ -81,6 +81,11 @@ struct PhysicsNode
 };
 
 void AddCollider(PhysicsNode*, MemoryArena*, StaticCollider* collider);
+
+// @untested! We currently don't allow the removal of static colliders so this hasn't been used
+uint32 RemoveCollider(PhysicsNode*, StaticCollider*); // Returns the number of copies that were found and removed
+
+StaticCollider** GetPotentialColliders(PhysicsNode* node, Rectf aabb, StaticCollider** collision_list, uint32* list_size);
 void DrawBoundingBoxes(PhysicsNode*, Renderer*);
 bool Contains(PhysicsNode*, Rectf rect);
 bool Contains(PhysicsNode*, Vec2 point);

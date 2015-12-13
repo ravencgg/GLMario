@@ -336,7 +336,7 @@ int main(int argc, char* argv[])
         }
         renderer->DrawLine(v, 3, DrawLayer_UI, LineDrawOptions::SMOOTH);
 
-        DrawTileMap(&game_state->active_scene->tilemap);
+        //DrawTileMap(&game_state->active_scene->tilemap);
 
 		renderer->Flush();
 

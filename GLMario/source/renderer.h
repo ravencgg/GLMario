@@ -14,7 +14,7 @@ struct GameState;
 
 enum ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT };
 enum ShaderTypes : uint32 { Shader_Default, Shader_Text, Shader_Particle, Shader_Line, Shader_Count };
-enum DrawLayer   : uint32 { DrawLayer_Background, DrawLayer_PreTilemap, DrawLayer_Tilemap, DrawLayer_PostTilemap, DrawLayer_Player, DrawLayer_Foreground, DrawLayer_UI, DrawLayer_Count };
+enum DrawLayer   : uint32 { DrawLayer_Background, DrawLayer_PreTilemap, DrawLayer_Tilemap, DrawLayer_PostTilemap, DrawLayer_Player, DrawLayer_Foreground, DrawLayer_UI, DrawLayer_Debug, DrawLayer_Count };
 
 namespace DrawOptions
 {
@@ -179,7 +179,7 @@ struct Shader
 class Renderer
 {
 public:
-	Renderer(Window* w, Vec4 clear_color = vec4(0.1f, 0.1f, 0.1f, 1));
+	Renderer(Window* w, Vec4 clear_color = vec4(0.0f, 1.0f, 0.0f, 1));
 	virtual ~Renderer() {};
 
 	static void create_instance(Window*);

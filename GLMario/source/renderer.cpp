@@ -64,7 +64,9 @@ Renderer::Renderer(Window* w, Vec4 clear_color)
 void Renderer::create_instance(Window* w)
 {
 	if(s_instance) return;
-	s_instance = new Renderer(w);
+
+    Vec4 clear_color = { 0, 0, 0, 1.f };
+	s_instance = new Renderer(w, clear_color);
 }
 
 Renderer* Renderer::get()

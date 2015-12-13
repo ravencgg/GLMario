@@ -26,6 +26,17 @@ void DespawnEntity(Scene* scene, Entity* entity)
     assert(entity);
     if(entity)
     {
+
+        switch(entity->type)
+        {
+        case EntityType_Player:
+        {
+            // TODO: fix deallocation of dynamic colliders
+            // scene->physics->DestroyCollider(entity->player.collider);
+        }break;
+
+        }
+
         --scene->active_entities;
         // This resets EntityType to EntityType_Null!
         memset(entity, 0, sizeof(*entity));
@@ -144,6 +155,13 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
                 SpawnEnemy(scene, game_state, { x, y });
             }
         }
+
+        // @hack remove me
+        if (MouseFrameDown(MouseButton::LEFT))
+        {
+            Vec2 mouse_pos = MouseWorldPosition();
+            scene->tmap->AddTile(mouse_pos.x, mouse_pos.y);
+        }
     }
 
 // TODO: despawn entity by ID
@@ -193,7 +211,7 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
 
             if(KeyIsDown(SDLK_SPACE))
             {
-                RemoveEntity(entity);
+                //RemoveEntity(entity);
                 player->velocity.y = 10.f;
             }
             else
