@@ -4,13 +4,20 @@ TOREDO:
         -> convert to individual render groups? draw to framebuffers?
         -> file static stuff? probably not
 
+Window
+    Convert the viewport dimensions when resizing the window? Currently locked at 16:9
+
+Collision:
+    Support rotated rectangles, fill the aabb inside the StaticCollider struct
+
+    If you copy collider data from the quadtree instead of just the pointers then you could SIMD the raycasting
+
 Console/Rendering:
     Multi color text on a per letter basis 
         -> should the "start" variable be taken out of the StringTextColor struct?
            it is implied if there is always a StringTextColor object during drawing
            which there will be because if one is not supplied, then a default one is used.
      
-
      World space text rendering 
 
      Remove console from the debug profiling

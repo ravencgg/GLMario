@@ -1,6 +1,5 @@
 #pragma once
 
-#include "SDL.h"
 #include <stdint.h>
 
 typedef float real32;
@@ -45,7 +44,8 @@ typedef int32_t b32;
 
 #define NO_MATRICES 1
 
-#define InvalidDefaultCase assert(!"Invalid default case!");
+#define InvalidDefaultCase default:  \
+                            assert(!"Invalid default case!");
 
 struct Dimension
 {
@@ -64,11 +64,11 @@ struct Point3
 
 struct FRange
 {
-	float min;
-	float max;
+	float min_range;
+	float max_range;
 
-	FRange() : min(0), max(0) {}
-	FRange(float min, float max) : min(min), max(max) {}
+	FRange() : min_range(0), max_range(0) {}
+	FRange(float min, float max) : min_range(min), max_range(max) {}
 };
 
 struct Rect

@@ -1,7 +1,7 @@
 #include "mathops.h"
 
-
 /*************************************************
+ *
 *
 *  Vector2 Implementation
 *
@@ -381,19 +381,19 @@ std::string Vector4::to_string()
 
 Vector2 lerp(Vector2& a, Vector2& b, float t)
 {
-	Vector2 result = (b - a) * t + a;  
+	Vector2 result = (b - a) * t + a;
 	return result;
 }
 
 Vector3 lerp(Vector3& a, Vector3& b, float t)
 {
-	Vector3 result = (b - a) * t + a;  
+	Vector3 result = (b - a) * t + a;
 	return result;
 }
 
 Vector4 lerp(Vector4& a, Vector4& b, float t)
 {
-	Vector4 result = (b - a) * t + a;  
+	Vector4 result = (b - a) * t + a;
 	return result;
 }
 
@@ -406,7 +406,7 @@ Vector4 lerp(Vector4& a, Vector4& b, float t)
 
 
 Mat4 operator * (const Mat4& a, const Mat4& b) {
-	
+
 	// Extract columns from the second matrix;
 	Vector4 c[4];
 	c[0] = Vector4(b.e[0].x, b.e[1].x, b.e[2].x, b.e[3].x);
@@ -419,7 +419,7 @@ Mat4 operator * (const Mat4& a, const Mat4& b) {
 	result.e[1] = Vector4(a.e[1].dot(c[0]), a.e[1].dot(c[1]), a.e[1].dot(c[2]), a.e[1].dot(c[3]));
 	result.e[2] = Vector4(a.e[2].dot(c[0]), a.e[2].dot(c[1]), a.e[2].dot(c[2]), a.e[2].dot(c[3]));
 	result.e[3] = Vector4(a.e[3].dot(c[0]), a.e[3].dot(c[1]), a.e[3].dot(c[2]), a.e[3].dot(c[3]));
-	
+
 	return result;
 }
 

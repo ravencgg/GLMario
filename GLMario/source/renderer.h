@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vector>
-
+#include "types.h"
+#include "containers.h"
 #include "glew.h"
 #include "mathops.h"
-#include "types.h"
 #include "utility.h"
-#include "containers.h"
+
+#include <vector>
 
 struct Camera;
 struct Window;
@@ -176,10 +176,11 @@ struct Shader
 // TODO: break this up into logical components
 //  -> Text drawing
 //  -> Particles?
+
 class Renderer
 {
 public:
-	Renderer(Window* w, Vec4 clear_color = vec4(0.0f, 1.0f, 0.0f, 1));
+	Renderer(Window* w, Vec4 clear_color);
 	virtual ~Renderer() {};
 
 	static void create_instance(Window*);
@@ -216,7 +217,7 @@ public:
     void DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
 
     void DrawLine(Array<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
-	void DrawRect(Rectf&, uint8 line_width = 4, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1), uint32 line_draw_options = 0);
+	void DrawRect(const Rectf&, uint8 line_width = 4, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1), uint32 line_draw_options = 0);
 
 private:
 

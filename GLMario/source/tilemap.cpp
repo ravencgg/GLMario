@@ -1,9 +1,5 @@
 #include "tilemap.h"
 
-#include "utility.h"
-#include "renderer.h"
-#include "containers.h"
-
 void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, uint32 map_width, uint32 map_height)
 {
     tilemap->map_width = map_width;
@@ -18,17 +14,17 @@ void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, uint32 map_width, uin
     tilemap->tile_groups = PushStructs(arena, TileGroup, tilemap->hor_groups * tilemap->ver_groups);
 
     TileGroup* group = tilemap->tile_groups;
-    for(uint32 y = 0; y < tilemap->ver_groups; ++y)
+    for(uint16 y = 0; y < tilemap->ver_groups; ++y)
     {
-        for(uint32 x = 0; x < tilemap->hor_groups; ++x)
+        for(uint16 x = 0; x < tilemap->hor_groups; ++x)
         {
             group->group_coord_x = x;
             group->group_coord_y = y;
 
             Tile2* tile = group->tiles;
-            for(uint32 yy = 0; yy < TILE_GROUP_SIDE_SIZE; ++yy)
+            for(uint16 yy = 0; yy < TILE_GROUP_SIDE_SIZE; ++yy)
             {
-                for(uint32 xx = 0; xx < TILE_GROUP_SIDE_SIZE; ++xx)
+                for(uint16 xx = 0; xx < TILE_GROUP_SIDE_SIZE; ++xx)
                 {
                     tile->tile_coord_x = x * TILE_GROUP_SIDE_SIZE + xx;
                     tile->tile_coord_y = y * TILE_GROUP_SIDE_SIZE + yy;

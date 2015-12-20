@@ -1,7 +1,6 @@
 #pragma once
 
 #include <assert.h>
-#include <math.h>
 #include <string>
 #include "types.h"
 
@@ -27,6 +26,19 @@ inline float deg_to_rad(float f)
 	return result;
 }
 
+#ifdef max
+#undef max
+#endif
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
+#ifdef min
+#undef min
+#endif
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+
+
+#if 0
 inline uint32 max(uint32 a, uint32 b)
 {
 	uint32 result = (a < b ? b : a);
@@ -62,6 +74,7 @@ inline float min(float a, float b)
 	float result = (a < b ? a : b);
 	return result;
 }
+#endif
 
 inline float clamp01(float f)
 {

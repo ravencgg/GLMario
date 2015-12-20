@@ -1,15 +1,45 @@
 #include "utility.h"
 
-#include <windows.h>
+#include <Windows.h>
 #include <assert.h>
 #include <random>
 
+#include "types.h"
 
 /**********************************************
  *
  * File functions
  *
  ***************/
+
+// Returns a pointer to the data
+// Doesn't work on files > 4 gigs
+uint8* LoadDataFile(MemoryArena* arena, uint32* out_size, char* filename)
+{
+    uint8* result = 0;
+    HANDLE file = 0;
+
+    file = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+    LARGE_INTEGER file_size = {};
+
+    if(file != INVALID_HANDLE_VALUE)
+    {
+        GetFileSizeEx(file, &file_size);
+        *out_size = file_size.LowPart;
+
+        DWORD bytes_read = 0;
+        result = PushSize(arena, *out_size, false);
+        ReadFile(file, result, *out_size, &bytes_read, 0);
+
+        CloseHandle(file);
+        assert(file_size.HighPart == 0);
+        return result;
+    }
+
+    *out_size = 0;
+    return nullptr;
+};
 
 char* load_text_file(char* filename)
 {

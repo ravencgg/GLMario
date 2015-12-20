@@ -1,7 +1,13 @@
 #include "particles.h"
+#include "containers.h"
+#include "renderer.h"
 
-//#include "scene_manager.h"
+#include "console.h"
+#include "time.h"
+#include "input.h"
+
 #include "utility.h"
+#include "mathops.h"
 
 ParticleSystem::ParticleSystem()
     : max_particles(0),
@@ -427,13 +433,13 @@ void ParticleSystem::create_particle(ParticleVertexData& pvd, ParticleFrameData&
 	pvd.position.x = ptd.world_position.x + ped.spawn_position.x + random_float(-ped.spawn_size.x / 2.f, ped.spawn_size.x / 2.f);
 	pvd.position.y = ptd.world_position.y + ped.spawn_position.y + random_float(-ped.spawn_size.y / 2.f, ped.spawn_size.y / 2.f);
 	pvd.color = ped.start_color;
-	pvd.scale = random_float(ped.start_size.min, ped.start_size.max);
+	pvd.scale = random_float(ped.start_size.min_range, ped.start_size.max_range);
 
 	pfd.velocity.x = random_float(ped.min_start_speed.x, ped.max_start_speed.x);
 	pfd.velocity.y = random_float(ped.min_start_speed.y, ped.max_start_speed.y);
 
 	pfd.start_time = start_time;// (float)time->current_time;
-	pfd.lifetime = random_float(ped.lifetime.min, ped.lifetime.max);
+	pfd.lifetime = random_float(ped.lifetime.min_range, ped.lifetime.max_range);
 	pfd.start_color = ped.start_color;
 	pfd.end_color = ped.end_color;
 }

@@ -1,9 +1,10 @@
 #pragma once
 
+#include "SDL.h"
+
 #include "types.h"
 #include "mathops.h"
-#include <string.h> // memset
-#include "SDL.h"
+
 
 #define NUM_KEYS 256
 

@@ -1,36 +1,16 @@
 #pragma once
 
+#include "types.h"
+
+
 /**********************************************
  *
  * Cross platform utility functions
  *
  ***************/
 
-#include "types.h"
-
 #include <fstream>
 #include <sys/stat.h>
-
-/**********************************************
- *
- * File
- *
- ***************/
-
-char* load_text_file(char*);
-
-
-/**********************************************
- *
- * String
- *
- ***************/
-
-
-#ifdef _MSC_VER
-//#define vsnprintf _vsnprintf
-#define snprintf  _snprintf
-#endif
 
 /**********************************************
  *
@@ -39,7 +19,7 @@ char* load_text_file(char*);
  ***************/
 
 template <typename T>
-T* ExpandArray(T* array, uint32 start_count, uint32 new_count)
+T* ExpandArray(T* array, size_t start_count, size_t new_count)
 {
     T* result = nullptr;
     if(array)
@@ -87,6 +67,28 @@ void PopAllocation(MemoryArena* arena, void*);
 #define PushStructs(arena, type, count) (type*) PushSize(arena, sizeof(type) * (count))
 #define PushStruct(arena, type)         (type*) PushSize(arena, sizeof(type))
 
+
+
+/**********************************************
+ *
+ * File
+ *
+ ***************/
+
+uint8* LoadDataFile(MemoryArena*, uint32* out_size, char* filename);
+
+char* load_text_file(char*);
+
+/**********************************************
+ *
+ * String
+ *
+ ***************/
+
+#ifdef _MSC_VER
+//#define vsnprintf _vsnprintf
+#define snprintf  _snprintf
+#endif
 
 /**********************************************
  *

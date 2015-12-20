@@ -1,3 +1,9 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <Windows.h>
+
+#include "types.h"
+#include "mathops.h"
+
 #include "console.h"
 #include "time.h"
 
@@ -73,7 +79,7 @@ void ProfileBeginFrame()
         ps->cycle_count_start = 0;
         ps->sum = 0;
         ps->hits = 0;
-        ps->min_cycles = -1;
+        ps->min_cycles = (uint64)-1;
         ps->max_cycles = 0;
 
         if(ps->history.size() == 0)

@@ -1,14 +1,8 @@
 #pragma once
 
+#include <assert.h>
 #include "entity.h"
 #include "types.h"
-#include "mathops.h"
-#include "renderer.h"
-#include "time.h"
-#include "console.h"
-
-#include "SDL.h"
-#include "input.h" // REMOVE Me
 
 class SceneManager;
 

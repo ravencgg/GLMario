@@ -1,13 +1,11 @@
-#include "time.h"
-
-#include "SDL.h"
-#include <assert.h>
-#include <string.h>
-#include "utility.h"
 #include "game_types.h"
 
+#include "time.h"
+#include "mathops.h"
+#include "sdl.h"
 
 /****************************
+ *
  *
  * Time functions
  *
@@ -29,7 +27,7 @@ float CurrentTime(GameState* game_state)
 float FrameTime(GameState* game_state)
 {
     // TODO: This is really debug only
-    float result = MIN((float)game_state->time.delta_time, MAX_FRAME_TIME);
+    float result = min((float)game_state->time.delta_time, MAX_FRAME_TIME);
     return result;
 }
 

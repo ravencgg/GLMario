@@ -1,6 +1,5 @@
 #include "input.h"
 
-
 static Input s_input;
 
 static void UpdateKeys()

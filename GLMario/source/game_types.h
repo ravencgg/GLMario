@@ -1,10 +1,6 @@
 #pragma once
 
 #include "SDL.h"
-#include "types.h"
-#include "utility.h"
-#include "input.h"
-
 #include "entity.h"
 #include "tilemap.h"
 

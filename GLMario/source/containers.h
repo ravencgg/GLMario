@@ -1,8 +1,9 @@
 #pragma once
+
 #include <assert.h>
+
 #include "types.h"
-
-
+#include "containers.h"
 
 // Dynamic array implementation
 template<class T>
@@ -324,7 +325,7 @@ public:
             }
 
             Element<T>* destination = (elements + location);
-            destination->index = location;
+            destination->index = (uint16)location;
             destination->data = element;
             destination->generation &= ~VALID_MASK;
             //if (destination->generation == 0) ++destination->generation;

@@ -1,17 +1,32 @@
+
+// TODO: REMOVE
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "SDL.h"
+#include <string>
+#include "types.h"
+#include "mathops.h"
 
+#include <vector>
+#include <string.h>
+#include <assert.h>
 #include <stdio.h>
-
-#include "renderer.h"
-#include "input.h"
-#include "scene_manager.h"
-#include "time.h"
-#include "game_types.h"
-#include "entity.h"
-
 #include <inttypes.h> // For 64 bit int printf output
+#include <random>
 
-#include "containers.h"
+#include "time.h"
+#include "renderer.h"
+#include "physics.h"
+#include "entity.h"
+#include "particles.h"
+#include "input.h"
+#include "console.h"
+#include "audio.h"
+#include "tilemap.h"
+#include "game_types.h"
+
+#include "audio.h"
+
 
 // Should be like 16.66666
 #define MS_PER_FRAME 16
@@ -19,6 +34,8 @@
 
 #define FRAME_TEMPORARY_MEMORY_SIZE MEGABYTES(256)
 #define GAME_PERMANENT_MEMORY_SIZE  MEGABYTES(256)
+
+#define TOTAL_MEMORY_ALLOCATION_SIZE FRAME_TEMPORARY_MEMORY_SIZE + GAME_PERMANENT_MEMORY_SIZE
 
 #define MAX_GAME_ENTITES 5000
 #define MAX_GAME_OBJECTS 500
@@ -150,6 +167,7 @@ int main(int argc, char* argv[])
 	Renderer::create_instance(&game_state->window);
     InitializeInput();
     InitializeDebugConsole();
+    InitializeAudio(&game_state->window);
 // End Global initialization
 
     game_state->active_scene->physics = new Physics;
@@ -158,12 +176,19 @@ int main(int argc, char* argv[])
     game_state->active_scene->physics->quadtree.aabb = { -100.f, -100.f, 200.f, 200.f };
     game_state->active_scene->tmap = new Tilemap(game_state->active_scene->physics);
 
+#if 1
     game_state->active_scene->tmap->MakeWalledRoom(rect(-50, -20, 50, 50));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -20, 30, 3));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-25, -10, 5, 10));
     game_state->active_scene->tmap->MakeWalledRoom(rect(20, 20, 10, 10));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 10, 2));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 4, 4));
+#endif
+
+#if 1
+    char* test_sound_file = "C:\\projects\\imperial_march.wav";
+    WavFile* file = LoadWavFile(&game_state->permanent_memory, test_sound_file);
+#endif
 
 // TODO: no more singletons!
 	Renderer* renderer = Renderer::get();
@@ -274,7 +299,6 @@ int main(int argc, char* argv[])
 
         Renderer* debug_renderer = draw_debug ? renderer : 0;
 
-
 	    TimeBeginFrame(game_state);
 
 		// Update the scene first, pushing draw calls if necessary.
@@ -310,10 +334,11 @@ int main(int argc, char* argv[])
 
         DrawSceneEntities(game_state->active_scene);
 
-//        game_state->active_scene->physics->DebugDraw();
+        game_state->active_scene->physics->DebugDraw();
 
         ProfileEndSection(Profile_SceneUpdate);
 
+#if 1
         static Array<SimpleVertex> v;
         static bool initialized = false;
         if(!initialized)
@@ -335,6 +360,7 @@ int main(int argc, char* argv[])
             }
         }
         renderer->DrawLine(v, 3, DrawLayer_UI, LineDrawOptions::SMOOTH);
+#endif
 
         //DrawTileMap(&game_state->active_scene->tilemap);
 
@@ -343,6 +369,10 @@ int main(int argc, char* argv[])
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(debug_renderer, TARGET_FPS);
         DebugDrawConsole(debug_renderer);
+
+        // For drawing Debug info, the profiling in this section will be discarded,
+        // but it is only drawing text and the debug graph.
+        renderer->Flush();
 
         SwapBuffer(game_state);
 

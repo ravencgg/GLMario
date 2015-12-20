@@ -1,5 +1,7 @@
 #include "physics.h"
 
+#include "utility.h"
+#include <assert.h>
 #include "renderer.h"
 #include "mathops.h"
 #include "input.h"
@@ -210,40 +212,38 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
 	std::vector<CollisionInfo> collisions;
 	bool valid = true;
 
-// TODO: end of scope macro to do PopAllocations
+    // TODO: end of scope macro to do PopAllocations
     StaticCollider** collision_list_base = PushArray(&this->quadtree_memory, StaticCollider*, statics.Size());
+
+    // Find the potentially colliding statics
+    Rectf col_plus_velocity = CanonicalRect(&col);
+    col_plus_velocity.w += abs(remainingVelocity.x);
+    col_plus_velocity.h += abs(remainingVelocity.y);
+    if(remainingVelocity.x < 0)
+    {
+        col_plus_velocity.x += remainingVelocity.x;
+    }
+    if(remainingVelocity.y < 0)
+    {
+        col_plus_velocity.y += remainingVelocity.y;
+    }
+
+    StaticCollider** collision_list = collision_list_base;
+    uint32 collision_list_size = 0;
+    StaticCollider** end = GetPotentialColliders(&this->quadtree, col_plus_velocity, collision_list, &collision_list_size);
+    assert((size_t) end == (size_t)collision_list + collision_list_size * sizeof(collision_list[0]));
 
     do
     {
         collided = false;
         memset(&ci, 0, sizeof(CollisionInfo));
 
-        // Find the potentially colliding statics
-
-        Rectf col_plus_velocity = CanonicalRect(&col);
-
-        col_plus_velocity.w += abs(remainingVelocity.x);
-        col_plus_velocity.h += abs(remainingVelocity.y);
-        if(remainingVelocity.x < 0)
-        {
-            col_plus_velocity.x += remainingVelocity.x;
-        }
-        if(remainingVelocity.y < 0)
-        {
-            col_plus_velocity.y += remainingVelocity.y;
-        }
-
-        StaticCollider** collision_list = collision_list_base;
-        uint32 collision_list_size = 0;
-
-        StaticCollider** end = GetPotentialColliders(&this->quadtree, col_plus_velocity, collision_list, &collision_list_size);
-        assert((size_t) end == (size_t)collision_list + collision_list_size * sizeof(collision_list[0]));
 
 #if 1
         Renderer* ren = Renderer::get();
         for(uint32 i = 0; i < collision_list_size; ++i)
         {
-            //ren->DrawRect(collision_list[i]->rect, 4, DrawLayer_Debug, { 1.f, 1.f, 0.5f, 1.f });
+            ren->DrawRect(collision_list[i]->rect, 4, DrawLayer_Debug, { 1.f, 1.f, 0.5f, 1.f });
         }
 #endif
 
@@ -375,7 +375,7 @@ bool LineSegmentIntersection(Vec2 r0, Vec2 r1, Vec2 a, Vec2 b, Vec2& result)
 }
 
 // NOTE(cgenova): Look up "Vector Projection" to shoot the ray along the wall after a collision
-bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
+bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 {
 	bool result = false;
 	Vec2 o = { m.x + m.w / 2.f, m.y + m.h / 2.f };
@@ -466,19 +466,19 @@ bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
  ***************/
 
 
-static bool Contains(PhysicsNode* physics_node, Rectf rect)
+bool Contains(PhysicsNode* physics_node, Rectf rect)
 {
     bool result = Intersects(physics_node->aabb, rect);
     return result;
 }
 
-static bool Contains(PhysicsNode* physics_node, Vec2 point)
+bool Contains(PhysicsNode* physics_node, Vec2 point)
 {
     bool result = Contains(physics_node->aabb, point);
     return result;
 }
 
-static bool IsLeaf(PhysicsNode* physics_node)
+bool IsLeaf(PhysicsNode* physics_node)
 {
     bool result = !physics_node->is_parent;
     return result;
@@ -486,7 +486,7 @@ static bool IsLeaf(PhysicsNode* physics_node)
 
 // NOTE: could switch to doing this by ID instead of pointer?
 // @untested! We currently don't allow the removal of static colliders so this hasn't been used
-static uint32 RemoveCollider(PhysicsNode* node, StaticCollider* to_delete)
+uint32 RemoveCollider(PhysicsNode* node, StaticCollider* to_delete)
 {
     uint32 num_removed = 0;
 
@@ -512,10 +512,10 @@ static uint32 RemoveCollider(PhysicsNode* node, StaticCollider* to_delete)
     }
     else
     {
-        PhysicsNode* node = node->child_nodes;
+        PhysicsNode* child_node = node->child_nodes;
         for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i)
         {
-            num_removed += RemoveCollider(node, to_delete);
+            num_removed += RemoveCollider(child_node, to_delete);
         }
     }
 
@@ -524,7 +524,6 @@ static uint32 RemoveCollider(PhysicsNode* node, StaticCollider* to_delete)
 
 void AddCollider(PhysicsNode* physics_node, MemoryArena* arena, StaticCollider* collider)
 {
-    assert(collider->active != 288);
     if(IsLeaf(physics_node) && physics_node->contained_colliders < MAX_LEAF_SIZE)
     {
         physics_node->colliders[physics_node->contained_colliders] = collider;
@@ -532,17 +531,12 @@ void AddCollider(PhysicsNode* physics_node, MemoryArena* arena, StaticCollider* 
     }
     else if(IsLeaf(physics_node))
     {
+
         // Split the node into 4
         StaticCollider* temp_colliders[MAX_LEAF_SIZE];
         memcpy(temp_colliders, physics_node->colliders, sizeof(temp_colliders));
 
         physics_node->child_nodes = PushArray(arena, PhysicsNode, QUADTREE_CHILDREN);
-
-        if(!physics_node->child_nodes)
-        {
-            volatile int i = 0;
-            physics_node->depth = i;
-        }
         physics_node->is_parent = true;
 
         uint16 new_depth = physics_node->depth + 1;

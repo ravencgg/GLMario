@@ -1,4 +1,12 @@
+#include "time.h"
 #include "renderer.h"
+#include "physics.h"
+#include "entity.h"
+#include "particles.h"
+#include "input.h"
+#include "console.h"
+#include "audio.h"
+#include "tilemap.h"
 #include "game_types.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -99,7 +107,7 @@ void Renderer::set_clear_color(Vec4 color)
 
 void Renderer::force_color_clear()
 {
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT); // Would have to put a swap buffer here to notice anything
 }
 
 void Renderer::Flush()
@@ -235,7 +243,7 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
     const uint32 verts_per_char = 6;
     if(text_array_size < string_size * verts_per_char)
     {
-        uint32 new_size = string_size * verts_per_char;
+        size_t new_size = string_size * verts_per_char;
         text_array = ExpandArray<TextVertex>(text_array, text_array_size, new_size);
         text_array_size = new_size;
     }
@@ -403,8 +411,8 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 
 	{
         // TODO(cgenova): convert to function and pull this and the one in draw_call out
-		GLint active_tex = 0;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
+		GLuint active_tex = 0;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
 		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
 		{
 			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
@@ -474,8 +482,8 @@ void Renderer::draw_call(DrawCall data)
 	glUseProgram(shaders[(uint32)data.shader].shader_handle);
 
 	{
-		GLint active_tex = 0;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &active_tex);
+		GLuint active_tex = 0;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
 
 		if (active_tex != textures[(uint32)data.image].texture_handle)
 		{
@@ -689,7 +697,7 @@ void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, D
     }
 
     LineBufferData* lbd = &line_buffer[line_buffer_loc++];
-    lbd->num_vertices = vertices.size();
+    lbd->num_vertices = (uint32)vertices.size();
 
     lbd->draw_method = (line_draw_options & LineDrawOptions::LOOPED) ? GL_LINE_LOOP : GL_LINE_STRIP;
     lbd->line_draw_options = line_draw_options;
@@ -745,7 +753,7 @@ void Renderer::DrawLine(Array<SimpleVertex>& vertices, uint8 line_width, DrawLay
     push_draw_call(dc, dl);
 }
 
-void Renderer::DrawRect(Rectf& rect, uint8 line_width, DrawLayer layer, Vec4 color, uint32 line_draw_options)
+void Renderer::DrawRect(const Rectf& rect, uint8 line_width, DrawLayer layer, Vec4 color, uint32 line_draw_options)
 {
     std::vector<SimpleVertex> verts;
     verts.reserve(4);

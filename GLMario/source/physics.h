@@ -1,10 +1,11 @@
 #pragma once
 
 #include "types.h"
+#include "containers.h"
 #include "console.h"
 #include <vector>
 #include <algorithm>
-#include "containers.h"
+
 
 #define MAX_STATIC_COLLIDERS 2048
 #define MAX_DYNAMIC_COLLIDERS 2048
@@ -64,6 +65,9 @@ Rectf CanonicalRect(TDynamicCollider*);
 
 // NOTE: rotated rects using 2d rotation matrix?
 
+
+// TODO: Max depth
+// TODO: handle overflow
 #define MAX_LEAF_SIZE 8
 #define QUADTREE_CHILDREN 4
 struct PhysicsNode
@@ -100,7 +104,6 @@ public:
 
     PhysicsNode quadtree;
     MemoryArena quadtree_memory;
-
 
     Physics();
     ~Physics();
@@ -154,7 +157,7 @@ Rectf make_rect(Vec2 pos, Vec2 size)
    return result;
 }
 
-bool CheckCollision(Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out);
+bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out);
 
 
 

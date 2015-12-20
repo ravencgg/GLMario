@@ -1,8 +1,6 @@
+#include "input.h"
 #include "entity.h"
-
-#include "scene_manager.h"
 #include "game_types.h"
-#include "time.h"
 
 Entity* FindEntityWithID(Scene* scene, uint32 id)
 {
@@ -242,15 +240,15 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
                 entity->delete_this_frame = true;
             }
 
-            DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
-            DebugPrintf("Player position: (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
+            //DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
+            //DebugPrintf("Player position: (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
             Vec2 old_velocity = player->velocity;
             //TODO: integrate physics in the new system
 
             entity->transform.position = scene->physics->StepCollider(player->collider, player->velocity, FrameTime(game_state));
 
             const uint8 line_width = 3;
-            Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
+            //Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
             DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
 
         }break;

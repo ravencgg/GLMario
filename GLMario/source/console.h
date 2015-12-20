@@ -1,9 +1,11 @@
 #pragma once
-#define _CRT_SECURE_NO_WARNINGS 1
+
 #include "types.h"
-#include <string>
 #include "renderer.h"
+#include "mathops.h"
 #include <vector>
+#include <string>
+
 
 #define PROFILE_HISTORY_SIZE 100
 
