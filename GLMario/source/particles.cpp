@@ -38,11 +38,8 @@ void ParticleSystem::initialize(uint32 max_particles, DrawLayer layer)
 
 	ren = Renderer::get();
 	particles.init(max_particles);
-	allocate();
-}
 
-void ParticleSystem::allocate()
-{
+    // Allocate GPU buffers
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(ParticleVertexData) * max_particles, particles.pvd, GL_DYNAMIC_DRAW);
@@ -51,6 +48,8 @@ void ParticleSystem::allocate()
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
+
+// TODO: change to SOA
 
 	// Position
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ParticleVertexData), (GLvoid*)0);
@@ -206,6 +205,7 @@ void ParticleSystem::update(GameState* game_state, Vec2 new_position)
                 {
                     --particles.last_active_index;
                 }
+
                 if (particles.last_active_index <= j) break;
                 assert(particles.pfd[particles.last_active_index].is_active(current_time));
                 particles.pvd[j] = particles.pvd[particles.last_active_index];
@@ -222,7 +222,7 @@ void ParticleSystem::update(GameState* game_state, Vec2 new_position)
         }
         active_particles = j;
     }
-    else
+    else // single path
         // #else
     {
         uint32 i;

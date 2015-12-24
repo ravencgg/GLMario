@@ -238,8 +238,7 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
         collided = false;
         memset(&ci, 0, sizeof(CollisionInfo));
 
-
-#if 1
+#if 0
         Renderer* ren = Renderer::get();
         for(uint32 i = 0; i < collision_list_size; ++i)
         {
@@ -375,6 +374,7 @@ bool LineSegmentIntersection(Vec2 r0, Vec2 r1, Vec2 a, Vec2 b, Vec2& result)
 }
 
 // NOTE(cgenova): Look up "Vector Projection" to shoot the ray along the wall after a collision
+// TODO: SIMD
 bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out)
 {
 	bool result = false;
@@ -405,7 +405,9 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& 
                   { mSum.x + mSum.w, mSum.y + mSum.h },
                   { mSum.x + mSum.w, mSum.y} };
 
-	//assert(!Contains(mSum, o));
+#ifdef _DEBUG
+	printf(!Contains(mSum, o));
+#endif
 
 	mRays[0] = make_ray(p[0], p[1]);
 	mRays[1] = make_ray(p[1], p[2]);
@@ -417,6 +419,7 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& 
 	for (int i = 0; i < 4; ++i)
 	{
         Vec2 intersection;
+        // TODO: SIMD
         if(LineSegmentIntersection(motion.v0, motion.v1, mRays[i].v0, mRays[i].v1, intersection))
         {
             float distance = length(intersection - motion.v0);

@@ -6,101 +6,105 @@
 #include "game_types.h"
 #include "utility.h"
 
-#include "SDL_syswm.h"
+#include "SDL_audio.h"
 
 static const uint32 CC_riff = 'RIFF';
 static const uint32 CC_fmt  = 'fmt ';
 static const uint32 CC_data = 'data';
 
-typedef HRESULT (WINAPI *DirectSoundCreateFunc)(LPCGUID pcGuidDevice, LPDIRECTSOUND *ppDS, LPUNKNOWN pUnkOuter);
-
 namespace
 {
-    HMODULE audio_dll;
-    LPDIRECTSOUND direct_sound;
     // TODO: HANDLE audio_thread;
+    //
+    uint8* audio_chunk;
+    int32 audio_len;
+    uint8* audio_pos;
 }
 
-bool InitializeAudio(Window* window)
+void FillAudio(void* data, uint8* stream, int32 len)
 {
-    audio_dll = LoadLibraryA("dsound.dll");
-    if(!audio_dll) { goto failure; }
+    static int done = 0;
 
-    DirectSoundCreateFunc dsound_create = (DirectSoundCreateFunc) GetProcAddress(audio_dll, "DirectSoundCreate");
-    if(!dsound_create) { goto failure; }
+    memset(stream, 0, len);
 
-#define DEFAULT_AUDIO_DEVICE 0
-    if(SUCCEEDED(dsound_create(DEFAULT_AUDIO_DEVICE, &direct_sound, NULL)))
+    if(audio_len == 0)
     {
-        SDL_SysWMinfo info = { };
-        if(SDL_GetWindowWMInfo(window->sdl_window, &info))
-        {
-            direct_sound->SetCooperativeLevel(info.info.win.window, DSSCL_PRIORITY);
-        }
-        else
-        {
-            goto failure;
-        }
+        return;
+    }
+
+#if 0
+    if (done > 3) return;
+    printf("running");
+    ++done;
+#endif
+
+    len = ( len > audio_len ? audio_len : len );
+
+    SDL_MixAudioFormat(stream, audio_pos, AUDIO_S16, len, SDL_MIX_MAXVOLUME);
+    audio_pos += len;
+    audio_len -= len;
+}
+
+bool InitializeAudio(SDL_AudioSpec* audio_spec)
+{
+
+#if 0
+    SDL_AudioSpec audio_spec;
+    audio_spec.freq = 22050;
+    audio_spec.format = AUDIO_S16;
+    audio_spec.channels = 2;
+    audio_spec.samples = 1024;
+    audio_spec.callback = FillAudio;
+    audio_spec.userdata = NULL;
+#endif
+
+    if(SDL_OpenAudio(audio_spec, NULL) < 0)
+    {
+        printf("Unable to start audio\n");
+        return false;
     }
 
     return true;
-
-failure:
-    if(audio_dll)
-    {
-        FreeLibrary(audio_dll);
-    }
-    return false;
 }
 
 void ShutdownAudio()
 {
-    if(audio_dll)
-    {
-        FreeLibrary(audio_dll);
-    }
+    SDL_CloseAudio();
 }
 
-WavFile* LoadWavFile(MemoryArena* arena, char* filename)
+void PauseAudio(bool pause)
 {
-    uint32 file_size = 0;
-    WavFile* result = (WavFile*)LoadDataFile(arena, &file_size, filename);
+    SDL_PauseAudio(pause);
+}
 
-    if(!result || !file_size)
+bool LoadWavFile(const char* filename)
+{
+    SDL_AudioSpec audio_spec;
+    uint32 wav_length;
+    uint8* wav_buffer;
+#if 0
+    audio_spec.freq = 22050;
+    audio_spec.format = AUDIO_S16;
+    audio_spec.channels = 2;
+    audio_spec.samples = 1024;
+#endif
+
+    if(SDL_LoadWAV(filename, &audio_spec, &wav_buffer, &wav_length))
     {
-        goto failure;
-    }
+        audio_chunk = wav_buffer;
+        audio_pos = audio_chunk;
+        audio_len = wav_length;
 
-    const size_t uncounted_wave_bytes = 8; // as per the file format
-    size_t wave_file_size = uncounted_wave_bytes + result->riff_chunk.chunk_size;
+        audio_spec.userdata = NULL;
+        audio_spec.callback = FillAudio;
 
-    if(wave_file_size != file_size)
-    {
-        goto failure;
-    }
 
-    if(result->riff_chunk.chunk_id != CC_riff
-            || result->fmt_chunk.subchunk1_id != CC_fmt
-            || result->data_chunk.subchunk2_id != CC_data)
-    {
-        goto failure;
-    }
+        InitializeAudio(&audio_spec);
 
-    // Success!
-    return result;
-
-failure:
-    if(result)
-    {
-        PopAllocation(arena, result);
+        return true;
     }
     return false;
 }
-
-struct AudioState
-{
-
-};
 
 
 

@@ -4,6 +4,10 @@ TOREDO:
         -> convert to individual render groups? draw to framebuffers?
         -> file static stuff? probably not
 
+        For drawing rects/lines, maybe hand out vbos within a handle structure? 
+            -> or maybe just switch it to the system where you buffer every line to be drawn for the frame and do 
+                them all at once.  This would be the best in the end even if the downsides of extra memcopies are present
+
 Window
     Convert the viewport dimensions when resizing the window? Currently locked at 16:9
 

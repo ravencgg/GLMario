@@ -1,6 +1,66 @@
 #include "input.h"
 #include "entity.h"
 #include "game_types.h"
+#include "particles.h"
+
+void RenderRandomParticles(GameState* game_state)
+{
+#if 1
+	static ParticleSystem ps1(10000);
+	ps1.draw_layer = DrawLayer_PreTilemap;
+	//ps1.draw_layer = DrawLayer::POST_TILEMAP;
+	static ParticleEmissionData data[2];
+	static uint32 active_data = 0;
+
+	static ParticleSystem ps2(7500);
+	ps2.draw_layer = DrawLayer_PreTilemap;
+	static bool setup = false;
+	if(!setup)
+	{
+		setup = true;
+
+		ps1.ped.spawn_position.x = -2.f;
+		ps1.ped.spawn_rate = 1000;
+		ps1.ped.spawn_size.x = 1.f;
+		ps1.ped.spawn_size.y = 1.f;
+		ps1.ped.lifetime.min_range = 9.0f;
+		ps1.ped.lifetime.max_range = 10.f;
+		ps1.ptd.gravity = vec2(-10.0f, 1.0f);
+
+		ps2.ptd.gravity = vec2(1.0f, 0.3f);
+		ps2.ped.spawn_size.x = 1.f;
+		ps2.ped.spawn_size.y = 1.f;
+		ps2.ped.spawn_rate = 1000;
+		ps2.ped.spawn_position.x = 2.f;
+		ps2.ped.start_color = vec4(0, 1.f, 0, 1.f);
+		ps2.ped.end_color   = vec4(0.2f, 0.8f, 0.2f, 0.4f);
+
+		data[0] = ps2.ped;
+		data[1] = ps2.ped;
+		data[0].start_color = vec4(1, 0, 0, 1);
+		data[0].end_color   = vec4(0, 1, 0, 0.5f);
+		data[1].start_color = vec4(0, 1, 0, 1);
+		data[1].end_color   = vec4(1, 1, 0, 0);
+	}
+
+	ps2.ped.start_color = vec4((float)sin(CurrentTime(game_state)), (float)cos(CurrentTime(game_state)), 1, 1.f);
+	ps2.ped.end_color = vec4(0.2f, sin(CurrentTime(game_state)), cos(CurrentTime(game_state)), 0.4f);
+
+	static Timer timer = (StartTimer(game_state, &timer, 1.0f), timer);
+	if (TimerIsFinished(game_state, &timer))
+	{
+		StartTimer(game_state, &timer);
+		active_data ^= 1;
+		ps2.ped = data[active_data];
+	}
+
+	ps1.update(game_state);
+	ps1.render();
+	ps2.update(game_state);
+	ps2.render();
+#endif
+}
+
 
 Entity* FindEntityWithID(Scene* scene, uint32 id)
 {
@@ -132,6 +192,7 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
 // Entities need to be tightly packed?
 // Split entities into smaller groups and update each group?
 
+    RenderRandomParticles(game_state);
     // NOTE: random scene test code
     {
 
@@ -249,7 +310,7 @@ void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt)
 
             const uint8 line_width = 3;
             //Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
-            DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
+            //DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
 
         }break;
         case EntityType_Spawner:

@@ -23,6 +23,28 @@ struct ParticleVertexData
 	float scale;
 };
 
+#define SOA 0
+
+// For SIMD
+// TODO: Need to change the vertex format in the render call as well.
+#if SOA
+struct ParticleVertexData
+{
+    // Position
+    float* x;
+    float* y;
+
+    // Color
+    float* r;
+    float* g;
+    float* b;
+    float* a;
+
+    float* scale;
+};
+#endif
+
+
 struct ParticleFrameData
 {
 	Vec2 velocity;
@@ -57,8 +79,13 @@ struct ParticleData
 		if (memory) delete[] memory;
 		memory = nullptr;
 	}
+
 	void init(int32 count)
 	{
+#if SOA
+        assert((count & 0x3) == 0) // Keep them 16 byte aligned
+#endif
+
 		if (memory) delete[] memory;
 		uint32 alignment = 16; // 16 byte align data for SIMD.
 		size_t mem_size = count * (sizeof(ParticleVertexData) + sizeof(ParticleFrameData)) + alignment;
@@ -134,7 +161,6 @@ public:
     virtual void Tick(GameState*);
 
 private:
-	void allocate();
 
 	inline void update_particle(ParticleVertexData&, ParticleFrameData&, Vec2&, float, float, Vec2&);
 #define UPDATE_PARTICLE_WIDE

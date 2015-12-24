@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
 	Renderer::create_instance(&game_state->window);
     InitializeInput();
     InitializeDebugConsole();
-    InitializeAudio(&game_state->window);
+//    InitializeAudio();
 // End Global initialization
 
     game_state->active_scene->physics = new Physics;
@@ -187,7 +187,12 @@ int main(int argc, char* argv[])
 
 #if 1
     char* test_sound_file = "C:\\projects\\imperial_march.wav";
-    WavFile* file = LoadWavFile(&game_state->permanent_memory, test_sound_file);
+    bool test_sound_loaded = LoadWavFile(test_sound_file);
+    if(test_sound_loaded)
+    {
+        printf("Loaded File\n");
+    }
+    PauseAudio(false);
 #endif
 
 // TODO: no more singletons!

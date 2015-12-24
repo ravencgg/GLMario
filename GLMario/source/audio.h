@@ -43,6 +43,7 @@ enum class SoundType
 };
 
 struct Window;
-bool InitializeAudio(Window* window);
-WavFile* LoadWavFile(MemoryArena* arena, char* filename);
+bool InitializeAudio();
+void PauseAudio(bool pause);
+bool LoadWavFile(const char* filename);
 
