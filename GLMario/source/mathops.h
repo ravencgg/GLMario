@@ -761,13 +761,12 @@ inline Vec2 rect_center(Rectf r)
 	return result;
 }
 
-// TODO: Swap the arguments
-inline Rectf MinkowskiSum(Rectf expand, Rectf base)
+inline Rectf MinkowskiSum(Rectf base, Rectf expand_amount)
 {
-	Rectf result = { base.x - expand.w / 2.f,
-					base.y - expand.h / 2.f,
-					expand.w + base.w,
-					expand.h + base.h };
+	Rectf result = { base.x - expand_amount.w / 2.f,
+					base.y - expand_amount.h / 2.f,
+					expand_amount.w + base.w,
+					expand_amount.h + base.h };
 
     return result;
 }
@@ -775,7 +774,7 @@ inline Rectf MinkowskiSum(Rectf expand, Rectf base)
 inline bool Intersects(Rectf lhs, Rectf rhs)
 {
 	Vec2 center = rect_center(lhs);
-    Rectf mink_sum = MinkowskiSum(lhs, rhs);
+    Rectf mink_sum = MinkowskiSum(rhs, lhs);
     bool result = Contains(mink_sum, center);
     return result;
 }

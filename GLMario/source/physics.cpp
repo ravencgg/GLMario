@@ -385,7 +385,7 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& 
 
     // Do the Minkowski sum
     //Vec2 center = rect_center(other); // unused ?
-    Rectf mSum = MinkowskiSum(m, other);
+    Rectf mSum = MinkowskiSum(other, m);
 #if 0 // moved this to the MinkowskiSum function
     { other.x - m.w / 2.f,
         other.y - m.h / 2.f,
@@ -406,7 +406,10 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& 
                   { mSum.x + mSum.w, mSum.y} };
 
 #ifdef _DEBUG
-	printf(!Contains(mSum, o));
+    if(!Contains(mSum, o))
+    {
+        printf("Collider inside of object!");
+    }
 #endif
 
 	mRays[0] = make_ray(p[0], p[1]);

@@ -8,13 +8,18 @@
 
 #include <vector>
 
-struct Camera;
 struct Window;
 struct GameState;
 
 enum ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT };
 enum ShaderTypes : uint32 { Shader_Default, Shader_Text, Shader_Particle, Shader_Line, Shader_Count };
 enum DrawLayer   : uint32 { DrawLayer_Background, DrawLayer_PreTilemap, DrawLayer_Tilemap, DrawLayer_PostTilemap, DrawLayer_Player, DrawLayer_Foreground, DrawLayer_UI, DrawLayer_Debug, DrawLayer_Count };
+
+struct Camera
+{
+    Vec2 position;
+    Vec2 viewport_size;
+};
 
 namespace DrawOptions
 {

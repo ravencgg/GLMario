@@ -59,12 +59,11 @@ struct Scene
     uint32 max_entities;
     uint32 active_entities;
     uint32 next_entity_id;
-    Entity* entities;
-
-    uint32 max_objects;
-    uint32 active_objects;
-    uint32 next_object_id;
-    GameObject* objects;
+    uint32 player_id;
+    EntityVtable entity_vtable[EntityType_Count];
+    Entity*  entities;
+    Entity** entity_delete_list;
+    uint32   entity_delete_count;
 
 // The physics one
     Tilemap* tmap;
@@ -73,12 +72,6 @@ struct Scene
 // TODO: combine tilemap code, or just pick one
 // The grid one
     TileMap tilemap;
-};
-
-struct Camera
-{
-    Vec2 position;
-    Vec2 viewport_size;
 };
 
 

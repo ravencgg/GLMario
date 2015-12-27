@@ -19,6 +19,7 @@ enum EntityType
     EntityType_Player,
     EntityType_Enemy,
     EntityType_Spawner,
+    EntityType_Camera,
     EntityType_Tile,
 
     EntityType_Count
@@ -42,6 +43,7 @@ struct EntityPlayer
 {
     RArrayRef<DynamicCollider> collider;
     Vec2 velocity;
+    uint32 camera_id;
 };
 struct EntityEnemy
 {
@@ -53,6 +55,10 @@ struct EntitySpawner
 {
     float last_spawn_time;
     float time_between_spawns;
+};
+struct EntityCamera
+{
+    Camera camera;
 };
 
 struct Entity
@@ -70,79 +76,42 @@ struct Entity
         EntityPlayer  player;
         EntityEnemy   enemy;
         EntitySpawner spawner;
+        EntityCamera  camera;
     };
 };
 
 struct Scene;
-void UpdateSceneEntities(Scene* scene, GameState* game_state, float dt);
+
+// Run the entities update functions
+void UpdateSceneEntities(GameState* game_state, Scene* scene);
+
+// Run the entity draw functions
 void DrawSceneEntities(Scene* scene);
 
-struct GameObject // particle system, parallax background, Tilemap?
+// Create the vtable at run-time
+void BuildEntityVTable(Scene* scene);
+
+//
+bool FindEntityWithID(Scene* scene, uint32 id, Entity** out);
+
+// Only do at the end of the frame to keep pointers valid during entity updating
+void RemoveEntity(Scene* scene, Entity* entity);
+
+Entity* SpawnEntity(GameState* game_state, Scene* scene, EntityType type, Vec2 position);
+
+typedef void (*DrawFunc)(Entity*);
+#define EntityDrawFunc(name) static void name(Entity* entity)
+
+typedef void (*UpdateFunc)(GameState* game_state, Scene* scene, float dt, Entity*);
+#define EntityUpdateFunc(name) static void name(GameState* game_state, Scene* scene, float dt, Entity* entity)
+
+typedef void (*SpawnFunc)(GameState* game_state, Scene* scene, Entity* entity, Vec2 position);
+#define EntitySpawnFunc(name) static void name(GameState* game_state, Scene* scene, Entity* entity, Vec2 position)
+
+struct EntityVtable
 {
-    int unused;
+    UpdateFunc update;
+    DrawFunc   draw;
+    SpawnFunc  spawn;
 };
 
-#if 0
-
-class SceneManager;
-
-class Entity
-{
-public:
-    Transform transform;
-    SceneManager* parent_scene;
-    EntityType entity_type;
-    LIST_LINK(Entity) entity_group;
-    bool delete_this_frame = false;
-
-    Entity(SceneManager* sm) { parent_scene = sm; }
-    virtual ~Entity() {}
-
-    virtual void Tick(GameState*) {}
-    virtual void Draw() {}
-    virtual void SetPosition(Vec2 pos) { transform.position = pos; }
-    virtual void Translate(Vec2 offset) { transform.position += offset; }
-};
-
-class Actor : public Entity
-{
-public:
-
-	DrawCall draw_call;
-    RArrayRef<DynamicCollider> collider;
-
-    Actor(SceneManager* sm) : Entity(sm) { };
-    virtual ~Actor() { }
-    void SetPosition(Vec2 pos) { collider->position = pos; }
-};
-
-
-class Enemy : public Actor
-{
-public:
-	Vec2 velocity;
-
-	Enemy(SceneManager* sm);
-    virtual ~Enemy() {}
-
-    virtual void Tick(GameState*) override;
-    virtual void Draw() override;
-};
-
-class Spawner : public Entity
-{
-public:
-
-    float time_between_spawns;
-    float last_spawn_time;
-
-    void SpawnEnemy();
-
-	Spawner(SceneManager* sm);
-    virtual ~Spawner();
-
-    virtual void Tick(GameState*) override;
-    virtual void Draw() override;
-};
-
-#endif

@@ -449,13 +449,230 @@ void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
 
 void Renderer::render_draw_buffer()
 {
+    const Rectf ogl_screen_rect = { -1.f, -1.f, 2.0f, 2.0f };
+
+    uint32 num_drawn = 0;
+    uint32 num_culled = 0;
+
 	for (uint32 layer = 0; layer < DrawLayer_Count; ++layer)
 	{
 		for (uint32 i = 0; i < draw_buffer[layer].Size(); ++i)
 		{
-			draw_call(draw_buffer[layer][i]);
+            DrawCall& data = draw_buffer[layer][i];
+
+            ProfileBeginSection(Profile_RenderFinish);
+            // TODO: set up the shaders once per frame (or once per draw surface)
+            // TODO: don't have every draw type specify a shader e.g. lines only have the line shader
+            // and text will ony have the text shader. Oh, and TODO: Batch text draws into a buffer.
+
+            static GLuint vao = (glGenVertexArrays(1, &vao), vao);
+            static GLuint vbo = (glGenBuffers(1, &vbo), vbo);
+
+            Vec2 cam_position = { main_camera->position.x, main_camera->position.y };
+            Vec2 viewport     = { main_camera->viewport_size.x, main_camera->viewport_size.y };
+
+            glUseProgram(shaders[(uint32)data.shader].shader_handle);
+
+            {
+                GLuint active_tex = 0;
+                glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
+
+                if (active_tex != textures[(uint32)data.image].texture_handle)
+                {
+                    glBindTexture(GL_TEXTURE_2D, textures[(uint32)data.image].texture_handle);
+                }
+            }
+
+            switch(data.draw_type)
+            {
+                case DrawType::SINGLE_SPRITE:
+                    {
+                        // TODO(cgenova): handle rotated scaling;
+
+                        int32 tw = textures[(uint32)data.image].w;
+                        int32 th = textures[(uint32)data.image].h;
+
+                        float tex_left  = (float)data.sd.tex_rect.left / tw;
+                        float tex_right = (float)(data.sd.tex_rect.left + data.sd.tex_rect.width) / tw;
+                        float tex_bot   = (float)(th - (data.sd.tex_rect.top + data.sd.tex_rect.height)) / th;
+                        float tex_top   = (float)(th - data.sd.tex_rect.top) / th;
+
+                        float width  = data.sd.world_size.x;
+                        float height = data.sd.world_size.y;
+
+                        float x_pos = (data.sd.world_position.x - cam_position.x) - width / 2;
+                        float y_pos = (data.sd.world_position.y - cam_position.y) - height / 2;
+
+#define TO_OGL(pos, dir) ((((pos + (dir / 2)) / dir) * 2) - 1)
+
+                        x_pos = TO_OGL(x_pos, viewport.x);
+                        y_pos = TO_OGL(y_pos, viewport.y);
+                        width = TO_OGL(width, viewport.x);
+                        height = TO_OGL(height, viewport.y);
+
+#undef TO_OGL
+
+                        SpriteVertex sprite_vertices[4] = {
+                            {
+                                { x_pos, y_pos },                    // World position
+                                { tex_left, tex_bot }                // UV coords
+                            },
+                            {
+                                { x_pos + width, y_pos },            // World position
+                                { tex_right, tex_bot }               // UV coords
+                            },
+                            {
+                                { x_pos, y_pos + height },           // World position
+                                { tex_left, tex_top }                // UV coords
+                            },
+                            {
+                                { x_pos + width, y_pos + height },   // World position
+                                { tex_right, tex_top }               // UV coords
+                            },
+                        };
+
+                        Rectf sprite_rect = { x_pos, y_pos, width, height };
+                        Rectf msum = MinkowskiSum(ogl_screen_rect, sprite_rect);
+
+                        if(Intersects(ogl_screen_rect, sprite_rect))
+                        {
+                            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                            glBufferData(GL_ARRAY_BUFFER, sizeof(sprite_vertices), sprite_vertices, GL_STREAM_DRAW);
+                            glBindVertexArray(vao);
+
+                            glEnableVertexAttribArray(0);
+                            glEnableVertexAttribArray(1);
+                            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+                            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (GLvoid*)(2 * sizeof(float)) );
+
+                            // NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call
+                            //float time = 1.f;
+                            //GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
+                            //glUniform1f(time_loc, time);
+
+                            //GLint color_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "color_in");
+                            //glUniform4f(color_loc, data.sd.color_mod.x, data.sd.color_mod.y, data.sd.color_mod.z, data.sd.color_mod.w);
+
+                            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+                            ++num_drawn;
+                        }
+                        else
+                        {
+                            ++num_culled;
+                        }
+
+                    }break;
+                case DrawType::ARRAY_BUFFER:
+                    {
+                        glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
+                        glBindVertexArray(data.abd.vao);
+                        glEnableVertexAttribArray(0);
+                        glEnableVertexAttribArray(1);
+                        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
+                        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
+
+                        GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+                        glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+
+                        GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+                        glUniform2f(viewport_loc, viewport.x, viewport.y);
+
+                        glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
+                        ++num_drawn;
+
+                    }break;
+                case DrawType::LINE_BUFFER:
+                    {
+                        glBindBuffer(GL_ARRAY_BUFFER, data.lbd.vbo);
+                        glBindVertexArray(data.lbd.vao);
+                        glEnableVertexAttribArray(0);
+                        glEnableVertexAttribArray(1);
+                        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
+                        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
+
+                        if(data.lbd.line_draw_options & LineDrawOptions::SMOOTH)
+                        {
+                            glEnable(GL_LINE_SMOOTH);
+                            glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+                        }
+                        else
+                        {
+                            glDisable(GL_LINE_SMOOTH);
+                        }
+
+                        if(data.lbd.line_draw_options & LineDrawOptions::CUSTOM_SIZE)
+                        {
+                            uint8 s = ((data.lbd.line_draw_options & (0xFF << 24)) >> 24);
+                            float size = (float) s;
+                            glLineWidth(size);
+                        }
+                        else
+                        {
+                            glLineWidth(4.f);
+                        }
+
+                        if(data.lbd.line_draw_options & LineDrawOptions::SCREEN_SPACE)
+                        {
+                            // Screen space drawing is in range [0,1];
+                            GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
+                            glUniform2f(cam_pos_loc, 0.5f, 0.5f);
+                            GLint viewport_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "viewport");
+                            glUniform2f(viewport_loc, 1, 1);
+                        }
+                        else
+                        {
+                            GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
+                            glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+                            GLint viewport_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "viewport");
+                            glUniform2f(viewport_loc, viewport.x, viewport.y);
+                        }
+
+                        glDrawArrays(data.lbd.draw_method, 0, data.lbd.num_vertices);
+                        //glDrawArrays(GL_LINE_LOOP, 0, data.lbd.num_vertices);
+
+                        ++num_drawn;
+
+                    }break;
+                case DrawType::PARTICLE_ARRAY_BUFFER:
+                    {
+                        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+                        glEnable(GL_POINT_SPRITE);
+
+                        glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
+                        glBindVertexArray(data.abd.vao);
+
+                        float world_scale = viewport_width();
+                        GLint scl_loc = glGetUniformLocation(shaders[Shader_Particle].shader_handle, "w_scale");
+                        glUniform1f(scl_loc, world_scale);
+
+
+                        GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+                        glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+
+                        GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+                        glUniform2f(viewport_loc, viewport.x, viewport.y);
+
+
+                        //glDrawArrays(data.pbd.draw_method, 0, data.pbd.num_vertices);
+                        //glDrawArrays(GL_TRIANGLE_FAN, 0, data.pbd.num_vertices);
+                        glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
+
+                        ++num_drawn;
+
+                    }break;
+                default:
+                    assert(0);
+                    break;
+            }
+
+            ProfileEndSection(Profile_RenderFinish);
 		}
 	}
+
+    DebugPrintPushColor(vec4(0.8f, 0.2f, 0.2f, 1.0f));
+    DebugPrintf("Draw calls drawn: %d/%d", num_drawn, (num_drawn + num_culled));
+    DebugPrintPopColor();
 }
 
 void ConvertToGLRect(Rectf* rect)
@@ -464,205 +681,6 @@ void ConvertToGLRect(Rectf* rect)
     rect->y = rect->y * 2.f - 1.f;
     rect->w *= 2.f;
     rect->h *= 2.f;
-}
-
-void Renderer::draw_call(DrawCall data)
-{
-    ProfileBeginSection(Profile_RenderFinish);
-    // TODO: set up the shaders once per frame (or once per draw surface)
-    // TODO: don't have every draw type specify a shader e.g. lines only have the line shader
-    // and text will ony have the text shader. Oh, and TODO: Batch text draws into a buffer.
-
-	static GLuint vao = (glGenVertexArrays(1, &vao), vao);
-	static GLuint vbo = (glGenBuffers(1, &vbo), vbo);
-
-    Vec2 cam_position = { main_camera->position.x, main_camera->position.y };
-    Vec2 viewport     = { main_camera->viewport_size.x, main_camera->viewport_size.y };
-
-	glUseProgram(shaders[(uint32)data.shader].shader_handle);
-
-	{
-		GLuint active_tex = 0;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
-
-		if (active_tex != textures[(uint32)data.image].texture_handle)
-		{
-			glBindTexture(GL_TEXTURE_2D, textures[(uint32)data.image].texture_handle);
-		}
-	}
-
-    if(data.draw_type != DrawType::LINE_BUFFER && 0) goto renderfinish;
-
-	switch(data.draw_type)
-	{
-		case DrawType::SINGLE_SPRITE:
-		{
-			// TODO(cgenova): handle rotated scaling;
-
-			int32 tw = textures[(uint32)data.image].w;
-			int32 th = textures[(uint32)data.image].h;
-
-		 	float tex_left  = (float)data.sd.tex_rect.left / tw;
-		 	float tex_right = (float)(data.sd.tex_rect.left + data.sd.tex_rect.width) / tw;
-		 	float tex_bot   = (float)(th - (data.sd.tex_rect.top + data.sd.tex_rect.height)) / th;
-		 	float tex_top   = (float)(th - data.sd.tex_rect.top) / th;
-
-            float width  = data.sd.world_size.x;
-            float height = data.sd.world_size.y;
-
-            float x_pos = (data.sd.world_position.x - cam_position.x) - width / 2;
-            float y_pos = (data.sd.world_position.y - cam_position.y) - height / 2;
-
-#define TO_OGL(pos, dir) ((((pos + (dir / 2)) / dir) * 2) - 1)
-
-            x_pos = TO_OGL(x_pos, viewport.x);
-            y_pos = TO_OGL(y_pos, viewport.y);
-            width = TO_OGL(width, viewport.x);
-            height = TO_OGL(height, viewport.y);
-
-#undef TO_OGL
-
-            SpriteVertex sprite_vertices[4] = {
-                {
-                    { x_pos, y_pos },                    // World position
-                    { tex_left, tex_bot }                // UV coords
-                },
-                {
-                    { x_pos + width, y_pos },            // World position
-                    { tex_right, tex_bot }               // UV coords
-                },
-                {
-                    { x_pos, y_pos + height },           // World position
-                    { tex_left, tex_top }                // UV coords
-                },
-                {
-                    { x_pos + width, y_pos + height },   // World position
-                    { tex_right, tex_top }               // UV coords
-                },
-            };
-
-            // TODO: Culling
-
-			glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(sprite_vertices), sprite_vertices, GL_STREAM_DRAW);
-			glBindVertexArray(vao);
-
-            glEnableVertexAttribArray(0);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (GLvoid*)(2 * sizeof(float)) );
-
-			// NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call
-			//float time = 1.f;
-			//GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
-			//glUniform1f(time_loc, time);
-
-			//GLint color_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "color_in");
-			//glUniform4f(color_loc, data.sd.color_mod.x, data.sd.color_mod.y, data.sd.color_mod.z, data.sd.color_mod.w);
-
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-		}break;
-        case DrawType::ARRAY_BUFFER:
-        {
-			glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
-			glBindVertexArray(data.abd.vao);
-			glEnableVertexAttribArray(0);
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
-			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
-
-			GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
-			glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-
-			GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
-			glUniform2f(viewport_loc, viewport.x, viewport.y);
-
-			glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
-
-        }break;
-        case DrawType::LINE_BUFFER:
-        {
-			glBindBuffer(GL_ARRAY_BUFFER, data.lbd.vbo);
-			glBindVertexArray(data.lbd.vao);
-			glEnableVertexAttribArray(0);
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
-			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
-
-            if(data.lbd.line_draw_options & LineDrawOptions::SMOOTH)
-            {
-                glEnable(GL_LINE_SMOOTH);
-                glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-            }
-            else
-            {
-                glDisable(GL_LINE_SMOOTH);
-            }
-
-            if(data.lbd.line_draw_options & LineDrawOptions::CUSTOM_SIZE)
-            {
-                uint8 s = ((data.lbd.line_draw_options & (0xFF << 24)) >> 24);
-                float size = (float) s;
-                glLineWidth(size);
-            }
-            else
-            {
-                glLineWidth(4.f);
-            }
-
-            if(data.lbd.line_draw_options & LineDrawOptions::SCREEN_SPACE)
-            {
-                // Screen space drawing is in range [0,1];
-                GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
-                glUniform2f(cam_pos_loc, 0.5f, 0.5f);
-                GLint viewport_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "viewport");
-                glUniform2f(viewport_loc, 1, 1);
-            }
-            else
-            {
-                GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
-                glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-                GLint viewport_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "viewport");
-                glUniform2f(viewport_loc, viewport.x, viewport.y);
-            }
-
-			glDrawArrays(data.lbd.draw_method, 0, data.lbd.num_vertices);
-			//glDrawArrays(GL_LINE_LOOP, 0, data.lbd.num_vertices);
-
-        }break;
-		case DrawType::PARTICLE_ARRAY_BUFFER:
-		{
-			glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-			glEnable(GL_POINT_SPRITE);
-
-			glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
-			glBindVertexArray(data.abd.vao);
-
-			float world_scale = viewport_width();
-			GLint scl_loc = glGetUniformLocation(shaders[Shader_Particle].shader_handle, "w_scale");
-			glUniform1f(scl_loc, world_scale);
-
-
-			GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
-			glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-
-			GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
-			glUniform2f(viewport_loc, viewport.x, viewport.y);
-
-
-			//glDrawArrays(data.pbd.draw_method, 0, data.pbd.num_vertices);
-			//glDrawArrays(GL_TRIANGLE_FAN, 0, data.pbd.num_vertices);
-			glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
-
-		}break;
-		default:
-			assert(0);
-			break;
-	}
-
-    renderfinish:
-    ProfileEndSection(Profile_RenderFinish);
 }
 
 void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, uint8 line_width, DrawLayer dl, uint32 line_draw_options)

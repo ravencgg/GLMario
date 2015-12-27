@@ -24,6 +24,7 @@
 #include "audio.h"
 #include "tilemap.h"
 #include "game_types.h"
+#include "entity.h"
 
 #include "audio.h"
 
@@ -141,14 +142,12 @@ static Scene* PushScene(MemoryArena* arena, uint32 num_entities, uint32 num_obje
     Scene* result = PushStruct(arena, Scene);
 
     result->max_entities = num_entities;
-    result->max_objects  = num_objects;
-    result->entities = PushStructs(arena, Entity, num_entities);
-    result->objects  = PushStructs(arena, GameObject, num_objects);
+    result->entities = PushArray(arena, Entity, num_entities);
+
+    BuildEntityVTable(result);
 
     // This should be done when loading a level
-
-
-// This needs to subarena for a quad tree
+    // This needs to subarena for a quad tree
     const uint32 width = 50; // LOAD FROM FILE!
     const uint32 height = 50;
     AllocateTileMap(arena, &result->tilemap, width, height);
@@ -185,7 +184,7 @@ int main(int argc, char* argv[])
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 4, 4));
 #endif
 
-#if 1
+#if 0
     char* test_sound_file = "C:\\projects\\imperial_march.wav";
     bool test_sound_loaded = LoadWavFile(test_sound_file);
     if(test_sound_loaded)
@@ -335,8 +334,7 @@ int main(int argc, char* argv[])
         DebugPrintf("Active scene entity usage: (%d / %d)", game_state->active_scene->active_entities, MAX_GAME_ENTITES);
         DebugPrintPopColor();
 
-        UpdateSceneEntities(game_state->active_scene, game_state, FrameTime(game_state));
-
+        UpdateSceneEntities(game_state, game_state->active_scene);
         DrawSceneEntities(game_state->active_scene);
 
         game_state->active_scene->physics->DebugDraw();
