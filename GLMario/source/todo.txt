@@ -48,5 +48,3 @@ To figure out:
         -> each could have their own memory and entities, multiple could be active at a time
 
     Global Unique IDs? or keep ids unique within their own system only?
-
-

@@ -186,7 +186,7 @@ void Physics::StepDynamicColliders(float dt)
 }
 #endif
 
-Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocity, float dt)
+Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicCollider> refCollider, Vec2& velocity, float dt)
 {
     ProfileBeginSection(Profile_PhysicsStepCollider);
     assert(dynamics.IsValid(refCollider));
@@ -209,11 +209,10 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
     float maxX = 0;
     float maxY = 0;
 
-	std::vector<CollisionInfo> collisions;
 	bool valid = true;
 
-    // TODO: end of scope macro to do PopAllocations
-    StaticCollider** collision_list_base = PushArray(&this->quadtree_memory, StaticCollider*, statics.Size());
+    StaticCollider** potential_colliders_base;
+    PushArrayScoped(potential_colliders_base, &this->quadtree_memory, StaticCollider*, statics.Size());
 
     // Find the potentially colliding statics
     Rectf col_plus_velocity = CanonicalRect(&col);
@@ -228,10 +227,15 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
         col_plus_velocity.y += remainingVelocity.y;
     }
 
-    StaticCollider** collision_list = collision_list_base;
-    uint32 collision_list_size = 0;
-    StaticCollider** end = GetPotentialColliders(&this->quadtree, col_plus_velocity, collision_list, &collision_list_size);
-    assert((size_t) end == (size_t)collision_list + collision_list_size * sizeof(collision_list[0]));
+    StaticCollider** potential_colliders = potential_colliders_base;
+    uint32 potential_colliders_size = 0;
+    StaticCollider** end = GetPotentialColliders(&this->quadtree, col_plus_velocity, potential_colliders, &potential_colliders_size);
+    assert((size_t) end == (size_t)potential_colliders + potential_colliders_size * sizeof(potential_colliders[0]));
+
+    CollisionInfo* detected_collisions_base;
+    PushArrayScoped(detected_collisions_base, temporary_memory, CollisionInfo, potential_colliders_size);
+    CollisionInfo* detected_collisions = detected_collisions_base;
+    uint32 detected_collisions_count = 0;
 
     do
     {
@@ -246,16 +250,26 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
         }
 #endif
 
-        for(uint32 j = 0; j < collision_list_size; ++j)
+        for(uint32 j = 0; j < potential_colliders_size; ++j)
         {
             ProfileBeginSection(Profile_PhysicsInnerLoop);
-            StaticCollider* scol = collision_list[j];
+            StaticCollider* scol = potential_colliders[j];
             if (!scol->active) continue;
 
 			if (CheckCollision(CanonicalRect(&col), remainingVelocity, scol->rect, ci))
 			{
 				valid = true;
 
+                for (uint32 c = 0; c < detected_collisions_count; ++c)
+                {
+					if (Contains(detected_collisions[c].mSumOther, ci.point))
+					{
+						valid = false;
+						break;
+					}
+
+                }
+#if 0
 				for (auto it : collisions)
 				{
 					if (Contains(it.mSumOther, ci.point))
@@ -264,12 +278,13 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
 						break;
 					}
 				}
+#endif
 
                 Rectf curRect = CanonicalRect(&col);
-                for(uint32 k = 0; k < collision_list_size; ++k)
+                for(uint32 k = 0; k < potential_colliders_size; ++k)
                 {
-					Rectf* other = &collision_list[k]->rect;
-                    if(!collision_list[k]->active) continue;
+					Rectf* other = &potential_colliders[k]->rect;
+                    if(!potential_colliders[k]->active) continue;
 
                     Rectf mSum = { other->x - curRect.w / 2.f,
                             other->y - curRect.h / 2.f,
@@ -285,7 +300,8 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
 
 				if (valid)
 				{
-					collisions.push_back(ci);
+                    assert(detected_collisions_count < potential_colliders_size); // ob1?
+                    detected_collisions[detected_collisions_count++] = ci;
 					collided = true;
 
 					if (closestCollision > ci.distance)
@@ -311,7 +327,7 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
 			float rh = 0.2f;
 			float rw = rh * 2.f;
             const uint8 line_width = 3;
-			Renderer::get()->DrawRect(rectf(ci.point.x + ci.projection.x - rh, ci.point.y + ci.projection.y - rh, rw, rw), line_width, DrawLayer_UI, vec4(1, 1, 0, 1));
+			// Renderer::get()->DrawRect(rectf(ci.point.x + ci.projection.x - rh, ci.point.y + ci.projection.y - rh, rw, rw), line_width, DrawLayer_UI, vec4(1, 1, 0, 1));
 
             // col.position.x = MinSigned(col.position.x, maxX);
             // col.position.y = MinSigned(col.position.y, maxY);
@@ -346,8 +362,6 @@ Vec2 Physics::StepCollider(RArrayRef<DynamicCollider> refCollider, Vec2& velocit
         velocity.x = sign(velocity.x) * min(abs(velocity.x), abs(startVelocity.x));
         velocity.y = sign(velocity.y) * min(abs(velocity.y), abs(startVelocity.y));
     }
-
-    PopAllocation(&this->quadtree_memory, collision_list_base);
 
     ProfileEndSection(Profile_PhysicsStepCollider);
     return col.position;

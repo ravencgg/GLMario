@@ -45,17 +45,21 @@ struct EntityPlayer
     Vec2 velocity;
     uint32 camera_id;
 };
+
 struct EntityEnemy
 {
     Vec2 velocity;
     Timer despawn_timer;
     uint32 health;
 };
+
 struct EntitySpawner
 {
+    uint32 num_spawned;
     float last_spawn_time;
     float time_between_spawns;
 };
+
 struct EntityCamera
 {
     Camera camera;
@@ -94,7 +98,7 @@ void BuildEntityVTable(Scene* scene);
 //
 bool FindEntityWithID(Scene* scene, uint32 id, Entity** out);
 
-// Only do at the end of the frame to keep pointers valid during entity updating
+// Will be removed at the end of the frame
 void RemoveEntity(Scene* scene, Entity* entity);
 
 Entity* SpawnEntity(GameState* game_state, Scene* scene, EntityType type, Vec2 position);

@@ -96,6 +96,11 @@ void FreeMemoryArena(MemoryArena* arena)
 
 uint8* PushSize(MemoryArena* arena, size_t size, bool clear)
 {
+    if(size == 0)
+    {
+        return nullptr;
+    }
+
     assert(arena->size - arena->used > size);
 
     if(arena->size - arena->used > size)
@@ -113,7 +118,6 @@ uint8* PushSize(MemoryArena* arena, size_t size, bool clear)
 
     return nullptr;
 }
-
 
 // NOTE: Could fill the memory with obvious garbage in these resetting functions
 // to track deallocation problems

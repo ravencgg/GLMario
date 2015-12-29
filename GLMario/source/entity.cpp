@@ -3,6 +3,7 @@
 #include "game_types.h"
 #include "particles.h"
 
+// Move this
 void RenderRandomParticles(GameState* game_state)
 {
 #if 1
@@ -108,7 +109,7 @@ EntityUpdateFunc(UpdatePlayer)
     Vec2 old_velocity = player->velocity;
     //TODO: integrate physics in the new system
 
-    entity->transform.position = scene->physics->StepCollider(player->collider, player->velocity, FrameTime(game_state));
+    entity->transform.position = scene->physics->StepCollider(&game_state->temporary_memory, player->collider, player->velocity, FrameTime(game_state));
 
     const uint8 line_width = 3;
     //Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
@@ -123,7 +124,20 @@ EntityUpdateFunc(UpdateSpawner)
 
     if (current_time - spawner->last_spawn_time > spawner->time_between_spawns)
     {
-        SpawnEntity(game_state, scene, EntityType_Enemy, entity->transform.position); // TODO: Write!
+        Vec2 spawn_pos = entity->transform.position;
+        if(spawner->num_spawned > 0)
+        {
+            spawn_pos.y += 1.0f * (float) spawner->num_spawned;
+            SpawnEntity(game_state, scene, EntityType_Enemy, spawn_pos);
+        }
+        else
+        {
+            spawn_pos.x -= 1.0f;
+            Entity* new_spawner = SpawnEntity(game_state, scene, EntityType_Spawner, spawn_pos);
+            new_spawner->spawner.last_spawn_time = current_time;
+        }
+
+        ++spawner->num_spawned;
         spawner->last_spawn_time = current_time;
     }
 }
@@ -142,7 +156,7 @@ EntityUpdateFunc(UpdateEnemy)
     //const uint8 line_width = 3;
     //Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + enemy->velocity, vec4(0, 1, 1, 1), line_width);
     //TODO: physics
-    //            enemy->transform.position = parent_scene->physics->StepCollider(collider, velocity, FrameTime(game_state));
+    //            enemy->transform.position = parent_scene->physics->StepCollider(game_state->temporary_memory, collider, velocity, FrameTime(game_state));
 }
 
 EntityDrawFunc(DrawEnemy)
@@ -175,6 +189,21 @@ EntityDrawFunc(DrawPlayer)
     Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
 }
 
+EntityDrawFunc(DrawSpawner)
+{
+    DrawCall draw_call = {};
+    draw_call.draw_type = DrawType::SINGLE_SPRITE;
+    draw_call.image = ImageFiles::MARIO_IMAGE;
+    draw_call.shader = Shader_Default;
+    draw_call.options = DrawOptions::TEXTURE_RECT;
+    draw_call.sd.tex_rect = { 34, 903, 34, 34 };
+    draw_call.sd.world_size = vec2(1.0f, 1.5f);
+    draw_call.sd.draw_angle = 0;
+    draw_call.sd.world_position = entity->transform.position;
+
+    Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
+}
+
 
 bool FindEntityWithID(Scene* scene, uint32 id, Entity** out)
 {
@@ -195,7 +224,7 @@ bool FindEntityWithID(Scene* scene, uint32 id, Entity** out)
     return false;
 }
 
-void DespawnRemovedEntities(Scene* scene)
+static void DespawnRemovedEntities(Scene* scene)
 {
     for(uint32 i = 0; i < scene->entity_delete_count; ++i)
     {
@@ -300,6 +329,8 @@ EntitySpawnFunc(SpawnEnemySpawner)
 
     spawner->last_spawn_time = 0;
     spawner->time_between_spawns = 2.0f;
+
+    entity->transform.position = position;
 }
 
 Entity* SpawnEntity(GameState* game_state, Scene* scene, EntityType type, Vec2 position)
@@ -327,6 +358,7 @@ void AttachCameraToPlayer(Scene* scene, uint32 camera_id)
 // TODO: despawn entity by ID
 void RemoveEntity(Scene* scene, Entity* entity)
 {
+    assert(scene->entity_delete_list);
     entity->flags |= EntityFlag_Removing;
     scene->entity_delete_list[scene->entity_delete_count++] = entity;
 }
@@ -340,10 +372,17 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
     RenderRandomParticles(game_state);
     // NOTE: random scene test code
     {
+        if (KeyFrameDown(SDLK_t))
+        {
+            SpawnEntity(game_state, scene, EntityType_Spawner, { 5.f, -1.0f });
+        }
 
         if (KeyFrameDown(SDLK_m))
         {
-            SpawnEntity(game_state, scene, EntityType_Player, { 1.f, 2.0f });
+            for(int i = 0; i < 100; ++i)
+            {
+                SpawnEntity(game_state, scene, EntityType_Player, { 1.f, 2.0f });
+            }
         }
 
         if (KeyFrameDown(SDLK_n))
@@ -398,6 +437,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
     DespawnRemovedEntities(scene);
 
     PopAllocation(&game_state->temporary_memory, scene->entity_delete_list);
+    scene->entity_delete_list = nullptr;
 }
 
 void DrawSceneEntities(Scene* scene)
@@ -440,10 +480,10 @@ void BuildEntityVTable(Scene* scene)
 
     EntityVTableBuilder vtable_builder[]
     {
-        { EntityType_Enemy,    { UpdateEnemy,  DrawEnemy,  SpawnEnemy         } },
-        { EntityType_Spawner,  { UpdateEnemy,  nullptr,    SpawnEnemySpawner  } },
-        { EntityType_Player,   { UpdatePlayer, DrawPlayer, SpawnPlayer        } },
-        { EntityType_Camera,   { nullptr,      nullptr,    nullptr            } },
+        { EntityType_Enemy,    { UpdateEnemy,   DrawEnemy,   SpawnEnemy         } },
+        { EntityType_Spawner,  { UpdateSpawner, DrawSpawner, SpawnEnemySpawner  } },
+        { EntityType_Player,   { UpdatePlayer,  DrawPlayer,  SpawnPlayer        } },
+        { EntityType_Camera,   { nullptr,       nullptr,     nullptr            } },
     };
 
 #ifdef _DEBUG

@@ -120,7 +120,7 @@ public:
     bool RaycastStatics(Vec2, Vec2, CollisionInfo&, bool draw = false);
 
     // Returns final collider position
-    Vec2 StepCollider(RArrayRef<DynamicCollider> collider, Vec2& velocity, float dt);
+    Vec2 StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicCollider> collider, Vec2& velocity, float dt);
 
 
 #ifdef _DEBUG
