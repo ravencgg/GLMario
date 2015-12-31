@@ -360,7 +360,7 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
             Rectf rect = {};
             rect.left = x;
             rect.width = char_size.x;
-            rect.top = y;
+            rect.bot = y;
             rect.height = char_size.y;
 
             // Char coords
@@ -386,12 +386,12 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
             //*current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
             //*current_vertex++ = { rect.left + rect.width , rect.top + rect.height , right, top, *vert_color };
 
-            *current_vertex++ = { rect.left              , rect.top               , left , bot, start_color };
-            *current_vertex++ = { rect.left              , rect.top + rect.height , left , top, start_color };
-            *current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, end_color   };
-            *current_vertex++ = { rect.left              , rect.top + rect.height , left , top, start_color };
-            *current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, end_color   };
-            *current_vertex++ = { rect.left + rect.width , rect.top + rect.height , right, top, end_color   };
+            *current_vertex++ = { rect.left              , rect.bot               , left , bot, start_color };
+            *current_vertex++ = { rect.left              , rect.bot + rect.height , left , top, start_color };
+            *current_vertex++ = { rect.left + rect.width , rect.bot               , right, bot, end_color   };
+            *current_vertex++ = { rect.left              , rect.bot + rect.height , left , top, start_color };
+            *current_vertex++ = { rect.left + rect.width , rect.bot               , right, bot, end_color   };
+            *current_vertex++ = { rect.left + rect.width , rect.bot + rect.height , right, top, end_color   };
 
             array_pos += 6;
             x += char_size.x;
@@ -440,6 +440,16 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 	return result;
 #undef NEW_LINE
 #undef TAB
+}
+
+inline Vec2 ScreenToOpenGL(Vec2 input, Vec2 viewport)
+{
+#define TO_OGL(pos, dir) ((((pos + (dir / 2)) / dir) * 2) - 1)
+    Vec2 result;
+    result.x = TO_OGL(input.x, viewport.x);
+    result.y = TO_OGL(input.y, viewport.y);
+    return result;
+#undef TO_OGL
 }
 
 void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
@@ -505,6 +515,14 @@ void Renderer::render_draw_buffer()
 
 #define TO_OGL(pos, dir) ((((pos + (dir / 2)) / dir) * 2) - 1)
 
+                        Rectf rect = { x_pos, y_pos, width, height };
+                        Vec2_4 positions = RotatedRect(rect, data.sd.draw_angle);
+
+                        Vec2 left_top = ScreenToOpenGL(positions.e[0], viewport);
+                        Vec2 left_bot = ScreenToOpenGL(positions.e[1], viewport);
+                        Vec2 right_bot = ScreenToOpenGL(positions.e[2], viewport);
+                        Vec2 right_top = ScreenToOpenGL(positions.e[3], viewport);
+
                         x_pos = TO_OGL(x_pos, viewport.x);
                         y_pos = TO_OGL(y_pos, viewport.y);
                         width = TO_OGL(width, viewport.x);
@@ -512,6 +530,7 @@ void Renderer::render_draw_buffer()
 
 #undef TO_OGL
 
+#if 0
                         SpriteVertex sprite_vertices[4] = {
                             {
                                 { x_pos, y_pos },                    // World position
@@ -530,6 +549,26 @@ void Renderer::render_draw_buffer()
                                 { tex_right, tex_top }               // UV coords
                             },
                         };
+#else
+                        SpriteVertex sprite_vertices[4] = {
+                            {
+                                left_bot,                    // World position
+                                { tex_left, tex_bot }                // UV coords
+                            },
+                            {
+                                right_bot,            // World position
+                                { tex_right, tex_bot }               // UV coords
+                            },
+                            {
+                                left_top,           // World position
+                                { tex_left, tex_top }                // UV coords
+                            },
+                            {
+                                right_top,   // World position
+                                { tex_right, tex_top }               // UV coords
+                            },
+                        };
+#endif
 
                         Rectf sprite_rect = { x_pos, y_pos, width, height };
                         Rectf msum = MinkowskiSum(ogl_screen_rect, sprite_rect);
@@ -591,7 +630,7 @@ void Renderer::render_draw_buffer()
                         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
                         glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
 
-                        if(data.lbd.line_draw_options & LineDrawOptions::SMOOTH)
+                        if(data.lbd.line_draw_flags & LineDrawOptions::SMOOTH)
                         {
                             glEnable(GL_LINE_SMOOTH);
                             glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -601,18 +640,11 @@ void Renderer::render_draw_buffer()
                             glDisable(GL_LINE_SMOOTH);
                         }
 
-                        if(data.lbd.line_draw_options & LineDrawOptions::CUSTOM_SIZE)
-                        {
-                            uint8 s = ((data.lbd.line_draw_options & (0xFF << 24)) >> 24);
-                            float size = (float) s;
-                            glLineWidth(size);
-                        }
-                        else
-                        {
-                            glLineWidth(4.f);
-                        }
+                        uint8 s = ((data.lbd.line_draw_flags & (0xFF << 24)) >> 24);
+                        float size = (float) s;
+                        glLineWidth(size);
 
-                        if(data.lbd.line_draw_options & LineDrawOptions::SCREEN_SPACE)
+                        if(data.lbd.line_draw_flags & LineDrawOptions::SCREEN_SPACE)
                         {
                             // Screen space drawing is in range [0,1];
                             GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
@@ -683,18 +715,22 @@ void ConvertToGLRect(Rectf* rect)
     rect->h *= 2.f;
 }
 
-void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, uint8 line_width, DrawLayer dl, uint32 line_draw_options)
+void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, LineDrawParams* params)
 {
+    LineDrawParams default_params;
+    LineDrawParams* using_params = params ? params : &default_params;
+
     Array<SimpleVertex> v(2);
     v.AddEmpty(2);
     v[0].position = start;
     v[0].color = color;
     v[1].position = end;
     v[1].color = color;
-    DrawLine(v, line_width, dl, line_draw_options);
+    DrawLine(v, params);
 }
 
-void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options)
+#if 0
+void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_flags)
 {
 	DrawCall dc = {};
 	dc.draw_type = DrawType::LINE_BUFFER;
@@ -717,13 +753,13 @@ void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, D
     LineBufferData* lbd = &line_buffer[line_buffer_loc++];
     lbd->num_vertices = (uint32)vertices.size();
 
-    lbd->draw_method = (line_draw_options & LineDrawOptions::LOOPED) ? GL_LINE_LOOP : GL_LINE_STRIP;
-    lbd->line_draw_options = line_draw_options;
+    lbd->draw_method = (line_draw_flags & LineDrawOptions::LOOPED) ? GL_LINE_LOOP : GL_LINE_STRIP;
+    lbd->line_draw_flags = line_draw_flags;
 
     if(line_width)
     {
-        lbd->line_draw_options |= LineDrawOptions::CUSTOM_SIZE;
-        lbd->line_draw_options |= ((uint32)line_width << 24);
+        lbd->line_draw_flags |= LineDrawOptions::CUSTOM_SIZE;
+        lbd->line_draw_flags |= ((uint32)line_width << 24);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);
@@ -731,10 +767,14 @@ void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, D
     dc.lbd = *lbd;
     push_draw_call(dc, dl);
 }
+#endif
 
 // Collapse this one with the std::vector version
-void Renderer::DrawLine(Array<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options)
+void Renderer::DrawLine(Array<SimpleVertex>& vertices, LineDrawParams* params)
 {
+    LineDrawParams default_params;
+    LineDrawParams* using_params = params ? params : &default_params;
+
 	DrawCall dc = {};
 	dc.draw_type = DrawType::LINE_BUFFER;
     dc.shader = Shader_Line;
@@ -756,39 +796,69 @@ void Renderer::DrawLine(Array<SimpleVertex>& vertices, uint8 line_width, DrawLay
     LineBufferData* lbd = &line_buffer[line_buffer_loc++];
     lbd->num_vertices = vertices.Size();
 
-    lbd->draw_method = (line_draw_options & LineDrawOptions::LOOPED) ? GL_LINE_LOOP : GL_LINE_STRIP;
-    lbd->line_draw_options = line_draw_options;
+    lbd->draw_method = (using_params->line_draw_flags & LineDraw_Looped) ? GL_LINE_LOOP : GL_LINE_STRIP;
+    lbd->line_draw_flags = using_params->line_draw_flags;
 
-    if(line_width)
+    if(using_params->line_width)
     {
-        lbd->line_draw_options |= LineDrawOptions::CUSTOM_SIZE;
-        lbd->line_draw_options |= ((uint32)line_width << 24);
+        lbd->line_draw_flags |= LineDraw_CustomWidth;
+        lbd->line_draw_flags |= ((uint32)using_params->line_width << 24);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);
     glBufferData(GL_ARRAY_BUFFER, vertices.Size() * sizeof(SimpleVertex), &vertices[0], GL_STREAM_DRAW);
     dc.lbd = *lbd;
-    push_draw_call(dc, dl);
+    push_draw_call(dc, using_params->draw_layer);
 }
 
-void Renderer::DrawRect(const Rectf& rect, uint8 line_width, DrawLayer layer, Vec4 color, uint32 line_draw_options)
+void Renderer::DrawRect(const Rectf& rect, Vec4 color, LineDrawParams* params)
 {
-    std::vector<SimpleVertex> verts;
-    verts.reserve(4);
+    Array<SimpleVertex> verts(4);
 
     SimpleVertex v;
 	v.color = color;
-	v.position = vec2(rect.left, rect.top);
-    verts.push_back(v);
+	v.position = vec2(rect.left, rect.bot);
+    verts.Add(v);
 
-	v.position = vec2(rect.left + rect.width, rect.top);
-	verts.push_back(v);
+	v.position = vec2(rect.left + rect.width, rect.bot);
+	verts.Add(v);
 
-	v.position = vec2(rect.left + rect.width, rect.top + rect.height);
-	verts.push_back(v);
+	v.position = vec2(rect.left + rect.width, rect.bot + rect.height);
+	verts.Add(v);
 
-	v.position = vec2(rect.left, rect.top + rect.height);
-	verts.push_back(v);
+	v.position = vec2(rect.left, rect.bot + rect.height);
+	verts.Add(v);
 
-	DrawLine(verts, line_width, layer, LineDrawOptions::LOOPED | line_draw_options);
+    LineDrawParams default_params;
+    LineDrawParams* using_params = params ? params : &default_params;
+    using_params->line_draw_flags |= LineDraw_Looped;
+
+	DrawLine(verts, using_params);
+}
+
+void Renderer::DrawRotatedRect(const Rectf& rect, float rotation, Vec4 color, LineDrawParams* params)
+{
+    Vec2_4 points = RotatedRect(rect, rotation);
+
+    Array<SimpleVertex> verts(4);
+
+    SimpleVertex v;
+	v.color = color;
+	v.position = points.e[0];
+    verts.Add(v);
+
+	v.position = points.e[1];
+	verts.Add(v);
+
+	v.position = points.e[2];
+	verts.Add(v);
+
+	v.position = points.e[3];
+	verts.Add(v);
+
+    LineDrawParams default_params;
+    LineDrawParams* using_params = params ? params : &default_params;
+    using_params->line_draw_flags |= LineDraw_Looped;
+
+	DrawLine(verts, using_params);
 }

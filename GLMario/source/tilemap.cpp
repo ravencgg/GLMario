@@ -168,19 +168,23 @@ void DrawTileMap(TileMap* tilemap)
             float x = (float)tile->tile_coord_x;
             float y = (float)tile->tile_coord_y;
 
+            LineDrawParams params;
+            params.line_width = 2;
+            Vec4 color = { 1, 0, 0, 1 };
+
             Rectf r = { x, y, 1.f, 1.f };
             if(tile->tile_coord_x > tilemap->map_width || tile->tile_coord_y > tilemap->map_height)
             {
-                ren->DrawRect(r, 2, DrawLayer_UI, vec4(1.0f, 0, 0, 1.f));
+                ren->DrawRect(r, vec4(1.0f, 0, 0, 1.f), &params);
             }
             else
             {
-                ren->DrawRect(r, 2, DrawLayer_UI, color);
+                ren->DrawRect(r, color, &params);
             }
         }
     }
-    const uint8 line_width = 3;
-    ren->DrawLine(line_vertices, line_width, DrawLayer_UI, LineDrawOptions::CUSTOM_SIZE);
+
+    ren->DrawLine(line_vertices);
 }
 
 #if 1
@@ -266,7 +270,7 @@ void Tilemap::MakeWalledRoom(Rect r)
 void Tilemap::AddTile(float x, float y)
 {
     Vec2 p = vec2(x, y);
-    Vec2 s = vec2(1, 1);
+    Vec2 s = vec2(3.f, 1.f);
     tiles.Add(MakeTile(physics, p, s));
     tiles.GetBack().collider->active = true;
 }
@@ -284,6 +288,7 @@ void Tilemap::draw()
     {
         draw_call.sd.world_position = tiles[i].position;
         draw_call.sd.world_size = tiles[i].size;
+        draw_call.sd.draw_angle = TAU / 12.f;
         ren->push_draw_call(draw_call, DrawLayer_Tilemap);
     }
 }

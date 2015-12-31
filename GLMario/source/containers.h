@@ -61,6 +61,14 @@ public:
         AddBack(value);
     }
 
+    void Reserve(uint32 count)
+    {
+        if(count > capacity)
+        {
+            reallocate(count);
+        }
+    }
+
     void AddBack(T value)
     {
         if (write_pos >= capacity)

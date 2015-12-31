@@ -82,9 +82,9 @@ void ProfileBeginFrame()
         ps->min_cycles = (uint64)-1;
         ps->max_cycles = 0;
 
-        if(ps->history.size() == 0)
+        if(ps->history.Size() == 0)
         {
-            ps->history.reserve(PROFILE_HISTORY_SIZE);
+            ps->history.Reserve(PROFILE_HISTORY_SIZE);
         }
     }
 }
@@ -116,8 +116,8 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         {
             u32 hits = section->hits;
 
-//            DebugPrintPushColor(profile_colors[i]);
-            DebugPrintPushGradient(profile_colors[i], profile_colors[i + 1]);
+            DebugPrintPushColor(profile_colors[i]);
+//            DebugPrintPushGradient(profile_colors[i], profile_colors[i + 1]);
 
             if(hits > 1)
             {
@@ -143,22 +143,20 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         }
 
         {
-            if(section->history.size() < PROFILE_HISTORY_SIZE)
+            if(section->history.Size() < PROFILE_HISTORY_SIZE)
             {
-                section->history.push_back({});
-                SimpleVertex* vertex = &section->history.back();
+                section->history.AddEmpty();
             }
             else
             {
-                for(uint32 j = 0; j < section->history.size() - 1; ++j)
+                for(uint32 j = 0; j < section->history.Size() - 1; ++j)
                 {
                     section->history[j].position.y = section->history[j + 1].position.y;
                 }
             }
-            SimpleVertex* vertex = &section->history.back();
 
-            float current_pos  = section->history.size() / (float)PROFILE_HISTORY_SIZE;
-
+            SimpleVertex* vertex = section->history.GetBackPtr();
+            float current_pos  = section->history.Size() / (float)PROFILE_HISTORY_SIZE;
             vertex->position.x = current_pos * data_box.w + data_box.x;
 
             //assert(section->sum < frame_cycles);
@@ -168,11 +166,12 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
             assert(i < ArrayCount(profile_colors));
             vertex->color = profile_colors[i];
 
-            const uint32 draw_options = LineDrawOptions::SCREEN_SPACE;
-            const uint32 line_width = 1;
             if(ren)
             {
-                ren->DrawLine(section->history, line_width, DrawLayer_UI, draw_options);
+                LineDrawParams params;
+                params.line_draw_flags |= LineDraw_ScreenSpace;
+                params.line_width = 1;
+                ren->DrawLine(section->history, &params);
             }
         }
     }
@@ -183,7 +182,10 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
     if(ren)
     {
-        ren->DrawRect(data_box, 2, DrawLayer_UI, color, LineDrawOptions::SCREEN_SPACE);
+        LineDrawParams params;
+        params.line_draw_flags = LineDraw_ScreenSpace;
+        params.line_width = 2;
+        ren->DrawRect(data_box, color, &params);
     }
 
 // NOTE: Second flush of the frame, just to push out the console data;

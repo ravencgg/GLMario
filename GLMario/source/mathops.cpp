@@ -1,575 +1,311 @@
 #include "mathops.h"
+#include <float.h>
 
 /*************************************************
- *
 *
-*  Vector2 Implementation
+*  2D Rotation
 *
 *************************************************/
 
-Vector2::Vector2(float x, float y)
-	:x(x),
-	y(y){}
-
-void Vector2::operator=(const Vector2 &rhs)
+// TODO: fixme
+Vec2 RotatePoint(Rectf rect, float theta, Vec2 point)
 {
-	this->x = rhs.x;
-	this->y = rhs.y;
+    Vec2 result = { };
+    if(theta == 0)
+    {
+        return point;
+    }
+
+    float left = rect.x;
+    float right = rect.x + rect.w;
+    float top = rect.y;
+    float bot = rect.y + rect.h;
+
+    Vec2 rotation_point = RectCenter(rect);
+
+    float sin_t = sin(theta);
+    float cos_t = cos(theta);
+
+    float x_in = point.x;
+    float y_in = point.y;
+
+    float x = rotation_point.x;
+    float y = rotation_point.y;
+
+    float r00 = cos_t;
+    float r01 = -sin_t;
+    float r10 = sin_t;
+    float r11 = cos_t;
+
+// All of the multiplications in the equation
+    float x_1 = r00 * x_in;
+    float x_2 = r01 * y_in;
+    float x_3 = r00 * x;
+    float x_4 = r01 * y;
+
+// All of the sums/differences in the equation
+    float x_5 = x_1 + x_2;
+    float x_6 = x_5 + x;
+    float x_7 = x_6 - x_3;
+
+    result.x = x_7 - x_4;
+
+// All of the multiplications in the equation
+    float y_1 = r10 * x_in;
+    float y_2 = r11 * y_in;
+    float y_3 = r10 * x;
+    float y_4 = r11 * y;
+
+// All of the sums/differences in the equation
+    float y_5 = y_1 + y_2;
+    float y_6 = y_5 + y;
+    float y_7 = y_6 - y_3;
+    result.y = y_7 - y_4;
+
+    return result;
 }
 
-Vector2 Vector2::operator+(const Vector2 &rhs) const
-{
-	Vector2 result;
-	result.x = this->x + rhs.x;
-	result.y = this->y + rhs.y;
-	return(result);
-}
-
-void Vector2::operator+=(const Vector2 &rhs)
-{
-	this->x += rhs.x;
-	this->y += rhs.y;
-}
-
-Vector2 Vector2::operator-(const Vector2 &rhs) const
-{
-	Vector2 result;
-	result.x = this->x - rhs.x;
-	result.y = this->y - rhs.y;
-	return result;
-}
-
-void Vector2::operator-=(const Vector2 &rhs)
-{
-	this->x -= rhs.x;
-	this->y -= rhs.y;
-}
-
-// const Vector2 Vector2::operator*(const float &rhs)
-// {
-// 	Vector2 result;
-// 	result.x = this->x * rhs;
-// 	result.y = this->y * rhs;
-// 	return result;
-// }
-
-void Vector2::operator*=(const float &rhs)
-{
-	this->x *= rhs;
-	this->y *= rhs;
-}
-
-Vector2 Vector2::operator*(const float& rhs)
-{
-	Vector2 result(this->x * rhs, this->y * rhs);
-	return result;
-}
-
-float Vector2::dot(const Vector2& rhs) const
-{
-	float result = this->x * rhs.x + this->y * rhs.y;
-	return result;
-}
-
-void Vector2::normalize()
-{
-	float length = this->get_length();
-	this->x /= length;
-	this->y /= length;
-}
-
-// removed static
-Vector2 Vector2::normalized(const Vector2 &rhs)
-{
-	Vector2 result;
-	float length = rhs.get_length();
-	result.x = rhs.x / length;
-	result.y = rhs.y / length;
-	return result;
-}
-
-float Vector2::get_length() const
-{
-	float result = sqrt(this->x * this->x + this->y * this->y);
-	return result;
-}
-
-std::string Vector2::to_string()
-{
-	std::string x_str = std::to_string(this->x);
-	std::string y_str = std::to_string(this->y);
-	std::string result = "(" + x_str + ", " + y_str + ")";
-	return result;
-}
-
-
-/*************************************************
+/*********************
+ * Returns a Vec2_4 with the following logic
  *
- *  Vector3 Implementation
+ * Input            OutputIndex
+ * ------------------------------
+ * Top left         0
+ * Bottom left      1
+ * Bottom right     2
+ * Top right        3
  *
- *************************************************/
-
-
-Vector3::Vector3(float x, float y, float z)
-	: x(x),
-	  y(y),
-	  z(z){}
-
-Vector3::Vector3(Vector2 xy, float z)
-	: x(xy.x),
-	  y(xy.y),
-	  z(z){}
-
-Vector2 Vector3::xy()
+ * So whichever corner was the Top left when coming into this function gets
+ * rotated and output to the 0th element of the Vec2_4 etc.
+ */
+Vec2_4 RotatedRect(Rectf rect, float theta, Rectf* out_aabb)
 {
-	return Vector2(this->x, this->y);
+    Vec2_4 result = { };
+
+    float left = rect.x;
+    float right = rect.x + rect.w;
+    float bot = rect.bot;
+    float top = rect.bot + rect.h;
+
+    if(theta == 0)
+    {
+        result.e[0] = { left, top };
+        result.e[1] = { left, bot };
+        result.e[2] = { right, bot };
+        result.e[3] = { right, top };
+
+        return result;
+    }
+
+    Vec2 rotation_point = RectCenter(rect);
+
+    float sin_t = sin(theta);
+    float cos_t = cos(theta);
+
+    __m128 x_in = _mm_setr_ps(left, left, right, right);
+    __m128 y_in = _mm_setr_ps(top, bot, bot, top);
+
+    __m128 x = _mm_set1_ps(rotation_point.x);
+    __m128 y = _mm_set1_ps(rotation_point.y);
+
+    __m128 r00 = _mm_set1_ps(cos_t);
+    __m128 r01 = _mm_set1_ps(-sin_t);
+    __m128 r10 = _mm_set1_ps(sin_t);
+    __m128 r11 = _mm_set1_ps(cos_t);
+
+// All of the multiplications in the equation
+    __m128 x_1 = _mm_mul_ps(r00, x_in);
+    __m128 x_2 = _mm_mul_ps(r01, y_in);
+    __m128 x_3 = _mm_mul_ps(r00, x);
+    __m128 x_4 = _mm_mul_ps(r01, y);
+
+// All of the sums/differences in the equation
+    __m128 x_5 = _mm_add_ps(x_1, x_2);
+    __m128 x_6 = _mm_add_ps(x_5, x);
+    __m128 x_7 = _mm_sub_ps(x_6, x_3);
+    __m128 x_out = _mm_sub_ps(x_7, x_4);
+
+// All of the multiplications in the equation
+    __m128 y_1 = _mm_mul_ps(r10, x_in);
+    __m128 y_2 = _mm_mul_ps(r11, y_in);
+    __m128 y_3 = _mm_mul_ps(r10, x);
+    __m128 y_4 = _mm_mul_ps(r11, y);
+
+// All of the sums/differences in the equation
+    __m128 y_5 = _mm_add_ps(y_1, y_2);
+    __m128 y_6 = _mm_add_ps(y_5, y);
+    __m128 y_7 = _mm_sub_ps(y_6, y_3);
+    __m128 y_out = _mm_sub_ps(y_7, y_4);
+
+    if(out_aabb)
+    {
+        float l, r, t, b;
+        float xx = ((float *)&(x_out))[0];
+        float yy = ((float *)&(y_out))[0];
+
+        l = xx;
+        r = xx;
+        t = yy;
+        b = yy;
+
+        for(uint32 i = 0; i < 4; ++i)
+        {
+            xx = ((float *)&(x_out))[i];
+            yy = ((float *)&(y_out))[i];
+
+            if(xx < l)
+            {
+                l = xx;
+            }
+            if(xx > r)
+            {
+                r = xx;
+            }
+
+            if(yy < b)
+            {
+                b = yy;
+            }
+            if(yy > t)
+            {
+                t = yy;
+            }
+
+            result.e[i].x = xx;
+            result.e[i].y = yy;
+        }
+
+        out_aabb->x = l;
+        out_aabb->w = r-l;
+        out_aabb->y = t;
+        out_aabb->h = t-b;
+    }
+    else
+    {
+        for(uint32 i = 0; i < 4; ++i)
+        {
+            result.e[i].x = ((float *)&(x_out))[i];
+            result.e[i].y = ((float *)&(y_out))[i];
+        }
+    }
+
+
+    return result;
 }
-
-void Vector3::operator=(const Vector3 &rhs)
-{
-	this->x = rhs.x;
-	this->y = rhs.y;
-	this->z = rhs.z;
-}
-
-Vector3 Vector3::operator+(const Vector3 &rhs) const
-{
-	Vector3 result;
-	result.x = this->x + rhs.x;
-	result.y = this->y + rhs.y;
-	result.z = this->z + rhs.z;
-	return(result);
-}
-
-void Vector3::operator+=(const Vector3 &rhs)
-{
-	this->x += rhs.x;
-	this->y += rhs.y;
-	this->z += rhs.z;
-}
-
-Vector3 Vector3::operator-(const Vector3 &rhs) const
-{
-	Vector3 result;
-	result.x = this->x - rhs.x;
-	result.y = this->y - rhs.y;
-	result.z = this->z - rhs.z;
-	return result;
-}
-
-void Vector3::operator-=(const Vector3 &rhs)
-{
-	this->x -= rhs.x;
-	this->y -= rhs.y;
-	this->z -= rhs.z;
-}
-
-// const Vector3 Vector3::operator*(const float &rhs)
-// {
-// 	Vector3 result;
-// 	result.x = this->x * rhs;
-// 	result.y = this->y * rhs;
-// 	result.z = this->z * rhs;
-// 	return result;
-// }
-
-void Vector3::operator*=(const float &rhs)
-{
-	this->x *= rhs;
-	this->y *= rhs;
-	this->z *= rhs;
-}
-
-Vector3 Vector3::operator*(const float& rhs)
-{
-	Vector3 result(this->x * rhs, this->y * rhs, this->z * rhs);
-	return result;
-}
-
-float Vector3::dot(const Vector3& rhs) const
-{
-	float result = this->x * rhs.x + this->y * rhs.y + this->z * rhs.z;
-	return result;
-}
-
-void Vector3::normalize()
-{
-	float length = this->get_length();
-	this->x /= length;
-	this->y /= length;
-	this->z /= length;
-}
-
-//removed static
-Vector3 Vector3::normalized(const Vector3 &rhs)
-{
-	Vector3 result;
-	float length = rhs.get_length();
-	result.x = rhs.x / length;
-	result.y = rhs.y / length;
-	result.z = rhs.z / length;
-	return result;
-}
-
-float Vector3::get_length() const
-{
-	float result = sqrt(this->x * this->x + this->y * this->y + this->z * this->z);
-	return result;
-}
-
-std::string Vector3::to_string()
-{
-	std::string x_str = std::to_string(this->x);
-	std::string y_str = std::to_string(this->y);
-	std::string z_str = std::to_string(this->z);
-	std::string result = "(" + x_str + ", " + y_str + ", " + z_str + ")";
-	return result;
-}
-
 
 /*************************************************
 *
-*  Vector4 Implementation
+*  Minkowski Mathematics
 *
 *************************************************/
 
-
-Vector4::Vector4(float x, float y, float z, float w)
-	: x(x),
-	y(y),
-	z(z),
-	w(w){}
-
-Vector4::Vector4(Vector3 xyz, float w = 0)
-	: x(xyz.x),
-	y(xyz.y),
-	z(xyz.z),
-	w(w){}
-
-Vector3 Vector4::xyz()
+// Aligned MinkowskiSum
+Rectf MinkowskiSum(Rectf base, Rectf expand_amount)
 {
-	return Vector3(this->x, this->y, this->z);
+	Rectf result = { base.x - expand_amount.w / 2.f,
+					base.y - expand_amount.h / 2.f,
+					expand_amount.w + base.w,
+					expand_amount.h + base.h };
+
+    return result;
 }
 
-void Vector4::operator=(const Vector4 &rhs)
+Vec2_8 MinkowskiSum(Rectf a_in, float theta_a, Rectf b_in, float theta_b, Rectf* aabb)
 {
-	this->x = rhs.x;
-	this->y = rhs.y;
-	this->z = rhs.z;
-	this->w = rhs.w;
+    Vec2_8 result = { };
+    const uint32 rect_sides = 4;
+    Vec2_4 a = RotatedRect(a_in, theta_a);
+    Vec2_4 b = RotatedRect(b_in, theta_b);
+
+    Vec2 center = RectCenter(b_in);
+    for(uint32 i = 0; i < 4; ++i)
+    {
+        b.e[i] -= center;
+    }
+
+    // Find the quadrant of the angle
+    int32 int_angle = (int32) (theta_a * (360.f / TAU));
+    int_angle = int_angle - (int_angle / 360) * 360;
+    if(int_angle < 0)
+    {
+        int_angle += 360;
+    }
+    const int32 quadrant_map[] = { 0, 3, 2, 1, 0, 3, 2, 1, 0 };
+    int32 left_quadrant = int_angle / 90;
+
+#if 0
+    //int32 int_angle_b = (int32) ((theta_b - (TAU / 8.f)) * (360.f / TAU));
+    int32 int_angle_b = (int32) (theta_b * (360.f / TAU));
+    const int32 quadrant_map_b[] = { 0, 3, 3, 2, 2, 1, 1, 0, 0, 3, 3, 2, 2, 1, 1, 0 };
+    int_angle_b = int_angle_b - (int_angle_b / 360) * 360;
+//    int_angle_b -= 45;
+    if(int_angle_b < 0)
+    {
+        int_angle_b += 360;
+    }
+    int32 start_index = int_angle_b / 90; // Is the left most index
+#endif
+
+    const int32 quadrant_map_b[] = { 0, 3, 3, 2, 2, 1, 1, 0, 0, 3, 3, 2, 2, 1, 1, 0 };
+
+    int left_index = 0;
+    float left_amount = b.e[0].x;
+    for(int i = 1; i < 4; ++i)
+    {
+        if(b.e[i].x < left_amount)
+        {
+            left_amount = b.e[i].x;
+            left_index = i;
+        }
+    }
+
+    Vec2 point_a1 = a.e[quadrant_map[left_quadrant]];
+    Vec2 point_a2 = a.e[quadrant_map[left_quadrant + 1]];
+
+    Vec2 left = b.e[left_index] + point_a1;
+    int32 next_index = left_index - 1;
+    if(next_index < 0) next_index = 3;
+
+    Vec2 next_this_point = b.e[next_index] + point_a1 - left;
+    Vec2 next_point = b.e[next_index] + point_a2 - left;
+
+    float theta_this = atan2(next_this_point.y, next_this_point.x);
+    float theta_next = atan2(next_point.y, next_point.x);
+
+    int32 aabb_start_index = 0;
+    if(theta_this < theta_next)
+    {
+        left_index++;
+        aabb_start_index = 1;
+    }
+
+    int32 start_index = 4 - left_index;
+    start_index *= 2;
+
+    int32 in = 0;
+    result.e[in++] = a.e[quadrant_map[left_quadrant]] + b.e[quadrant_map_b[start_index++]];
+    result.e[in++] = a.e[quadrant_map[left_quadrant]] + b.e[quadrant_map_b[start_index++]];
+    ++left_quadrant;
+
+    result.e[in++] = a.e[quadrant_map[left_quadrant]] + b.e[quadrant_map_b[start_index++]];
+    result.e[in++] = a.e[quadrant_map[left_quadrant]] + b.e[quadrant_map_b[start_index++]];
+    ++left_quadrant;
+
+    result.e[in++] = a.e[quadrant_map[left_quadrant]] + b.e[quadrant_map_b[start_index++]];
+    result.e[in++] = a.e[quadrant_map[left_quadrant]] + b.e[quadrant_map_b[start_index++]];
+    ++left_quadrant;
+
+    result.e[in++] = a.e[quadrant_map[left_quadrant]] + b.e[quadrant_map_b[start_index++]];
+    result.e[in++] = a.e[quadrant_map[left_quadrant]] + b.e[quadrant_map_b[start_index++]];
+
+    if(aabb)
+    {
+        aabb->left = result.e[aabb_start_index].x;
+        aabb->bot  = result.e[aabb_start_index + 6].y;
+        aabb->h    = result.e[aabb_start_index + 2].y - aabb->bot;
+        aabb->w    = result.e[aabb_start_index + 4].x - aabb->left;
+    }
+
+    return result;
 }
 
-Vector4 Vector4::operator+(const Vector4 &rhs) const
-{
-	Vector4 result;
-	result.x = this->x + rhs.x;
-	result.y = this->y + rhs.y;
-	result.z = this->z + rhs.z;
-	result.w = this->w + rhs.w;
-	return(result);
-}
-
-void Vector4::operator+=(const Vector4 &rhs)
-{
-	this->x += rhs.x;
-	this->y += rhs.y;
-	this->z += rhs.z;
-	this->w += rhs.w;
-}
-
-Vector4 Vector4::operator-(const Vector4 &rhs) const
-{
-	Vector4 result;
-	result.x = this->x - rhs.x;
-	result.y = this->y - rhs.y;
-	result.z = this->z - rhs.z;
-	result.w = this->w - rhs.w;
-	return result;
-}
-
-void Vector4::operator-=(const Vector4 &rhs)
-{
-	this->x -= rhs.x;
-	this->y -= rhs.y;
-	this->z -= rhs.z;
-	this->w -= rhs.w;
-}
-
-// const Vector4 Vector4::operator*(const float &rhs)
-// {
-// 	Vector4 result;
-// 	result.x = this->x * rhs;
-// 	result.y = this->y * rhs;
-// 	result.z = this->z * rhs;
-// 	result.w = this->w * rhs;
-// 	return result;
-// }
-
-void Vector4::operator*=(const float &rhs)
-{
-	this->x *= rhs;
-	this->y *= rhs;
-	this->z *= rhs;
-	this->w *= rhs;
-}
-
-Vector4 Vector4::operator*(const float& rhs)
-{
-	Vector4 result(this->x * rhs, this->y * rhs, this->z * rhs, this->w * rhs);
-	return result;
-}
-
-float Vector4::dot(const Vector4& rhs) const
-{
-	float result = this->x * rhs.x + this->y * rhs.y + this->z * rhs.z + this->w * rhs.w;
-	return result;
-}
-
-Vector3 Vector3::cross_product(const Vector3 &rhs) const
-{
-	Vector3 result;
-
-	result.x = this->y * rhs.z - this->z * rhs.y;
-	result.y = this->z * rhs.x - this->x * rhs.z;
-	result.z = this->x * rhs.y - this->y * rhs.x;
-
-	assert(!"Check this for accuracy");
-	result.x = -result.x;
-	result.y = -result.y;
-	result.z = -result.z;
-
-	return result;
-}
-
-void Vector4::normalize()
-{
-	float length = this->get_length();
-	this->x /= length;
-	this->y /= length;
-	this->z /= length;
-	this->w /= length;
-}
-
-//removed static
-Vector4 Vector4::normalized(const Vector4 &rhs)
-{
-	Vector4 result;
-	float length = rhs.get_length();
-	result.x = rhs.x / length;
-	result.y = rhs.y / length;
-	result.z = rhs.z / length;
-	result.w = rhs.w / length;
-	return result;
-}
-
-float Vector4::get_length() const
-{
-	float result = sqrt(this->x * this->x + this->y * this->y + this->z * this->z + this->w * this->w);
-	return result;
-}
-
-std::string Vector4::to_string()
-{
-	std::string x_str = std::to_string(this->x);
-	std::string y_str = std::to_string(this->y);
-	std::string z_str = std::to_string(this->z);
-	std::string w_str = std::to_string(this->w);
-	std::string result = "(" + x_str + ", " + y_str + ", " + z_str + ", " + z_str + ")";
-	return result;
-}
-
-
-Vector2 lerp(Vector2& a, Vector2& b, float t)
-{
-	Vector2 result = (b - a) * t + a;
-	return result;
-}
-
-Vector3 lerp(Vector3& a, Vector3& b, float t)
-{
-	Vector3 result = (b - a) * t + a;
-	return result;
-}
-
-Vector4 lerp(Vector4& a, Vector4& b, float t)
-{
-	Vector4 result = (b - a) * t + a;
-	return result;
-}
-
-
-/*************************************************
-*
-*  Mat4 Implementation
-*
-*************************************************/
-
-
-Mat4 operator * (const Mat4& a, const Mat4& b) {
-
-	// Extract columns from the second matrix;
-	Vector4 c[4];
-	c[0] = Vector4(b.e[0].x, b.e[1].x, b.e[2].x, b.e[3].x);
-	c[1] = Vector4(b.e[0].y, b.e[1].y, b.e[2].y, b.e[3].y);
-	c[2] = Vector4(b.e[0].z, b.e[1].z, b.e[2].z, b.e[3].z);
-	c[3] = Vector4(b.e[0].w, b.e[1].w, b.e[2].w, b.e[3].w);
-
-	Mat4 result;
-	result.e[0] = Vector4(a.e[0].dot(c[0]), a.e[0].dot(c[1]), a.e[0].dot(c[2]), a.e[0].dot(c[3]));
-	result.e[1] = Vector4(a.e[1].dot(c[0]), a.e[1].dot(c[1]), a.e[1].dot(c[2]), a.e[1].dot(c[3]));
-	result.e[2] = Vector4(a.e[2].dot(c[0]), a.e[2].dot(c[1]), a.e[2].dot(c[2]), a.e[2].dot(c[3]));
-	result.e[3] = Vector4(a.e[3].dot(c[0]), a.e[3].dot(c[1]), a.e[3].dot(c[2]), a.e[3].dot(c[3]));
-
-	return result;
-}
-
-Mat4 translation_matrix(Vector3 t)
-{
-	Mat4 result;
-
-	result.e[0] = Vector4(1.f, 0, 0, t.x);
-	result.e[1] = Vector4(0, 1.f, 0, t.y);
-	result.e[2] = Vector4(0, 0, 1.f, t.z);
-	result.e[3] = Vector4(0, 0, 0, 1.f);
-
-	return result;
-}
-
-Mat4 scale_matrix(Vector3 scale)
-{
-	Mat4 result;
-
-	result.e[0] = Vector4(scale.x, 0, 0, 0);
-	result.e[1] = Vector4(0, scale.y, 0, 0);
-	result.e[2] = Vector4(0, 0, scale.z, 0);
-	result.e[3] = Vector4(0, 0, 0, 1.f);
-
-	return result;
-}
-
-Mat4 rotation_matrix(Vector3 euler)
-{
-
-	Mat4 x_rot;
-	x_rot.e[0] = Vector4(1.f, 0, 0, 0);
-	x_rot.e[1] = Vector4(0, cos(euler.x), -sin(euler.x), 0);
-	x_rot.e[2] = Vector4(0, sin(euler.x), cos(euler.x), 0);
-	x_rot.e[3] = Vector4(0, 0, 0, 1.f);
-
-	Mat4 y_rot;
-	y_rot.e[0] = Vector4(cos(euler.y), 0, sin(euler.y), 0);
-	y_rot.e[1] = Vector4(0, 1.f, 0, 0);
-	y_rot.e[2] = Vector4(-sin(euler.y), 0, cos(euler.y), 0);
-	y_rot.e[3] = Vector4(0, 0, 0, 1.f);
-
-	Mat4 z_rot;
-	z_rot.e[0] = Vector4(cos(euler.z), -sin(euler.z), 0, 0);
-	z_rot.e[1] = Vector4(sin(euler.z), cos(euler.z), 0, 0);
-	z_rot.e[2] = Vector4(0, 0, 1.f, 0);
-	z_rot.e[3] = Vector4(0, 0, 0, 1.f);
-
-	Mat4 result = x_rot * y_rot * z_rot;
-
-	return result;
-}
-
-Mat4 z_rotation_matrix(float angle)
-{
-	Mat4 result;
-
-	result.e[0] = Vector4(cos(angle), -sin(angle), 0, 0);
-	result.e[1] = Vector4(sin(angle), cos(angle), 0, 0);
-	result.e[2] = Vector4(0, 0, 1.f, 0);
-	result.e[3] = Vector4(0, 0, 0, 1.f);
-
-	return result;
-}
-
-Mat4 orthographic_matrix(float w, float h, float n, float f, Vector2 center)
-{
-	float r = center.x + (w / 2);
-	float l = center.x - (w / 2);
-
-	float t = center.y + (h / 2);
-	float b = center.y - (h / 2);
-
-	float nr = n;
-	float far = f;
-
-	Mat4 result;
-
-	result.e[0] = Vector4((2.f * nr) / (r - l), 0, (r + l) / (r - l), 0);
-	result.e[1] = Vector4(0, (2.f * nr) / (t - b), (t + b) / (t - b), 0);
-	result.e[2] = Vector4(0, 0, (-far - nr) / (far - nr), (-2.f * far * nr) / (far - nr));
-	result.e[3] = Vector4(0, 0, -1.f, 0);
-
-	return result;
-}
-
-// TODO(chris): add in an aspect ratio version of this.
-Mat4 perspective_matrix(float fov_x, float fov_y, float z_near, float z_far)
-{
-	Mat4 result = {};
-	// float aspect = 16.f/9.f;
-	fov_x *= DEG_2_RAD;
-	fov_y *= DEG_2_RAD;
-
-	result.e[0] = Vector4(atanf(fov_x / 2.f), 0, 0, 0);
-	result.e[1] = Vector4(0, atanf(fov_y / 2.f), 0, 0);
-	result.e[2] = Vector4(0, 0, - (z_far + z_near) / (z_far - z_near), - (2 * z_near * z_far) / (z_far - z_near));
-	result.e[3] = Vector4(0, 0, -1.f, 0);
-
-	// float tanHalfFovy = tan(fov_y / 2);
-
-	// //// tmat4x4<T, defaultp> Result(static_cast<T>(0));
-	// result.e[0].x = 1 / (aspect * tanHalfFovy);
-	// result.e[1].y = 1 / (tanHalfFovy);
-	// result.e[2].z = - (z_far + z_near) / (z_far - z_near);
-	// result.e[2].w = - 1;
-	// result.e[3].y = - ((2) * z_far * z_near) / (z_far - z_near);
-	// //return Result;
-
-	//TODO(chris): e[0] is not atanf, it is ar*tan;
-	//result.e[0] = Vector4(1.f / atanf(fov_x / 2.f), 0, 0, 0);
-	//result.e[1] = Vector4(0, 1 / tanf(fov_y / 2.f), 0, 0);
-	//result.e[2] = Vector4(0, 0, (-z_far - z_near) / (z_near - z_far), (2 * z_near * z_far) / (z_near - z_far));
-	//result.e[3] = Vector4(0, 0, 1.f, 0);
-
-	return result;
-}
-
-Mat4 view_matrix(Vector3 right, Vector3 up, Vector3 look, Vector3 position)
-{
-	Mat4 result;
-
-	result.e[0] = Vector4(right.x, right.y, right.z, 0);
-	result.e[1] = Vector4(up.x, up.y, up.z, 0);
-	result.e[2] = Vector4(look.x, look.y, look.z, 0);
-	result.e[3] = Vector4(position.x, position.y, position.z, 1.f);
-
-	return result;
-}
-
-Mat4 identity_matrix()
-{
-	Mat4 result;
-
-	result.e[0] = Vector4(1, 0, 0, 0);
-	result.e[1] = Vector4(0, 1, 0, 0);
-	result.e[2] = Vector4(0, 0, 1, 0);
-	result.e[3] = Vector4(0, 0, 0, 1);
-
-	return result;
-}
-
-Mat4 mvp_matrix(Vector3 scale, Vector3 position, Vector3 euler, Mat4& perspective, Mat4& view)
-{
-	Mat4 result = perspective * view * translation_matrix(position) * scale_matrix(scale) * rotation_matrix(euler);
-	return result;
-}
-
-Mat4 ortho_mvp_matrix(Vector3 scale, Vector3 position, float angle, Mat4& perspective, Mat4& view)
-{
-	Mat4 result = perspective * view * translation_matrix(position) * scale_matrix(scale) * z_rotation_matrix(angle);
-	return result;
-}

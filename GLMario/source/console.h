@@ -37,8 +37,7 @@ struct ProfileSection
     u64 max_cycles;
     u32 hits;
 
-    // TODO: Array<>
-    std::vector<SimpleVertex> history;
+    Array<SimpleVertex> history;
 };
 
 struct DebugProfile

@@ -40,6 +40,22 @@ namespace LineDrawOptions
     };
 }
 
+enum LineDrawFlags : uint32
+{
+    LineDraw_Default      = 0x0,
+    LineDraw_Looped       = 0x1,
+    LineDraw_ScreenSpace  = 0x2,// Uses [0,1] coords instead of world space coordinates
+    LineDraw_CustomWidth  = 0x4,// top byte of the uint32 holding these flags data is the size in pixels of the line;
+    LineDraw_Smooth       = 0x8,
+};
+
+struct LineDrawParams
+{
+    uint32 line_draw_flags = LineDraw_Default;
+    DrawLayer draw_layer   = DrawLayer_UI;
+    uint8 line_width       = 3;
+};
+
 namespace DrawType
 {
 	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, LINE_BUFFER, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
@@ -124,7 +140,7 @@ struct LineBufferData
 	GLuint vao;
 	GLuint vbo;
 	GLuint draw_method;
-    uint32 line_draw_options;
+    uint32 line_draw_flags;
 	uint32 num_vertices;
 };
 
@@ -217,12 +233,13 @@ public:
 
 	void push_draw_call(DrawCall, DrawLayer);
 	void draw_call(DrawCall);
-    void DrawLine(Vec2, Vec2, Vec4, uint8 line_width, DrawLayer dl = DrawLayer_UI, uint32 line_draw_options = 0);
-    // TODO: Get rid of the std::vector version of this and just use the Array one.
-    void DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
 
-    void DrawLine(Array<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
-	void DrawRect(const Rectf&, uint8 line_width = 4, DrawLayer dl = DrawLayer_UI, Vec4 color = vec4(1, 1, 1, 1), uint32 line_draw_options = 0);
+    // TODO: Get rid of the std::vector version of this and just use the Array one.
+//    void DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
+    void DrawLine(Vec2, Vec2, Vec4, LineDrawParams* params = nullptr);
+    void DrawLine(Array<SimpleVertex>& vertices, LineDrawParams* params = nullptr);
+	void DrawRect(const Rectf&, Vec4 color, LineDrawParams* params = nullptr);
+	void DrawRotatedRect(const Rectf&, float rotation, Vec4 color, LineDrawParams* params = nullptr);
 
 private:
 

@@ -19,25 +19,31 @@ struct TDynamicCollider;
 
 struct CollisionInfo
 {
-    // NOTE(cgenova): only generating collision info for the dynamic colliders right now
-    float distance;
     Vec2 point;
     Vec2 projection;
     Vec2 normal;
+    float distance;
 
-    // TEMPORARY:
     Rectf mSumOther;
-
-    // RDynamicCollider other;
+    float rotation_other;
 };
 
-// Should these get collision messages? They would need a parent pointer!
+enum StaticColliderFlags
+{
+    SC_INACTIVE,
+    SC_ACTIVE,
+    SC_ROTATED,
+
+    SC_SPHERE,
+    SC_RECT,
+};
+
 struct StaticCollider
 {
-//    uint32 collider_id;
     bool32 active;
     Rectf rect;
     Rectf aabb;
+    float rotation;
 };
 
 struct DynamicCollider
@@ -157,7 +163,7 @@ Rectf make_rect(Vec2 pos, Vec2 size)
    return result;
 }
 
-bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, CollisionInfo& out);
+bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, float other_rot, CollisionInfo& out);
 
 
 

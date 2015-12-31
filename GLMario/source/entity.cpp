@@ -6,7 +6,7 @@
 // Move this
 void RenderRandomParticles(GameState* game_state)
 {
-#if 1
+#if 0
 	static ParticleSystem ps1(10000);
 	ps1.draw_layer = DrawLayer_PreTilemap;
 	//ps1.draw_layer = DrawLayer::POST_TILEMAP;
@@ -312,10 +312,15 @@ EntitySpawnFunc(SpawnPlayer)
     DynamicCollider col;
     col.active = true;
     col.position = entity->transform.position;
+
+#if 1
     col.rect = { -size.x / 2.f,
         -size.y / 2.f,
         size.x,
         size.y };
+#else
+    col.rect = { -0.5f, -0.5f, 1.0f, 1.0f };
+#endif
 
     col.parent = nullptr;
 
@@ -379,7 +384,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
 
         if (KeyFrameDown(SDLK_m))
         {
-            for(int i = 0; i < 100; ++i)
+            for(int i = 0; i < 1; ++i)
             {
                 SpawnEntity(game_state, scene, EntityType_Player, { 1.f, 2.0f });
             }

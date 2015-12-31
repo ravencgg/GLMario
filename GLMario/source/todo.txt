@@ -1,4 +1,8 @@
 
+Convenience stuff:
+    Make a struct that does params for DrawLine and DrawRect so there doesn't have to be 15 paramaters to the functions.
+
+
 TOREDO:
     Renderer
         -> convert to individual render groups? draw to framebuffers?

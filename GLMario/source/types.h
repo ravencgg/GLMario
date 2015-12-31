@@ -85,9 +85,6 @@ struct Rect
 		};
 		int32 E[4];
 	};
-
-    int32 Right() { return x + w; }
-    int32 Bottom() { return y + h; }
 };
 
 struct Rectf
@@ -100,7 +97,7 @@ struct Rectf
 		};
 		struct
 		{
-			float left, top, width, height;
+			float left, bot, width, height;
 		};
 		float E[4];
 	};
@@ -125,3 +122,4 @@ inline Rectf rectf(float x, float y, float w, float h)
 	result.h = h;
 	return result;
 }
+

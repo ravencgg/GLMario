@@ -5,6 +5,7 @@
 #include "types.h"
 
 #define PI 3.1415926f
+#define TAU 6.2831853f
 #define RAD_2_DEG 57.29577951308232f
 #define DEG_2_RAD 0.0174532925f
 
@@ -35,46 +36,6 @@ inline float deg_to_rad(float f)
 #undef min
 #endif
 #define min(a, b) ((a) < (b) ? (a) : (b))
-
-
-
-#if 0
-inline uint32 max(uint32 a, uint32 b)
-{
-	uint32 result = (a < b ? b : a);
-	return result;
-}
-
-inline uint32 min(uint32 a, uint32 b)
-{
-	uint32 result = (a < b ? a : b);
-	return result;
-}
-
-inline int32 max(int32 a, int32 b)
-{
-	int32 result = (a < b ? b : a);
-	return result;
-}
-
-inline int32 min(int32 a, int32 b)
-{
-	int32 result = (a < b ? a : b);
-	return result;
-}
-
-inline float max(float a, float b)
-{
-	float result = (a < b ? b : a);
-	return result;
-}
-
-inline float min(float a, float b)
-{
-	float result = (a < b ? a : b);
-	return result;
-}
-#endif
 
 inline float clamp01(float f)
 {
@@ -110,6 +71,16 @@ union Vec4
 	struct { float r, g, b, a; };
 	struct { Vec3 xyz; float _ignoredv4; };
 	float e[4];
+};
+
+struct Vec2_4
+{
+    Vec2 e[4];
+};
+
+struct Vec2_8
+{
+    Vec2 e[8];
 };
 
 inline Vec2 vec2(float x, float y)
@@ -212,6 +183,14 @@ operator-(Vec2 A, Vec2 B)
     return result;
 }
 
+inline Vec2 &
+operator-=(Vec2 &A, Vec2 B)
+{
+    A = A - B;
+
+    return(A);
+}
+
 inline Vec2
 hadamard(Vec2 A, Vec2 B)
 {
@@ -221,7 +200,7 @@ hadamard(Vec2 A, Vec2 B)
 }
 
 inline float
-dot(Vec2 A, Vec2 B)
+Dot(Vec2 A, Vec2 B)
 {
     float result = A.x*B.x + A.y*B.y;
 
@@ -229,17 +208,17 @@ dot(Vec2 A, Vec2 B)
 }
 
 inline float
-length_sq(Vec2 A)
+LengthSq(Vec2 A)
 {
-    float result = dot(A, A);
+    float result = Dot(A, A);
 
     return result;
 }
 
 inline float
-length(Vec2 A)
+Length(Vec2 A)
 {
-    float result = sqrt(length_sq(A));
+    float result = sqrt(LengthSq(A));
     return result;
 }
 
@@ -257,7 +236,7 @@ clamp01(Vec2 Value)
 inline Vec2
 Normalize(Vec2 A)
 {
-    Vec2 result = A * (1.0f / length(A));
+    Vec2 result = A * (1.0f / Length(A));
     return result;
 }
 
@@ -355,7 +334,7 @@ Hadamard(Vec3 A, Vec3 B)
 }
 
 inline float
-dot(Vec3 A, Vec3 B)
+Dot(Vec3 A, Vec3 B)
 {
     float result = A.x*B.x + A.y*B.y + A.z*B.z;
 
@@ -365,7 +344,7 @@ dot(Vec3 A, Vec3 B)
 inline float
 LengthSq(Vec3 A)
 {
-    float result = dot(A, A);
+    float result = Dot(A, A);
 
     return result;
 }
@@ -494,7 +473,7 @@ Hadamard(Vec4 A, Vec4 B)
 }
 
 inline float
-dot(Vec4 A, Vec4 B)
+Dot(Vec4 A, Vec4 B)
 {
     float result = A.x*B.x + A.y*B.y + A.z*B.z + A.w*B.w;
 
@@ -504,7 +483,7 @@ dot(Vec4 A, Vec4 B)
 inline float
 LengthSq(Vec4 A)
 {
-    float result = dot(A, A);
+    float result = Dot(A, A);
 
     return result;
 }
@@ -537,174 +516,6 @@ Lerp(Vec4 A, float t, Vec4 B)
     return result;
 }
 
-// inline
-// Vec2 vec2(Vec2 rhs)
-// {
-// 	Vec2 result = {};
-// 	lhs.x = rhs.x;
-// 	lhx.y = rhs.y;
-// 	return result;
-// }
-
-// inline
-// Vec2 operator+(Vec2 lhs, Vec2 rhs)
-// {
-// 	Vec2 result = { lhs.x + rhs.x, lhs.y + rhs.y };
-// 	return result;
-// }
-
-// inline
-// Vec2 & operator+=(Vec2& lhs, Vec2 rhs)
-// {
-// 	lhs = lhs + rhs;
-// 	return lhs;
-// }
-
-// inline
-// Vec2 operator-(Vec2 l, Vec2 r)
-// {
-// 	Vec2 result = { l.x - r.x, l.y - r.y };
-// 	return result;
-// }
-
-// inline
-// Vec2 & operator-=(vector2 &rhs);
-
-
-// vector2 operator*(const float &rhs);
-
-// void operator*=(const float &rhs);
-
-// // vector2 operator*(const float& rhs);
-
-// float dot(const vector2& rhs) const;
-
-// void normalize();
-
-// static vector2 normalized(const vector2 &rhs);
-
-// float get_length() const;
-
-// std::string to_string();
-
-
-class Vector2
-{
-public:
-	union { float x; float u; };
-	union { float y; float v; };
-
-	Vector2(float = 0, float = 0);
-
-	void operator=(const Vector2 &rhs);
-
-	Vector2 operator+(const Vector2 &rhs) const;
-
-	void operator+=(const Vector2 &rhs);
-
-	Vector2 operator-(const Vector2 &rhs) const;
-
-	void operator-=(const Vector2 &rhs);
-
-	Vector2 operator*(const float &rhs);
-
-	void operator*=(const float &rhs);
-
-	// vector2 operator*(const float& rhs);
-
-	float dot(const Vector2& rhs) const;
-
-	void normalize();
-
-	static Vector2 normalized(const Vector2 &rhs);
-
-	float get_length() const;
-
-	std::string to_string();
-};
-
-class Vector3
-{
-public:
-	union { float x; float r; };
-	union { float y; float g; };
-	union { float z; float b; };
-	// float x, y, z;
-
-	Vector3(float = 0, float = 0, float = 0);
-	Vector3(Vector2, float z = 0);
-
-	Vector2 xy();
-
-	void operator=(const Vector3 &rhs);
-
-	Vector3 operator+(const Vector3 &rhs) const;
-
-	void operator+=(const Vector3 &rhs);
-
-	Vector3 operator-(const Vector3 &rhs) const;
-
-	void operator-=(const Vector3 &rhs);
-
-	Vector3 operator*(const float &rhs);
-
-	void operator*=(const float &rhs);
-
-	// Vector3 operator*(const float& rhs);
-
-	float dot(const Vector3& rhs) const;
-
-	Vector3 cross_product(const Vector3& rhs) const;
-
-	void normalize();
-
-	static Vector3 normalized(const Vector3 &rhs);
-
-	float get_length() const;
-
-	std::string to_string();
-};
-
-class Vector4
-{
-public:
-	union { float x; float r; };
-	union { float y; float g; };
-	union { float z; float b; };
-	union { float w; float a; };
-	// float x, y, z, w;
-
-	Vector4(float = 0, float = 0, float = 0, float = 0);
-	Vector4(Vector3, float x);
-
-	Vector3 xyz();
-
-	void operator=(const Vector4 &rhs);
-
-	Vector4 operator+(const Vector4 &rhs) const;
-
-	void operator+=(const Vector4 &rhs);
-
-	Vector4 operator-(const Vector4 &rhs) const;
-
-	void operator-=(const Vector4 &rhs);
-
-	Vector4 operator*(const float &rhs);
-
-	void operator*=(const float &rhs);
-
-	// Vector4 operator*(const float& rhs);
-
-	float dot(const Vector4& rhs) const;
-
-	void normalize();
-
-	static Vector4 normalized(const Vector4 &rhs);
-
-	float get_length() const;
-
-	std::string to_string();
-};
 
 inline
 Vec2 lerp(Vec2 a, Vec2 b, float t)
@@ -727,11 +538,6 @@ Vec4 lerp(Vec4 a, Vec4 b, float t)
 	return result;
 }
 
-Vector2 lerp(Vector2&, Vector2&, float);
-
-Vector3 lerp(Vector3&, Vector3&, float);
-
-Vector4 lerp(Vector4&, Vector4&, float);
 
 inline float MaxSigned(float in, float maxValue)
 {
@@ -745,36 +551,54 @@ inline float MinSigned(float in, float minValue)
 	return result;
 }
 
+/*************************************************
+*
+*  Minkowski Mathematics
+*
+*************************************************/
+
+Rectf MinkowskiSum(Rectf base, Rectf expand_amount);
+
+Vec2_8 MinkowskiSum(Rectf a_in, float theta_a, Rectf b_in, float theta_b, Rectf* aabb);
+
+/*************************************************
+*
+*  Other utility
+*
+*************************************************/
+
+Vec2 RotatePoint(Rectf rect, float theta, Vec2 point);
+
+Vec2_4 RotatedRect(Rectf rect, float theta, Rectf* out_aabb = nullptr);
+
 inline bool Contains(Rectf rect, Vec2 point)
 {
 	if (point.x < rect.x + rect.w && point.x > rect.x
-		&& point.y > rect.y && point.y < rect.y + rect.h)
+		&& point.y > rect.bot && point.y < rect.y + rect.h)
 	{
 		return true;
 	}
 	return false;
 }
 
-inline Vec2 rect_center(Rectf r)
+// TODO: @test -> untested code
+inline bool Contains(Rectf rect, float theta, Vec2 point)
 {
-	Vec2 result = { r.x + r.w / 2.f, r.y + r.h / 2.f };
-	return result;
+    // Rotate the point backwards, and check against the unrotated rect
+    Vec2 rot_point = RotatePoint(rect, -theta, point);
+    return Contains(rect, rot_point);
 }
 
-inline Rectf MinkowskiSum(Rectf base, Rectf expand_amount)
+inline Vec2 RectCenter(Rectf r)
 {
-	Rectf result = { base.x - expand_amount.w / 2.f,
-					base.y - expand_amount.h / 2.f,
-					expand_amount.w + base.w,
-					expand_amount.h + base.h };
-
-    return result;
+	Vec2 result = { r.left + r.w / 2.f, r.bot + r.h / 2.f };
+	return result;
 }
 
 inline bool Intersects(Rectf lhs, Rectf rhs)
 {
-	Vec2 center = rect_center(lhs);
-    Rectf mink_sum = MinkowskiSum(rhs, lhs);
+	Vec2 center = RectCenter(rhs);
+    Rectf mink_sum = MinkowskiSum(lhs, rhs);
     bool result = Contains(mink_sum, center);
     return result;
 }
@@ -787,21 +611,3 @@ inline __m128 lerp(__m128& a, __m128& b, __m128& t)
 	return result;
 }
 
-class Mat4
-{
-public:
-	Vector4 e[4];
-};
-
-Mat4 operator * (const Mat4& a, const Mat4& b);
-
-Mat4 scale_matrix(Vector3 scale);
-Mat4 translation_matrix(Vector3 position);
-Mat4 rotation_matrix(Vector3 euler);
-Mat4 z_rotation_matrix(float angle);
-Mat4 orthographic_matrix(float w, float h, float n, float f, Vector2 center);
-Mat4 perspective_matrix(float fov_x, float fov_y, float z_near, float z_far);
-Mat4 view_matrix(Vector3 right, Vector3 up, Vector3 look, Vector3 position);
-Mat4 identity_matrix();
-Mat4 mvp_matrix(Vector3 scale, Vector3 position, Vector3 euler, Mat4& perspective, Mat4& view);
-Mat4 ortho_mvp_matrix(Vector3 scale, Vector3 position, float angle, Mat4& perspective, Mat4& view);

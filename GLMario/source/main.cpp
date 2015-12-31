@@ -175,13 +175,15 @@ int main(int argc, char* argv[])
     game_state->active_scene->physics->quadtree.aabb = { -100.f, -100.f, 200.f, 200.f };
     game_state->active_scene->tmap = new Tilemap(game_state->active_scene->physics);
 
-#if 1
+#if 0
     game_state->active_scene->tmap->MakeWalledRoom(rect(-50, -20, 50, 50));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -20, 30, 3));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-25, -10, 5, 10));
     game_state->active_scene->tmap->MakeWalledRoom(rect(20, 20, 10, 10));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 10, 2));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 4, 4));
+#else
+    game_state->active_scene->tmap->AddTile(-2.f, -1.f);
 #endif
 
 #if 0
@@ -341,7 +343,7 @@ int main(int argc, char* argv[])
 
         ProfileEndSection(Profile_SceneUpdate);
 
-#if 1
+#if 0 // Spaghetti test
         static Array<SimpleVertex> v;
         static bool initialized = false;
         if(!initialized)
@@ -362,7 +364,97 @@ int main(int argc, char* argv[])
 				v[i].position.y = sin(CurrentTime(game_state) + i / (PI * 20));
             }
         }
-        renderer->DrawLine(v, 3, DrawLayer_UI, LineDrawOptions::SMOOTH);
+
+        LineDrawParams spaghetti_params;
+        spaghetti_params.line_draw_flags |= LineDraw_Smooth;
+        renderer->DrawLine(v, &spaghetti_params);
+#endif
+
+#if 1 // Rotation test
+        static Rectf rot_rect = { 2.f, 1.f, 3.f, 3.f };
+        static Rectf rot_rect2 = { 2.f, 1.f, 1.f, 3.f };
+
+        static Array<SimpleVertex> rot_array(8);
+        static bool rot_init = false;
+        static float rot_angle = 0;
+        static float rot_angle2 = 0;
+        static uint32 num_elements = 8;
+        if(!rot_init)
+        {
+            rot_init = true;
+            for(uint32 i = 0; i < num_elements; ++i)
+            {
+                SimpleVertex verts = {};
+                verts.color = vec4(1, 1, (float) i / (float) num_elements, 1.f);
+                rot_array.Add(verts);
+            }
+        }
+
+        DebugPrintf("Angle 1: %.2f, Angle2: %.2f", rot_angle, rot_angle2);
+
+
+        if(KeyFrameDown(SDLK_1))
+        {
+            rot_rect = { 2.f, 1.f, 3.f, 3.f };
+            rot_rect2 = { 2.f, 1.f, 1.f, 3.f };
+            rot_angle = 0;
+            rot_angle2 = 0;
+        }
+
+        if(KeyIsDown(SDLK_6))
+        {
+            rot_angle += 0.02f;
+        }
+        if(KeyIsDown(SDLK_7))
+        {
+            rot_angle -= 0.02f;
+        }
+
+        if(KeyIsDown(SDLK_9))
+        {
+            rot_angle2 += 0.02f;
+        }
+        if(KeyIsDown(SDLK_0))
+        {
+            rot_angle2 -= 0.02f;
+        }
+
+        if(rot_angle > TAU)
+        {
+            rot_angle -= TAU;
+            rot_rect2.w = random_float(1.f, 4.f);
+            rot_rect2.h = random_float(1.f, 4.f);
+        }
+
+        //Vec2_4 rot_points = RotatedRect(rot_rect, rot_angle);
+
+        Rectf aabb;
+        Vec2_8 rot_sum = MinkowskiSum(rot_rect, rot_angle, rot_rect2, rot_angle2, &aabb);
+        renderer->DrawRect(aabb, vec4(0, 1.f, 1.f, 1.f));
+
+#if 0
+        for(uint32 i = 0; i < 4; ++i)
+        {
+            rot_array[i].position = rot_points.e[i];
+        }
+#endif
+
+        for(uint32 i = 0; i < 8; ++i)
+        {
+            rot_array[i].position = rot_sum.e[i];
+        }
+
+        LineDrawParams rot_params;
+        rot_params.line_draw_flags |= LineDraw_Looped;
+        renderer->DrawLine(rot_array, &rot_params);
+
+        for(uint32 i = 0; i < rot_array.Size(); ++i)
+        {
+            DebugPrintf("Point %d: is (%.1f,%.1f)", i, rot_array[i].position.x, rot_array[i].position.y);
+        }
+
+        renderer->DrawRotatedRect(rot_rect, rot_angle, vec4(0.5f, 0.5f, 0.5f, 0.5f));
+        renderer->DrawRotatedRect(rot_rect2, rot_angle2, vec4(0.8f, 0.8f, 0.8f, 1.f));
 #endif
 
         //DrawTileMap(&game_state->active_scene->tilemap);
