@@ -8,29 +8,29 @@
 *************************************************/
 
 // TODO: fixme
-Vec2 RotatePoint(Rectf rect, float theta, Vec2 point)
+Vec2 RotatePoint(Vec2 in_point, float theta, Vec2 rotate_point)
 {
     Vec2 result = { };
     if(theta == 0)
     {
-        return point;
+        return in_point;
     }
 
+#if 0
     float left = rect.x;
     float right = rect.x + rect.w;
     float top = rect.y;
     float bot = rect.y + rect.h;
-
-    Vec2 rotation_point = RectCenter(rect);
+#endif
 
     float sin_t = sin(theta);
     float cos_t = cos(theta);
 
-    float x_in = point.x;
-    float y_in = point.y;
+    float x_in = in_point.x;
+    float y_in = in_point.y;
 
-    float x = rotation_point.x;
-    float y = rotation_point.y;
+    float x = rotate_point.x;
+    float y = rotate_point.y;
 
     float r00 = cos_t;
     float r01 = -sin_t;
@@ -210,6 +210,7 @@ Rectf MinkowskiSum(Rectf base, Rectf expand_amount)
     return result;
 }
 
+// a_in is the center point that will be expanded by b
 Vec2_8 MinkowskiSum(Rectf a_in, float theta_a, Rectf b_in, float theta_b, Rectf* aabb)
 {
     Vec2_8 result = { };

@@ -567,7 +567,7 @@ Vec2_8 MinkowskiSum(Rectf a_in, float theta_a, Rectf b_in, float theta_b, Rectf*
 *
 *************************************************/
 
-Vec2 RotatePoint(Rectf rect, float theta, Vec2 point);
+Vec2 RotatePoint(Vec2 in_point, float theta, Vec2 rotate_point);
 
 Vec2_4 RotatedRect(Rectf rect, float theta, Rectf* out_aabb = nullptr);
 
@@ -581,18 +581,18 @@ inline bool Contains(Rectf rect, Vec2 point)
 	return false;
 }
 
-// TODO: @test -> untested code
-inline bool Contains(Rectf rect, float theta, Vec2 point)
-{
-    // Rotate the point backwards, and check against the unrotated rect
-    Vec2 rot_point = RotatePoint(rect, -theta, point);
-    return Contains(rect, rot_point);
-}
-
 inline Vec2 RectCenter(Rectf r)
 {
 	Vec2 result = { r.left + r.w / 2.f, r.bot + r.h / 2.f };
 	return result;
+}
+
+// TODO: @test -> untested code
+inline bool Contains(Rectf rect, float theta, Vec2 point)
+{
+    // Rotate the point backwards, and check against the unrotated rect
+    Vec2 rot_point = RotatePoint(point, -theta, RectCenter(rect));
+    return Contains(rect, rot_point);
 }
 
 inline bool Intersects(Rectf lhs, Rectf rhs)

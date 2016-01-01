@@ -37,7 +37,7 @@ RArrayRef<StaticCollider> Physics::AddStaticCollider(Rectf r)
     StaticCollider col;
     col.active = true;
     col.rect = r;
-    col.rotation = TAU / 12.f; //TAU / 4.f;
+    col.rotation = TAU / 8.f; //TAU / 4.f;
 
 // Fill in the aabb
     RotatedRect(col.rect, col.rotation, &col.aabb);
@@ -101,6 +101,7 @@ void Physics::DebugDraw()
     DrawBoundingBoxes(&this->quadtree, ren);
 }
 
+#if 0 // Fix the CheckCollision call and reenable this
 bool Physics::RaycastStatics(Vec2 start, Vec2 cast, CollisionInfo& outHit, bool draw)
 {
     bool result = false;
@@ -136,6 +137,7 @@ bool Physics::RaycastStatics(Vec2 start, Vec2 cast, CollisionInfo& outHit, bool 
 
     return result;
 }
+#endif
 
 Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicCollider> refCollider, Vec2& velocity, float dt)
 {
@@ -188,8 +190,32 @@ Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicColli
     CollisionInfo* detected_collisions = detected_collisions_base;
     uint32 detected_collisions_count = 0;
 
+// Generate minkowski sums and aabbs against the dynamic collider
+    Vec2_8* minkowski_sums;
+    PushArrayScoped(minkowski_sums, temporary_memory, Vec2_8, potential_colliders_size);
+    // TODO: First pass Contain check against the aabb
+    Rectf* minkowski_aabbs;
+    PushArrayScoped(minkowski_aabbs, temporary_memory, Rectf, potential_colliders_size);
+    for(uint32 i = 0; i < potential_colliders_size; ++i)
+    {
+        // Assume no rotation on dynamic collider
+        minkowski_sums[i] = MinkowskiSum(potential_colliders[i]->rect, potential_colliders[i]->rotation,
+                                        col.rect, 0, &minkowski_aabbs[i]);
+    }
+
+    Rectf* aligned_minkowski_sums;
+    PushArrayScoped(aligned_minkowski_sums, temporary_memory, Rectf, potential_colliders_size);
+    for(uint32 i = 0; i < potential_colliders_size; ++i)
+    {
+        aligned_minkowski_sums[i] = MinkowskiSum(potential_colliders[i]->rect, col.rect);
+    }
+
+    Renderer* ren = Renderer::get();
+
+// TODO: Get rid of mSumOther since the sums are being stored throughout the function now
     do
     {
+        bool found_hit = false;
         collided = false;
         memset(&ci, 0, sizeof(CollisionInfo));
 
@@ -200,6 +226,9 @@ Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicColli
             ren->DrawRect(collision_list[i]->rect, 4, DrawLayer_Debug, { 1.f, 1.f, 0.5f, 1.f });
         }
 #endif
+        int32 num_detected = 0;
+
+        uint32 detected_collisions_count = 0;
 
         for(uint32 j = 0; j < potential_colliders_size; ++j)
         {
@@ -207,35 +236,56 @@ Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicColli
             StaticCollider* scol = potential_colliders[j];
             if (!scol->active) continue;
 
-            if (CheckCollision(CanonicalRect(&col), remainingVelocity, scol->rect, scol->rotation, ci))
+            if (CheckCollision(CanonicalRect(&col), remainingVelocity, &minkowski_sums[j], ci))
 			{
+                ci.msum_index = j;
+                ci.rotation_other = potential_colliders[j]->rotation;
 				valid = true;
 
+num_detected++;
+#if 0  // Isn't this redundant with the next check?
                 // Check penetration against previous collisions
                 for (uint32 c = 0; c < detected_collisions_count; ++c)
                 {
-					if (Contains(detected_collisions[c].mSumOther, ci.point))
+					if (Contains(potential_colliders[detected_collisions[c].msum_index]->rect, detected_collisions[c].rotation_other, ci.point))
 					{
 						valid = false;
 						break;
 					}
                 }
+#endif
 
                 // Check penetration against potential colliders
-                if(valid)
+                if(false)
                 {
                     Rectf curRect = CanonicalRect(&col);
                     for(uint32 k = 0; k < potential_colliders_size; ++k)
                     {
+                        if(Contains(minkowski_aabbs[k], ci.point))
+                        {
+                            if(Contains(aligned_minkowski_sums[k], potential_colliders[k]->rotation, ci.point))
+                            {
+                                //static int counter = 0;
+                                //printf("%d Canceling because contains\n", counter++);
+                                LineDrawParams params;
+                                params.draw_layer = DrawLayer_Debug;
+                                ren->DrawRotatedRect(aligned_minkowski_sums[k], potential_colliders[k]->rotation, vec4(0, 1.f, 0, 1.f));
+                                valid = false;
+                                found_hit = true;
+                                break;
+                            }
+                        }
+#if 0
                         Rectf* other = &potential_colliders[k]->rect;
                         if(!potential_colliders[k]->active) continue;
 
                         Rectf mSum = MinkowskiSum(*other, curRect);
-                        if(Contains(mSum, ci.point))
+                        if(Contains(demSum, ci.point))
                         {
                             valid = false;
                             break;
                         }
+#endif
                     }
                 }
 
@@ -261,6 +311,8 @@ Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicColli
             ProfileEndSection(Profile_PhysicsInnerLoop);
         }
 
+        DebugPrintf("Detected: %d", num_detected);
+
         if (collided)
         {
             col.collisions.push_back(closestCollisionInfo);
@@ -278,6 +330,10 @@ Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicColli
         }
 		else if (valid)
         {
+            if (found_hit)
+            {
+                printf("trouble\n");
+            }
             col.position += remainingVelocity;
         }
 		else
@@ -333,7 +389,7 @@ bool LineSegmentIntersection(Vec2 r0, Vec2 r1, Vec2 a, Vec2 b, Vec2& result)
 
 // NOTE(cgenova): Look up "Vector Projection" to shoot the ray along the wall after a collision
 // TODO: SIMD
-bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, float other_rot, CollisionInfo& out)
+bool CheckCollision(const Rectf& m, Vec2 velocity, Vec2_8* mSum, CollisionInfo& out)
 {
 	bool result = false;
 	Vec2 o = { m.x + m.w / 2.f, m.y + m.h / 2.f };
@@ -344,57 +400,39 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, float other_rot
     // Do the Minkowski sum
     //Vec2 center = rect_center(other); // unused ?
     //TODO:remove this mSum, just use the one from RotatedRectMinkowski
-    Rectf mSum = MinkowskiSum(other, m);
+//    Rectf mSum = MinkowskiSum(other, m);
 
 // change this msumother
-    out.mSumOther = mSum;
-    out.rotation_other = other_rot;
-
-#ifdef _DEBUG
-	Physics::AddMinkowskiDebugRect(mSum);
-#endif
+    //out.mSumOther = mSum;
+    //out.rotation_other = other_rot;
 
 #if 0
-	Vec2 p[4] = { { mSum.x, mSum.y },
-                  { mSum.x, mSum.y + mSum.h },
-                  { mSum.x + mSum.w, mSum.y + mSum.h },
-                  { mSum.x + mSum.w, mSum.y} };
-#endif
-
-#if 1
     Rectf mink_aabb;
     const float m_rot = 0; // assuming no dynamic collider rotation for now
     Vec2_8 p = MinkowskiSum(other, other_rot, m, m_rot, &mink_aabb);
+    ren->DrawRect(mink_aabb, vec4(1.f, 1.f, 1.f, 1.f));
+#endif
 
     Renderer* ren = Renderer::get();
-
-    ren->DrawRect(mink_aabb, vec4(1.f, 1.f, 1.f, 1.f));
 
     Array<SimpleVertex> box;
     for(int i = 0; i < 8; ++i)
     {
         SimpleVertex v = { };
         v.color = vec4(0.2f, 0.2f, 1.f, 1.f);
-        v.position  = p.e[i];
+        v.position  = mSum->e[i];
         box.Add(v);
     }
     LineDrawParams params;
     params.line_draw_flags |= LineDraw_Looped;
     ren->DrawLine(box, &params);
-#endif
-
 
 	Ray mRays[8] = {};
-	mRays[0] = make_ray(p.e[0], p.e[1]);
-	mRays[1] = make_ray(p.e[1], p.e[2]);
-	mRays[2] = make_ray(p.e[2], p.e[3]);
-	mRays[3] = make_ray(p.e[3], p.e[0]);
-
     for(int i = 0; i < 7; ++i)
     {
-        mRays[i] = make_ray(p.e[i], p.e[i + 1]);
+        mRays[i] = make_ray(mSum->e[i], mSum->e[i + 1]);
     }
-    mRays[7] = make_ray(p.e[7], p.e[0]);
+    mRays[7] = make_ray(mSum->e[7], mSum->e[0]);
 
 #if 0
     if(!Contains(mSum, other_rot, o))

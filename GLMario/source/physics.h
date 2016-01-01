@@ -24,7 +24,7 @@ struct CollisionInfo
     Vec2 normal;
     float distance;
 
-    Rectf mSumOther;
+    uint32 msum_index;
     float rotation_other;
 };
 
@@ -163,7 +163,8 @@ Rectf make_rect(Vec2 pos, Vec2 size)
    return result;
 }
 
-bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, float other_rot, CollisionInfo& out);
+//bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, float other_rot, CollisionInfo& out);
+bool CheckCollision(const Rectf& m, Vec2 velocity, Vec2_8* mSum, CollisionInfo& out);
 
 
 

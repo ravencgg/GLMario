@@ -183,7 +183,10 @@ int main(int argc, char* argv[])
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 10, 2));
     game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 4, 4));
 #else
-    game_state->active_scene->tmap->AddTile(-2.f, -1.f);
+    game_state->active_scene->tmap->AddTile(-1.5f, -1.f);
+    game_state->active_scene->tmap->AddTile(-3.f, -1.f);
+
+    game_state->active_scene->tmap->AddTile(2.f, -1.f);
 #endif
 
 #if 0
@@ -370,8 +373,8 @@ int main(int argc, char* argv[])
         renderer->DrawLine(v, &spaghetti_params);
 #endif
 
-#if 1 // Rotation test
-        static Rectf rot_rect = { 2.f, 1.f, 3.f, 3.f };
+#if 0 // Rotation test
+        static Rectf rot_rect = { -15.f, 0, 30.f, 1.f };
         static Rectf rot_rect2 = { 2.f, 1.f, 1.f, 3.f };
 
         static Array<SimpleVertex> rot_array(8);
@@ -431,6 +434,20 @@ int main(int argc, char* argv[])
         Rectf aabb;
         Vec2_8 rot_sum = MinkowskiSum(rot_rect, rot_angle, rot_rect2, rot_angle2, &aabb);
         renderer->DrawRect(aabb, vec4(0, 1.f, 1.f, 1.f));
+
+        Vec2 vpoint = { 1.f, 1.f };
+
+//        static float point_theta = 0;
+//        point_theta += 0.01f;
+//        vpoint = RotatePoint(vpoint, point_theta, vec2(0, 0));
+        Rectf point = { vpoint.x, vpoint.y, 0.1f, 0.1f };
+        Vec4 point_color = vec4(0.2f, 0.2f, 0.8f, 1.0f);
+        if(Contains(rot_rect, rot_angle, vpoint))
+        {
+            point_color = vec4(1.f, 0, 0, 1.f);
+        }
+
+        renderer->DrawRect(point, point_color);
 
 #if 0
         for(uint32 i = 0; i < 4; ++i)

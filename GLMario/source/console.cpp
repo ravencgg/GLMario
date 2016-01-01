@@ -113,6 +113,7 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         }
 
         // Text output
+        if(0)
         {
             u32 hits = section->hits;
 

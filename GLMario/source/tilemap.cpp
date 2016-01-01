@@ -270,7 +270,7 @@ void Tilemap::MakeWalledRoom(Rect r)
 void Tilemap::AddTile(float x, float y)
 {
     Vec2 p = vec2(x, y);
-    Vec2 s = vec2(3.f, 1.f);
+    Vec2 s = vec2(1.f, 1.f);
     tiles.Add(MakeTile(physics, p, s));
     tiles.GetBack().collider->active = true;
 }
