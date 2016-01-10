@@ -97,7 +97,7 @@ public:
 	void MakeWalledRoom(Rect);
     void AddTile(float, float);
 	void update();
-	void draw();
+	void draw(GameState*);
 
     Array<Tile> tiles;
 
@@ -107,7 +107,6 @@ private:
 	int32 tile_width, tile_height;
     DrawCall draw_call;
 
-	Renderer* ren;
     Physics* physics;
 };
 #endif

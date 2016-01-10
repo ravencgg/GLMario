@@ -4,10 +4,12 @@
 
 #include "types.h"
 #include "mathops.h"
+#include "platform.h"
 
+#define NUM_KEYS SDL_NUM_SCANCODES
 
-#define NUM_KEYS 256
-
+#define OLD_INPUT
+#ifdef OLD_INPUT
 enum class MouseButton { LEFT, MIDDLE, RIGHT, COUNT };
 enum class KeyState { UP, FRAME_UP, DOWN, FRAME_DOWN, DOWN_UP, UP_DOWN };
 
@@ -41,7 +43,7 @@ bool KeyIsUp(int32 key);
 
 // Mouse handling
 void UpdateMousePosition();
-void UpdateMouseWorldPosition(Dimension screen_resolution, Vec2 viewport_size, Vec2 camera_pos);
+void UpdateMouseWorldPosition(Vec2i screen_resolution, Vec2 viewport_size, Vec2 camera_pos);
 void UpdateMouseWorldPosition();
 void MouseButtonEvent();
 
@@ -54,3 +56,73 @@ bool MouseFrameUp(MouseButton);
 bool MouseIsDown(MouseButton);
 bool MouseIsUp(MouseButton);
 
+
+#else
+
+
+enum class MouseButton
+{
+    LEFT,
+    MIDDLE,
+    RIGHT,
+    COUNT,
+    UNKNOWN = 0xFF
+};
+
+struct KeyState
+{
+    bool started_down = false;
+    bool ended_down = false;
+    uint16 half_presses = 0;
+
+    bool IsDown() const { return ended_down || half_presses > 1; }
+    bool OnDown() const { return !started_down && ended_down || half_presses > 1; }
+    bool IsUp() const { return !ended_down; }
+    bool OnUp() const { return (started_down && IsUp()); }
+};
+
+struct MouseState
+{
+    Vec2i last_position;
+    Vec2i new_position;
+    KeyState buttons[(uint32)MouseButton::COUNT];
+
+
+    Vec2i ScreenPosition() { return new_position; }
+    Vec2i Delta() { return new_position - last_position; }
+};
+
+
+Vec2 MouseWorldPosition();
+void UpdateMouseWorldPosition(Vec2i, Vec2, Vec2);
+
+class Input
+{
+public:
+    Input();
+    ~Input();
+
+    void BeginMessageLoop();
+    void HandleInputMessage(const InputEvent&);
+
+    MouseState GetMouseState() { return m_mouse_state; }
+
+    bool IsDown(KeyCode) const;
+    bool OnDown(KeyCode) const;
+
+    bool IsUp(KeyCode) const;
+    bool OnUp(KeyCode) const;
+
+    bool IsDown(MouseButton) const;
+    bool OnDown(MouseButton) const;
+
+    bool IsUp(MouseButton) const;
+    bool OnUp(MouseButton) const;
+
+private:
+
+    // NOTE: These can be duplicates in rare circumstances? wiki.libsdl.org/SDLKeycodeLookup
+    KeyState m_key_states[KeyCode_Count];
+    MouseState m_mouse_state;
+};
+#endif

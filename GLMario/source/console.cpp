@@ -172,7 +172,7 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
                 LineDrawParams params;
                 params.line_draw_flags |= LineDraw_ScreenSpace;
                 params.line_width = 1;
-                ren->DrawLine(section->history, &params);
+                DrawLine(ren, section->history, &params);
             }
         }
     }
@@ -186,7 +186,7 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         LineDrawParams params;
         params.line_draw_flags = LineDraw_ScreenSpace;
         params.line_width = 2;
-        ren->DrawRect(data_box, color, &params);
+        DrawRect(ren, data_box, color, &params);
     }
 
 // NOTE: Second flush of the frame, just to push out the console data;
@@ -336,7 +336,7 @@ void DebugDrawConsole(Renderer* ren)
 //
     if(ren)
     {
-        ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y,
+        DrawString(ren, console.output_string, console.used_chars, draw_x, draw_y,
                         &console.text_format_array[0], console.text_format_array.Size());
     }
     //ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y, colors, array_size);

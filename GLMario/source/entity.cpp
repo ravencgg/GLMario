@@ -3,6 +3,7 @@
 #include "game_types.h"
 #include "particles.h"
 
+#include "renderer.h"
 // Move this
 void RenderRandomParticles(GameState* game_state)
 {
@@ -109,7 +110,7 @@ EntityUpdateFunc(UpdatePlayer)
     Vec2 old_velocity = player->velocity;
     //TODO: integrate physics in the new system
 
-    entity->transform.position = scene->physics->StepCollider(&game_state->temporary_memory, player->collider, player->velocity, FrameTime(game_state));
+    entity->transform.position = scene->physics->StepCollider(game_state, &game_state->temporary_memory, player->collider, player->velocity, FrameTime(game_state));
 
     const uint8 line_width = 3;
     //Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
@@ -171,7 +172,7 @@ EntityDrawFunc(DrawEnemy)
     draw_call.sd.draw_angle = 0;
 
     draw_call.sd.world_position = entity->transform.position;
-    Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
+    PushDrawCall(renderer, draw_call, DrawLayer_Player);
 }
 
 EntityDrawFunc(DrawPlayer)
@@ -186,7 +187,7 @@ EntityDrawFunc(DrawPlayer)
     draw_call.sd.draw_angle = 0;
     draw_call.sd.world_position = entity->transform.position;
 
-    Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
+    PushDrawCall(renderer, draw_call, DrawLayer_Player);
 }
 
 EntityDrawFunc(DrawSpawner)
@@ -201,7 +202,7 @@ EntityDrawFunc(DrawSpawner)
     draw_call.sd.draw_angle = 0;
     draw_call.sd.world_position = entity->transform.position;
 
-    Renderer::get()->push_draw_call(draw_call, DrawLayer_Player);
+    PushDrawCall(renderer, draw_call, DrawLayer_Player);
 }
 
 
@@ -445,7 +446,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
     scene->entity_delete_list = nullptr;
 }
 
-void DrawSceneEntities(Scene* scene)
+void DrawSceneEntities(Scene* scene, Renderer* renderer)
 {
     Entity* entity = scene->entities;
     uint32 max_entities = scene->max_entities;
@@ -463,7 +464,7 @@ void DrawSceneEntities(Scene* scene)
 
         if(scene->entity_vtable[entity->type].draw)
         {
-            scene->entity_vtable[entity->type].draw(entity);
+            scene->entity_vtable[entity->type].draw(entity, renderer);
         }
 
         ++drawn_entities;
@@ -494,7 +495,8 @@ void BuildEntityVTable(Scene* scene)
 #ifdef _DEBUG
     // Don't duplicate an entity in the vtable, except the Null entity;
     bool duplicate_check[EntityType_Count] = { 0 };
-    for(int i = 0; i < EntityType_Count; ++i)
+    int32 max_iterations = Minimum(EntityType_Count, ArrayCount(vtable_builder));
+    for(int i = 0; i < max_iterations; ++i)
     {
         uint32 type = vtable_builder[i].type;
 

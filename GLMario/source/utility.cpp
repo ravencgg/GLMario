@@ -76,6 +76,7 @@ void AllocateMemoryArena(MemoryArena* arena, size_t size)
 {
     arena->size = size;
     arena->used = 0;
+    // TODO: Platform layer call
     arena->base = (uint8*) VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
 }
 
@@ -84,7 +85,7 @@ MemoryArena CreateSubArena(MemoryArena* super, size_t size)
     MemoryArena result;
     result.size = size;
     result.used = 0;
-    result.base = PushSize(super, size, true);
+    result.base = PushSize(super, size, false);
 
     return result;
 }
@@ -101,9 +102,9 @@ uint8* PushSize(MemoryArena* arena, size_t size, bool clear)
         return nullptr;
     }
 
-    assert(arena->size - arena->used > size);
+    assert(arena->size - arena->used >= size);
 
-    if(arena->size - arena->used > size)
+    if(arena->size - arena->used >= size)
     {
         uint8* result = arena->base + arena->used;
         arena->used += size;

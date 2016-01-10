@@ -6,6 +6,8 @@
 #include "mathops.h"
 #include "input.h"
 
+#include "game_types.h"
+
 Rectf CanonicalRect(DynamicCollider* col)
 {
     Rectf result = {};
@@ -72,10 +74,10 @@ void Physics::AddMinkowskiDebugRect(Rectf rect)
 }
 #endif
 
-void Physics::DebugDraw()
+void Physics::DebugDraw(GameState* game_state)
 {
     // call this after "step" so that the arrays are already sorted
-    Renderer* ren = Renderer::get();
+    Renderer* ren = game_state->renderer;
 
     Vec4 s_active = vec4(1, 0, 0, 1);
     Vec4 s_inactive = s_active;
@@ -90,12 +92,12 @@ void Physics::DebugDraw()
 
     for(uint32 i = 0; i < statics.Size(); ++i)
     {
-        ren->DrawRotatedRect(statics[i].rect, statics[i].rotation, statics[i].active ? s_active : s_inactive, &params);
+        DrawRotatedRect(ren, statics[i].rect, statics[i].rotation, statics[i].active ? s_active : s_inactive, &params);
     }
 
     for(uint32 i = 0; i < dynamics.Size(); ++i)
     {
-        ren->DrawRect(CanonicalRect(&dynamics[i]), dynamics[i].active ? d_active : d_inactive, &params);
+        DrawRect(ren, CanonicalRect(&dynamics[i]), dynamics[i].active ? d_active : d_inactive, &params);
     }
 
     DrawBoundingBoxes(&this->quadtree, ren);
@@ -139,12 +141,14 @@ bool Physics::RaycastStatics(Vec2 start, Vec2 cast, CollisionInfo& outHit, bool 
 }
 #endif
 
-Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicCollider> refCollider, Vec2& velocity, float dt)
+Vec2 Physics::StepCollider(GameState* game_state, MemoryArena* temporary_memory, RArrayRef<DynamicCollider> refCollider, Vec2& velocity, float dt)
 {
     ProfileBeginSection(Profile_PhysicsStepCollider);
+
     assert(dynamics.IsValid(refCollider));
+
     DynamicCollider& col = (*refCollider.ptr);// dynamics[refCollider.index];
-    col.collisions.resize(0);
+//    col.collisions.resize(0);
 
     Vec2 startPosition = col.position;
     Vec2 startVelocity = velocity;
@@ -210,7 +214,7 @@ Vec2 Physics::StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicColli
         aligned_minkowski_sums[i] = MinkowskiSum(potential_colliders[i]->rect, col.rect);
     }
 
-    Renderer* ren = Renderer::get();
+    Renderer* ren = game_state->renderer;
 
 // TODO: Get rid of mSumOther since the sums are being stored throughout the function now
     do
@@ -256,36 +260,22 @@ num_detected++;
 #endif
 
                 // Check penetration against potential colliders
-                if(false)
+                Rectf curRect = CanonicalRect(&col);
+                for(uint32 k = 0; k < potential_colliders_size; ++k)
                 {
-                    Rectf curRect = CanonicalRect(&col);
-                    for(uint32 k = 0; k < potential_colliders_size; ++k)
+                    if(Contains(minkowski_aabbs[k], ci.point))
                     {
-                        if(Contains(minkowski_aabbs[k], ci.point))
+                        if(Contains(aligned_minkowski_sums[k], potential_colliders[k]->rotation, ci.point))
                         {
-                            if(Contains(aligned_minkowski_sums[k], potential_colliders[k]->rotation, ci.point))
-                            {
-                                //static int counter = 0;
-                                //printf("%d Canceling because contains\n", counter++);
-                                LineDrawParams params;
-                                params.draw_layer = DrawLayer_Debug;
-                                ren->DrawRotatedRect(aligned_minkowski_sums[k], potential_colliders[k]->rotation, vec4(0, 1.f, 0, 1.f));
-                                valid = false;
-                                found_hit = true;
-                                break;
-                            }
-                        }
-#if 0
-                        Rectf* other = &potential_colliders[k]->rect;
-                        if(!potential_colliders[k]->active) continue;
-
-                        Rectf mSum = MinkowskiSum(*other, curRect);
-                        if(Contains(demSum, ci.point))
-                        {
+                            //static int counter = 0;
+                            //printf("%d Canceling because contains\n", counter++);
+                            LineDrawParams params;
+                            params.draw_layer = DrawLayer_Debug;
+                            DrawRotatedRect(ren, aligned_minkowski_sums[k], potential_colliders[k]->rotation, vec4(0, 1.f, 0, 1.f));
                             valid = false;
+                            found_hit = true;
                             break;
                         }
-#endif
                     }
                 }
 
@@ -300,10 +290,9 @@ num_detected++;
 					{
 						remainingVelocity = ci.projection;
 						closestCollision = ci.distance;
-						//maxX = MinSigned(maxX, ci.point.x - col.position.x);
-						//maxY = MinSigned(maxY, ci.point.y - col.position.y);
+						maxX = MinSigned(maxX, ci.point.x - col.position.x);
+						maxY = MinSigned(maxY, ci.point.y - col.position.y);
 						closestCollisionInfo = ci;
-
 					}
                 }
             }
@@ -315,7 +304,7 @@ num_detected++;
 
         if (collided)
         {
-            col.collisions.push_back(closestCollisionInfo);
+//            col.collisions.push_back(closestCollisionInfo);
             col.position = closestCollisionInfo.point;//  + ci.projection;
 
             remainingVelocity = ci.projection;
@@ -346,7 +335,7 @@ num_detected++;
 
     // Just an assertion of curiousity. If this fires, there is nothing wrong, It just means that many
     // bounces are being handled.
-    assert(iterations != maxIterations);
+//    assert(iterations != maxIterations);
 
     velocity = col.position - startPosition;
 
@@ -399,8 +388,6 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Vec2_8* mSum, CollisionInfo& 
 
     // Do the Minkowski sum
     //Vec2 center = rect_center(other); // unused ?
-    //TODO:remove this mSum, just use the one from RotatedRectMinkowski
-//    Rectf mSum = MinkowskiSum(other, m);
 
 // change this msumother
     //out.mSumOther = mSum;
@@ -413,7 +400,8 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Vec2_8* mSum, CollisionInfo& 
     ren->DrawRect(mink_aabb, vec4(1.f, 1.f, 1.f, 1.f));
 #endif
 
-    Renderer* ren = Renderer::get();
+#if 0 // Debug Drawing
+    Renderer* ren = game_state->renderer;
 
     Array<SimpleVertex> box;
     for(int i = 0; i < 8; ++i)
@@ -427,12 +415,7 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Vec2_8* mSum, CollisionInfo& 
     params.line_draw_flags |= LineDraw_Looped;
     ren->DrawLine(box, &params);
 
-	Ray mRays[8] = {};
-    for(int i = 0; i < 7; ++i)
-    {
-        mRays[i] = make_ray(mSum->e[i], mSum->e[i + 1]);
-    }
-    mRays[7] = make_ray(mSum->e[7], mSum->e[0]);
+#endif
 
 #if 0
     if(!Contains(mSum, other_rot, o))
@@ -440,6 +423,13 @@ bool CheckCollision(const Rectf& m, Vec2 velocity, Vec2_8* mSum, CollisionInfo& 
         printf("Collider inside of object!");
     }
 #endif
+
+	Ray mRays[8] = {};
+    for(int i = 0; i < 7; ++i)
+    {
+        mRays[i] = make_ray(mSum->e[i], mSum->e[i + 1]);
+    }
+    mRays[7] = make_ray(mSum->e[7], mSum->e[0]);
 
     float closest = -1.f;
 
@@ -661,6 +651,6 @@ void DrawBoundingBoxes(PhysicsNode* physics_node, Renderer* ren)
 
     LineDrawParams params;
     params.line_width = 2;
-    ren->DrawRect(physics_node->aabb, color, &params);
+    DrawRect(ren, physics_node->aabb, color, &params);
 }
 

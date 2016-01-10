@@ -9,6 +9,8 @@
 #include "utility.h"
 #include "mathops.h"
 
+#include "game_types.h"
+
 ParticleSystem::ParticleSystem()
     : max_particles(0),
       active_particles(0),
@@ -19,24 +21,24 @@ ParticleSystem::ParticleSystem()
 
 }
 
-ParticleSystem::ParticleSystem(uint32 max, DrawLayer dl)
+ParticleSystem::ParticleSystem(GameState* game_state, uint32 max, DrawLayer dl)
     : max_particles(max),
       active_particles(0),
       burst_particles(0),
       draw_layer(dl),
 	  initialized(false)
 {
-	initialize(max, dl);
+	initialize(game_state, max, dl);
 }
 
-void ParticleSystem::initialize(uint32 max_particles, DrawLayer layer)
+void ParticleSystem::initialize(GameState* game_state, uint32 max_particles, DrawLayer layer)
 {
 	assert(!initialized);
 	if (initialized) return;
 	this->max_particles = max_particles;
 	draw_layer = layer;
 
-	ren = Renderer::get();
+    ren = game_state->renderer;
 	particles.init(max_particles);
 
     // Allocate GPU buffers
@@ -124,7 +126,7 @@ void ParticleSystem::update(GameState* game_state, Vec2 new_position)
 	Vec2 delta_p = ptd.world_position - ptd.last_world_position;
 	ptd.last_world_position = ptd.world_position;
 
-    if(!KeyIsDown(SDLK_l)) // Hold l to disable SIMD
+    if(1)// !KeyIsDown(SDLK_l)) // Hold l to disable SIMD
                                 // SIMD is currently ~2x as fast as normal path
     {
         // #ifdef UPDATE_PARTICLE_WIDE
@@ -459,7 +461,7 @@ void ParticleSystem::render()
 	draw_call.abd.draw_method = GL_POINTS;
 	draw_call.abd.num_vertices = active_particles;
 
-	ren->push_draw_call(draw_call, draw_layer);
+    PushDrawCall(ren, draw_call, draw_layer);
 }
 
 void ParticleSystem::Tick(GameState* game_state)

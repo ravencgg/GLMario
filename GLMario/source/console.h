@@ -9,8 +9,13 @@
 
 #define PROFILE_HISTORY_SIZE 100
 
+#if 1
 #define ProfileBeginSection(name) _ProfileBeginSection(name, __FILE__, __LINE__)
 #define ProfileEndSection(name) _ProfileEndSection(name, __FILE__, __LINE__)
+#else
+#define ProfileBeginSection(name)
+#define ProfileEndSection(name)
+#endif
 
 enum ProfileSectionName : uint32
 {

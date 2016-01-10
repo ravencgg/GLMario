@@ -10,8 +10,6 @@ template<class T>
 class Array
 {
 public:
-    typedef int (*CompareFunction)(const void* left, const void* right);
-    CompareFunction arrayCompareFunction;
 
     Array(uint32 start_size = 16)
         : capacity(start_size),
@@ -116,12 +114,6 @@ public:
     {
         assert(position < write_pos);
 
-        //TODO: Replace this with a memmove call!
-        //for (uint32 i = position; i < write_pos; ++i)
-        //{
-        //    data[i] = data[i + 1];
-        //}
-
         if(position == write_pos - 1)
         {
             size_t move_size = (write_pos - position) * sizeof(T);
@@ -165,11 +157,6 @@ public:
         write_pos = 0;
     }
 
-    void SetComparisonFunction(CompareFunction acf)
-    {
-        this->arrayCompareFunction = acf;
-    }
-
 	uint32 Size()
 	{
 		return write_pos;
@@ -181,66 +168,17 @@ public:
         return result;
     }
 
-    bool Sort(CompareFunction acf)
-    {
-        if (acf)
-        {
-            std::qsort(data, Size(), sizeof(T), acf);
-            return true;
-        }
-        return false;
-    }
-
-    bool Sort()
-    {
-        if (arrayCompareFunction)
-        {
-            std::qsort(data, Size(), sizeof(T), acf);
-            return true;
-        }
-        return false;
-    }
-
-    //bool SortDescending(CompareFunction acf)
-    //{
-    //    if (acf)
-    //    {
-    //        std::qsort(data, write_pos - 1, sizeof(T), -acf);
-    //        return true;
-    //    }
-    //    return false;
-    //}
-
-    //bool SortDescending()
-    //{
-    //    if (arrayCompareFunction)
-    //    {
-    //        std::qsort(data, write_pos - 1, sizeof(T), arrayCompareFunction);
-    //        return true;
-    //    }
-    //    return false;
-    //}
-
 private:
 
 	void reallocate(uint32 new_element_count = 1)
 	{
 		T* temp = data;
 		uint32 old_size = capacity;
-
-        do
-        {
-            capacity *= 2;
-        }while(capacity < write_pos + new_element_count);
-
+        uint32 half_size = capacity >> 1;
+        uint32 grow_size = Maximum(new_element_count, half_size);
+        capacity += grow_size;
 		data = new T[capacity] {};
-
-		//TODO(chris): Replace this with a memcopy call!
-		for(uint32 i = 0; i < old_size; ++i)
-		{
-			data[i] = temp[i];
-		}
-
+        memcpy(data, temp, old_size * sizeof(T));
 		delete[] temp;
 	}
 

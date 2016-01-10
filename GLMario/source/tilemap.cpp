@@ -1,4 +1,6 @@
 #include "tilemap.h"
+#include "game_types.h"
+#include "renderer.h"
 
 void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, uint32 map_width, uint32 map_height)
 {
@@ -135,7 +137,7 @@ Tile* FindTile(TileMap* tilemap, uint32 x, uint32 y)
 }
 #endif
 
-void DrawTileMap(TileMap* tilemap)
+void DrawTileMap(GameState* game_state, TileMap* tilemap)
 {
     uint32 num_groups = tilemap->hor_groups * tilemap->ver_groups;
     uint32 tiles_per_group = TILE_GROUP_SIZE;
@@ -149,7 +151,7 @@ void DrawTileMap(TileMap* tilemap)
 
     uint32 index = 0;
 
-    Renderer* ren = Renderer::get();
+    Renderer* ren = game_state->renderer;
 
     TileGroup* group = tilemap->tile_groups;
     for(uint32 group_num = 0; group_num < num_groups; ++group_num, ++group)
@@ -175,16 +177,17 @@ void DrawTileMap(TileMap* tilemap)
             Rectf r = { x, y, 1.f, 1.f };
             if(tile->tile_coord_x > tilemap->map_width || tile->tile_coord_y > tilemap->map_height)
             {
-                ren->DrawRect(r, vec4(1.0f, 0, 0, 1.f), &params);
+                DrawRect(ren, r, vec4(1.0f, 0, 0, 1.f), &params);
+                DrawRect(ren, r, vec4(1.0f, 0, 0, 1.f), &params);
             }
             else
             {
-                ren->DrawRect(r, color, &params);
+                DrawRect(ren, r, color, &params);
             }
         }
     }
 
-    ren->DrawLine(line_vertices);
+    DrawLine(ren, line_vertices);
 }
 
 #if 1
@@ -279,7 +282,7 @@ void Tilemap::update()
 {
 }
 
-void Tilemap::draw()
+void Tilemap::draw(GameState* game_state)
 {
 	static Rect brick_rect = { 85, 0, tile_width, tile_height };
 	static Rect ground_rect = { 0, 0, tile_width, tile_height };
@@ -289,13 +292,12 @@ void Tilemap::draw()
         draw_call.sd.world_position = tiles[i].position;
         draw_call.sd.world_size = tiles[i].size;
         draw_call.sd.draw_angle = TAU / 12.f;
-        ren->push_draw_call(draw_call, DrawLayer_Tilemap);
+        PushDrawCall(game_state->renderer, draw_call, DrawLayer_Tilemap);
     }
 }
 
 void Tilemap::init()
 {
-	ren = Renderer::get();
 	tile_width = 16;
 	tile_height = 16;
 

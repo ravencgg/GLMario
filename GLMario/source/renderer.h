@@ -1,8 +1,9 @@
 #pragma once
 
+#include "win32_gl.h"
+
 #include "types.h"
 #include "containers.h"
-#include "glew.h"
 #include "mathops.h"
 #include "utility.h"
 
@@ -135,6 +136,7 @@ struct ArrayBufferData
                         // even particle buffer stuff, use flags to control it all
 };
 
+// TODO: Change this to a system that stores indices in an array of line buffer data.
 struct LineBufferData
 {
 	GLuint vao;
@@ -180,7 +182,7 @@ struct TextDrawResult
 struct TextData
 {
     uint32 chars_per_line;
-    Dimension char_size;
+    Vec2i char_size;
 };
 
 struct Texture
@@ -194,71 +196,46 @@ struct Shader
     GLuint shader_handle;
 };
 
-// TODO: break this up into logical components
-//  -> Text drawing
-//  -> Particles?
-
-class Renderer
+struct Renderer
 {
-public:
-	Renderer(Window* w, Vec4 clear_color);
-	virtual ~Renderer() {};
-
-	static void create_instance(Window*);
-	static Renderer* get();
-
-	void set_camera(Camera*);
-	void begin_frame();
-	void Flush();
-    void SwapBuffer();
-	void set_clear_color(Vec4);
-	void force_color_clear();
-	void load_image(char*, ImageFiles);
-	void load_shader(char*, char*, ShaderTypes);
-
-	Dimension get_resolution();
-	float viewport_width();
-
-	void render_draw_buffer();
-
-	void activate_texture(ImageFiles i) { glBindTexture(GL_TEXTURE_2D, textures[(uint32) i].texture_handle); }
-	void activate_shader(ShaderTypes s) { glUseProgram(shaders[(uint32)s].shader_handle); }
-
-	TextDrawResult DrawString(char* string, uint32 string_size, float start_x, float start_y,
-                                StringTextColor* = 0, size_t = 0);
-
-
-	Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
-	Shader shaders[Shader_Count];
-
-	void push_draw_call(DrawCall, DrawLayer);
-	void draw_call(DrawCall);
-
-    // TODO: Get rid of the std::vector version of this and just use the Array one.
-//    void DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_options = 0);
-    void DrawLine(Vec2, Vec2, Vec4, LineDrawParams* params = nullptr);
-    void DrawLine(Array<SimpleVertex>& vertices, LineDrawParams* params = nullptr);
-	void DrawRect(const Rectf&, Vec4 color, LineDrawParams* params = nullptr);
-	void DrawRotatedRect(const Rectf&, float rotation, Vec4 color, LineDrawParams* params = nullptr);
-
-private:
-
-	Dimension frame_resolution;
-
+	Vec2i frame_resolution;
 	TextData text_data;
-
     TextVertex* text_array;
     size_t text_array_size;
-
     uint32 line_buffer_loc = 0;
+
+    Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
+    Shader shaders[Shader_Count];
+
+    // TODO: remove this, make a single buffer for lines and draw out of that with draw commands
     std::vector<LineBufferData> line_buffer;
+    // TODO: switch to frame buffer, then sort before drawing?
 	Array<DrawCall> draw_buffer[DrawLayer_Count];
 
-	Camera* main_camera;
-	Window* draw_window;
-
-	static Renderer* s_instance;
+    Camera* camera;
 };
 
 void SwapBuffer(GameState*);
+
+Renderer* CreateRenderer(MemoryArena* arena);
+void LoadImage(Renderer*, char*, ImageFiles);
+void LoadShader(Renderer*, char*, char*, ShaderTypes);
+
+void BeginFrame(Renderer*, Window*);
+void Flush(Renderer*);
+void ForceColorClear();
+void SetClearColor(Vec4);
+
+Vec2i GetResolution(Renderer*);
+float ViewportWidth(Renderer*);
+void RenderDrawBuffer(Renderer*);
+
+TextDrawResult DrawString(Renderer*, char* string, uint32 string_size, float start_x, float start_y, StringTextColor* = 0, size_t = 0);
+void PushDrawCall(Renderer*, DrawCall, DrawLayer);
+//void DrawCall(Renderer*, DrawCall);
+void DrawLine(Renderer*, Vec2, Vec2, Vec4, LineDrawParams* params = nullptr);
+void DrawLine(Renderer*, Array<SimpleVertex>& vertices, LineDrawParams* params = nullptr);
+void DrawRect(Renderer*, const Rectf&, Vec4 color, LineDrawParams* params = nullptr);
+void DrawRotatedRect(Renderer*, const Rectf&, float rotation, Vec4 color, LineDrawParams* params = nullptr);
+
 

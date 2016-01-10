@@ -1,3 +1,5 @@
+#if 0
+
 #include <windows.h>
 #include <dsound.h>
 
@@ -106,5 +108,4 @@ bool LoadWavFile(const char* filename)
     return false;
 }
 
-
-
+#endif

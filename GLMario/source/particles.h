@@ -147,10 +147,10 @@ private:
 
 public:
 	ParticleSystem();
-	ParticleSystem(uint32 max, DrawLayer dl = DrawLayer_Foreground);
+	ParticleSystem(GameState* game_state, uint32 max, DrawLayer dl = DrawLayer_Foreground);
 	~ParticleSystem();
 
-	void initialize(uint32 max, DrawLayer dl);
+	void initialize(GameState*, uint32 max, DrawLayer dl);
 	void init_random(float, uint32);
 	void update(GameState*, Vec2 p = vec2(0, 0));
 	void render();

@@ -6,6 +6,8 @@
 #include <vector>
 #include <algorithm>
 
+struct Renderer;
+struct GameState;
 
 #define MAX_STATIC_COLLIDERS 2048
 #define MAX_DYNAMIC_COLLIDERS 2048
@@ -13,7 +15,7 @@
 #define COLLISION_EPSILON 0.001f
 
 class Actor;
-class Renderer;
+struct Renderer;
 struct TStaticCollider;
 struct TDynamicCollider;
 
@@ -53,7 +55,7 @@ struct DynamicCollider
     Vec2 position; // Allows for non-centered colliders
 
 // TODO:Array
-    std::vector<CollisionInfo> collisions;
+//    std::vector<CollisionInfo> collisions;
 
     Actor* parent;
 };
@@ -120,13 +122,13 @@ public:
 
     void DestroyCollider(RArrayRef<DynamicCollider>);
     void StepDynamicColliders(float);
-    void DebugDraw();
+    void DebugDraw(GameState*);
 
     // Returns true if hits
     bool RaycastStatics(Vec2, Vec2, CollisionInfo&, bool draw = false);
 
     // Returns final collider position
-    Vec2 StepCollider(MemoryArena* temporary_memory, RArrayRef<DynamicCollider> collider, Vec2& velocity, float dt);
+    Vec2 StepCollider(GameState*, MemoryArena* temporary_memory, RArrayRef<DynamicCollider> collider, Vec2& velocity, float dt);
 
 
 #ifdef _DEBUG

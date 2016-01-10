@@ -11,7 +11,7 @@
 
 inline int32 round_float_to_int32(float num)
 {
-	int32 result = (int32)(num + 0.5f);
+    int32 result = num > 0 ? (int32)(num + 0.5f) : (int32)(num - 0.5f);
 	return result;
 }
 
@@ -516,28 +516,23 @@ Lerp(Vec4 A, float t, Vec4 B)
     return result;
 }
 
-
-inline
-Vec2 lerp(Vec2 a, Vec2 b, float t)
+inline Vec2 lerp(Vec2 a, Vec2 b, float t)
 {
 	Vec2 result = (b - a) * t + a;
 	return result;
 }
 
-inline
-Vec3 lerp(Vec3 a, Vec3 b, float t)
+inline Vec3 lerp(Vec3 a, Vec3 b, float t)
 {
 	Vec3 result = (b - a) * t + a;
 	return result;
 }
 
-inline
-Vec4 lerp(Vec4 a, Vec4 b, float t)
+inline Vec4 lerp(Vec4 a, Vec4 b, float t)
 {
 	Vec4 result = (b - a) * t + a;
 	return result;
 }
-
 
 inline float MaxSigned(float in, float maxValue)
 {

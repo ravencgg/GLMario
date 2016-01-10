@@ -4,11 +4,13 @@
 #include "entity.h"
 #include "tilemap.h"
 
+struct Renderer;
+
 enum ScreenMode
 {
-    ScreenMode_Windowed   = 0,
-    ScreenMode_FullScreen = SDL_WINDOW_FULLSCREEN,
-    ScreenMode_Borderless = SDL_WINDOW_FULLSCREEN_DESKTOP
+    ScreenMode_Windowed = 0,
+    ScreenMode_FullScreen = 1, // SDL_WINDOW_FULLSCREEN,
+    ScreenMode_Borderless = 2, //SDL_WINDOW_FULLSCREEN_DESKTOP
 };
 
 struct Window
@@ -17,7 +19,7 @@ struct Window
 	SDL_GLContext sdl_gl_context;
 
     ScreenMode current_mode;
-    Dimension resolution;
+    Vec2i resolution;
 };
 
 struct GameTime
@@ -88,6 +90,7 @@ struct GameState
 
     Scene* active_scene;
 
+    Renderer* renderer;
     Window window;
     GameTime time;
 };

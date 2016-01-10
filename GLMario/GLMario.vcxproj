@@ -29,17 +29,18 @@
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\containers.h" />
     <ClInclude Include="source\entity.h" />
-    <ClInclude Include="source\game_object.h" />
     <ClInclude Include="source\game_types.h" />
     <ClInclude Include="source\input.h" />
     <ClInclude Include="source\mathops.h" />
     <ClInclude Include="source\particles.h" />
     <ClInclude Include="source\physics.h" />
+    <ClInclude Include="source\platform.h" />
     <ClInclude Include="source\renderer.h" />
     <ClInclude Include="source\tilemap.h" />
     <ClInclude Include="source\time.h" />
     <ClInclude Include="source\types.h" />
     <ClInclude Include="source\utility.h" />
+    <ClInclude Include="source\win32_gl.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9717368F-0C4D-4A43-BC52-429C6E35A7F7}</ProjectGuid>
@@ -82,9 +83,9 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>.\Dependencies\sdl\lib\x86;.\Dependencies\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>.\Dependencies\sdl\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -104,7 +105,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>.\Dependencies\sdl\lib\x86;.\Dependencies\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>

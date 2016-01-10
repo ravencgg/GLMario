@@ -19,7 +19,6 @@
     <ClInclude Include="source\console.h" />
     <ClInclude Include="source\containers.h" />
     <ClInclude Include="source\entity.h" />
-    <ClInclude Include="source\game_object.h" />
     <ClInclude Include="source\game_types.h" />
     <ClInclude Include="source\input.h" />
     <ClInclude Include="source\mathops.h" />
@@ -30,5 +29,7 @@
     <ClInclude Include="source\time.h" />
     <ClInclude Include="source\types.h" />
     <ClInclude Include="source\utility.h" />
+    <ClInclude Include="source\win32_gl.h" />
+    <ClInclude Include="source\platform.h" />
   </ItemGroup>
 </Project>

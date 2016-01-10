@@ -27,6 +27,7 @@ void Camera::Tick(GameState* game_state)
         transform.position = (*follow_target)->transform.position;
     }
 
+#if 0
 	if(KeyIsDown(SDLK_LEFT))
 	{
 		transform.position.x -= 0.1f;
@@ -48,5 +49,6 @@ void Camera::Tick(GameState* game_state)
 		// transform.position.y -= 0.1f;
 		viewport_size *= 0.9f;
 	}
+#endif
 }
 

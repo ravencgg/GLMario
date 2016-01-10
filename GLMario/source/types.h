@@ -42,15 +42,13 @@ typedef int32_t b32;
 #define MIN(a, b) ( (a) < (b) ? (a) : (b) )
 #define MAX(a, b) ( (a) > (b) ? (a) : (b) )
 
+#define Maximum(a, b) ( (a) > (b) ? (a) : (b) )
+#define Minimum(a, b) ( (a) < (b) ? (a) : (b) )
+
 #define NO_MATRICES 1
 
 #define InvalidDefaultCase default:  \
                             assert(!"Invalid default case!");
-
-struct Dimension
-{
-	int32 width, height;
-};
 
 struct Point2
 {
@@ -123,3 +121,15 @@ inline Rectf rectf(float x, float y, float w, float h)
 	return result;
 }
 
+struct Vec2i
+{
+    int x, y;
+};
+
+inline Vec2i operator- (const Vec2i& lhs, const Vec2i& rhs)
+{
+    Vec2i result;
+    result.x = lhs.x - rhs.x;
+    result.y = lhs.y - rhs.y;
+    return result;
+}

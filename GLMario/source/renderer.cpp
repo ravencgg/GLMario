@@ -1,17 +1,18 @@
-#include "time.h"
-#include "renderer.h"
-#include "physics.h"
-#include "entity.h"
-#include "particles.h"
-#include "input.h"
-#include "console.h"
-#include "audio.h"
-#include "tilemap.h"
-#include "game_types.h"
+#define __GL_IMPLEMENTATION__
+#include "win32_gl.h"
+#include "platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "..\Dependencies\stb_image.h"
 
+#include "renderer.h"
+
+#include "time.h"
+#include "particles.h"
+#include "console.h"
+#include "game_types.h"
+
+#include "SDL.h"
 
 char* default_vert_shader = "..\\res\\default_vert.glsl";
 char* default_frag_shader = "..\\res\\default_frag.glsl";
@@ -22,117 +23,101 @@ char* main_image = "..\\res\\tiles.png";
 char* text_image = "..\\res\\charmap.png";
 char* particle_image = "..\\res\\particle.png";
 
-//const uint32 Renderer::pixels_to_meters = 16;
-
-//enum class ShaderTypes : uint32 { DEFAULT_SHADER, TEXT_SHADER, PARTICLE_SHADER, LINE_SHADER, SHADER_COUNT };
-struct ShaderLoadData
-{
-    char* vertexFile;
-    char* fragFile;
-    ShaderTypes type;
-};
-
-ShaderLoadData shaderLoadData[Shader_Count];
-Renderer* Renderer::s_instance = nullptr;
-
 void SwapBuffer(GameState* game_state)
 {
 	SDL_GL_SwapWindow(game_state->window.sdl_window);
 }
 
-Renderer::Renderer(Window* w, Vec4 clear_color)
-: draw_window(w),
-  text_array_size(1024)
+#if 1
+Renderer* CreateRenderer(MemoryArena* arena)
 {
-    text_array = new TextVertex[text_array_size];
+    Renderer* result = PushStruct(arena, Renderer);
+    // TODO: allocate text_array per frame based on how much text there is, or use separate arrays for separate text draw calls
+    result->text_array_size = 1024 * 8;
+    result->text_array = PushArray(arena, TextVertex, result->text_array_size);
 
-	glewExperimental = GL_TRUE;
-	GLenum glew_status = glewInit();
-	if(glew_status)
-	{
-		printf("Error initializing GLEW");
-	}
-	set_clear_color(clear_color);
+    if(!LoadGLFunctionPointers())
+    {
+		printf("Error initializing GL");
+        return nullptr;
+    }
 
-	// NOTE(chris): also enables textures and blending
-	load_image(main_image, ImageFiles::MAIN_IMAGE);
-	load_image(mario_image, ImageFiles::MARIO_IMAGE);
-	load_image(text_image, ImageFiles::TEXT_IMAGE);
-	load_image(particle_image, ImageFiles::PARTICLE_IMAGE);
-	load_shader(default_vert_shader, default_frag_shader, Shader_Default);
-	load_shader(particle_vert_shader, particle_frag_shader, Shader_Particle);
-    load_shader("..\\res\\line_vert.glsl", "..\\res\\line_frag.glsl", Shader_Line);
-    load_shader("..\\res\\text_vert.glsl", "..\\res\\text_frag.glsl", Shader_Text);
+	LoadImage(result, main_image, ImageFiles::MAIN_IMAGE);
+	LoadImage(result, mario_image, ImageFiles::MARIO_IMAGE);
+	LoadImage(result, text_image, ImageFiles::TEXT_IMAGE);
+	LoadImage(result, particle_image, ImageFiles::PARTICLE_IMAGE);
+	LoadShader(result, default_vert_shader, default_frag_shader, Shader_Default);
+	LoadShader(result, particle_vert_shader, particle_frag_shader, Shader_Particle);
+    LoadShader(result, "..\\res\\line_vert.glsl", "..\\res\\line_frag.glsl", Shader_Line);
+    LoadShader(result, "..\\res\\text_vert.glsl", "..\\res\\text_frag.glsl", Shader_Text);
 
-	text_data.chars_per_line = 18;
-	text_data.char_size = { 7, 9 };
-
+	result->text_data.chars_per_line = 18;
+	result->text_data.char_size = { 7, 9 };
+    return result;
 }
 
-void Renderer::create_instance(Window* w)
+static void ActivateTexture(Renderer* ren, ImageFiles i)
 {
-	if(s_instance) return;
-
-    Vec4 clear_color = { 0, 0, 0, 1.f };
-	s_instance = new Renderer(w, clear_color);
+    glBindTexture(GL_TEXTURE_2D, ren->textures[(uint32) i].texture_handle);
 }
 
-Renderer* Renderer::get()
+static void ActivateShader(Renderer* ren, ShaderTypes s)
 {
-	assert(s_instance);
-	return s_instance;
+    glUseProgram(ren->shaders[(uint32)s].shader_handle);
 }
 
-void Renderer::set_camera(Camera* camera)
+#endif
+
+void SetCamera(Renderer* renderer, Camera* camera)
 {
-	this->main_camera = camera;
+	renderer->camera = camera;
 }
 
-void Renderer::begin_frame()
+void BeginFrame(Renderer* renderer, Window* window)
 {
     // Resolution can't change mid frame, although the camera position can
+    SDL_GL_GetDrawableSize(window->sdl_window, &renderer->frame_resolution.x, &renderer->frame_resolution.y);
 
-	//frame_resolution = draw_window->get_resolution();
-
-    SDL_GL_GetDrawableSize(draw_window->sdl_window, &frame_resolution.width, &frame_resolution.height);
-	glViewport(0, 0, frame_resolution.width, frame_resolution.height);
+	glViewport(0, 0, renderer->frame_resolution.x, renderer->frame_resolution.y);
 	glClear(GL_COLOR_BUFFER_BIT);
-	line_buffer_loc = 0;
+	renderer->line_buffer_loc = 0;
 }
 
-void Renderer::set_clear_color(Vec4 color)
+void SetClearColor(Vec4 color)
 {
 	glClearColor(color.x, color.y, color.z, color.w);
 }
 
-void Renderer::force_color_clear()
+void ForceColorClear()
 {
 	glClear(GL_COLOR_BUFFER_BIT); // Would have to put a swap buffer here to notice anything
 }
 
-void Renderer::Flush()
+void Flush(Renderer* renderer)
 {
-	render_draw_buffer();
+    RenderDrawBuffer(renderer);
 	for(uint32 i = 0; i < DrawLayer_Count; ++i)
 	{
-		draw_buffer[i].Clear();
+		renderer->draw_buffer[i].Clear();
 	}
 }
 
-float Renderer::viewport_width()
+float ViewportWidth(Renderer* renderer)
 {
-	float result = main_camera->viewport_size.x;
+	float result = renderer->camera->viewport_size.x;
 	return result;
 }
 
-void Renderer::load_image(char* filename, ImageFiles location)
+void LoadImage(Renderer* renderer, char* filename, ImageFiles location)
 {
 	GLuint handle = 0;
 
 	int x, y, n;
 	const int expected_components = 4;
 	stbi_set_flip_vertically_on_load(true);
+    // const_cast?
 	uint8* data = stbi_load(const_cast<char*>(filename), &x, &y, &n, expected_components);
+    assert(n == expected_components);
 
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
@@ -152,18 +137,16 @@ void Renderer::load_image(char* filename, ImageFiles location)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-//	GLenum error_type = glGetError();
-//	GLenum tex2D_enabled = glIsEnabled(GL_TEXTURE_2D);
 
 	stbi_image_free(data);
 
-	textures[(uint32)location].texture_handle = handle;
-	textures[(uint32)location].w = x;
-	textures[(uint32)location].h = y;
-	textures[(uint32)location].bytes_per_color = n;
+	renderer->textures[(uint32)location].texture_handle = handle;
+	renderer->textures[(uint32)location].w = x;
+	renderer->textures[(uint32)location].h = y;
+	renderer->textures[(uint32)location].bytes_per_color = n;
 }
 
-void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes location)
+void LoadShader(Renderer* renderer, char* vert_file, char* frag_file, ShaderTypes location)
 {
 	GLuint vert_loc = glCreateShader(GL_VERTEX_SHADER);
 	GLuint frag_loc = glCreateShader(GL_FRAGMENT_SHADER);
@@ -208,15 +191,8 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
 	delete vert_shader;
 	delete frag_shader;
 
-	shaders[(uint32)location].shader_handle = program;
+	renderer->shaders[(uint32)location].shader_handle = program;
 }
-
-// TODO: create an array buffer struct that can abstract the creation of
-// VAOs/VBOs away from code that doesn't care about while still letting that code
-// store them
-//
-// This will allow strings to be drawn with a ARRAY_BUFFER style instead of drawing
-// outside of the control of the renderer
 
 /*  Text drawing TODO(cgenova):
 		* Character width is not correct
@@ -232,20 +208,19 @@ void Renderer::load_shader(char* vert_file, char* frag_file, ShaderTypes locatio
         * of the screen
 		*/
 
-TextDrawResult
-Renderer::DrawString(char* string, uint32 string_size, float start_x, float start_y,
-                     StringTextColor* text_colors, size_t text_color_size)
+TextDrawResult DrawString(Renderer* renderer, char* string, uint32 string_size, float start_x, float start_y,
+                             StringTextColor* text_colors, size_t text_color_size)
 {
     // TODO: more sane way of storing these
     static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
     static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
 
     const uint32 verts_per_char = 6;
-    if(text_array_size < string_size * verts_per_char)
+    if(renderer->text_array_size < string_size * verts_per_char)
     {
         size_t new_size = string_size * verts_per_char;
-        text_array = ExpandArray<TextVertex>(text_array, text_array_size, new_size);
-        text_array_size = new_size;
+        renderer->text_array = ExpandArray<TextVertex>(renderer->text_array, renderer->text_array_size, new_size);
+        renderer->text_array_size = new_size;
     }
 
     Vec2 char_size = { 0.01f, 0.02f };
@@ -346,8 +321,8 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
         {
             //DrawCharacter(text_array + array_pos, string[i], x, y, char_size);
 
-            int32 tw = textures[(uint32)ImageFiles::TEXT_IMAGE].w;
-            int32 th = textures[(uint32)ImageFiles::TEXT_IMAGE].h;
+            int32 tw = renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].w;
+            int32 th = renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].h;
 
             // NOTE: this assumes valid characters are being rendered
             uint32 ascii_position = c - ' ';
@@ -365,26 +340,18 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 
             // Char coords
             Point2 char_pos;
-            char_pos.x = ascii_position % text_data.chars_per_line;
-            char_pos.x *= text_data.char_size.width;
-            char_pos.y = ascii_position / text_data.chars_per_line;
-            char_pos.y *= text_data.char_size.height;
+            char_pos.x = ascii_position % renderer->text_data.chars_per_line;
+            char_pos.x *= renderer->text_data.char_size.x;
+            char_pos.y = ascii_position / renderer->text_data.chars_per_line;
+            char_pos.y *= renderer->text_data.char_size.y;
 
             // Texture coords
             float left = (float)char_pos.x / tw;
-            float right = (float)(char_pos.x + text_data.char_size.width) / tw;
-            float bot = (float)(th - (char_pos.y + text_data.char_size.height)) / th;
+            float right = (float)(char_pos.x + renderer->text_data.char_size.x) / tw;
+            float bot = (float)(th - (char_pos.y + renderer->text_data.char_size.y)) / th;
             float top = (float)(th - char_pos.y) / th;
 
-            TextVertex* current_vertex = text_array + array_pos;
-//            Vec4* vert_color = &current_color->color;
-
-            //*current_vertex++ = { rect.left              , rect.top               , left , bot, *vert_color };
-            //*current_vertex++ = { rect.left              , rect.top + rect.height , left , top, *vert_color };
-            //*current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
-            //*current_vertex++ = { rect.left              , rect.top + rect.height , left , top, *vert_color };
-            //*current_vertex++ = { rect.left + rect.width , rect.top               , right, bot, *vert_color };
-            //*current_vertex++ = { rect.left + rect.width , rect.top + rect.height , right, top, *vert_color };
+            TextVertex* current_vertex = renderer->text_array + array_pos;
 
             *current_vertex++ = { rect.left              , rect.bot               , left , bot, start_color };
             *current_vertex++ = { rect.left              , rect.bot + rect.height , left , top, start_color };
@@ -395,7 +362,6 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 
             array_pos += 6;
             x += char_size.x;
-
         }
 	}
 
@@ -404,7 +370,7 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
 	result.bottom_right = { x, y };
 	result.lines_drawn = lines_drawn;
 
-	glUseProgram(shaders[Shader_Text].shader_handle);
+	glUseProgram(renderer->shaders[Shader_Text].shader_handle);
 
     //GLint color_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "color_modifier");
     //glUniform4f(color_loc, color.x, color.y, color.z, color.w);
@@ -413,9 +379,9 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
         // TODO(cgenova): convert to function and pull this and the one in draw_call out
 		GLuint active_tex = 0;
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
-		if (active_tex != textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
+		if (active_tex != renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
 		{
-			glBindTexture(GL_TEXTURE_2D, textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
+			glBindTexture(GL_TEXTURE_2D, renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
 		}
 	}
 
@@ -428,11 +394,11 @@ Renderer::DrawString(char* string, uint32 string_size, float start_x, float star
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(4 * sizeof(float)));
 
-	glBufferData(GL_ARRAY_BUFFER, array_pos * sizeof(text_array[0]), text_array, GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, array_pos * sizeof(renderer->text_array[0]), renderer->text_array, GL_STREAM_DRAW);
 
-    GLint cam_pos_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "cam_pos");
+    GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[Shader_Text].shader_handle, "cam_pos");
     glUniform2f(cam_pos_loc, 0.5f, 0.5f);
-    GLint viewport_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "viewport");
+    GLint viewport_loc = glGetUniformLocation(renderer->shaders[Shader_Text].shader_handle, "viewport");
     glUniform2f(viewport_loc, 1, 1);
 
     glDrawArrays(GL_TRIANGLES, 0, array_pos);
@@ -452,12 +418,12 @@ inline Vec2 ScreenToOpenGL(Vec2 input, Vec2 viewport)
 #undef TO_OGL
 }
 
-void Renderer::push_draw_call(DrawCall draw_call, DrawLayer layer)
+void PushDrawCall(Renderer* renderer, DrawCall draw_call, DrawLayer layer)
 {
-	draw_buffer[(uint32) layer].AddBack(draw_call);
+	renderer->draw_buffer[(uint32) layer].AddBack(draw_call);
 }
 
-void Renderer::render_draw_buffer()
+void RenderDrawBuffer(Renderer* renderer)
 {
     const Rectf ogl_screen_rect = { -1.f, -1.f, 2.0f, 2.0f };
 
@@ -466,9 +432,9 @@ void Renderer::render_draw_buffer()
 
 	for (uint32 layer = 0; layer < DrawLayer_Count; ++layer)
 	{
-		for (uint32 i = 0; i < draw_buffer[layer].Size(); ++i)
+		for (uint32 i = 0; i < renderer->draw_buffer[layer].Size(); ++i)
 		{
-            DrawCall& data = draw_buffer[layer][i];
+            DrawCall& data = renderer->draw_buffer[layer][i];
 
             ProfileBeginSection(Profile_RenderFinish);
             // TODO: set up the shaders once per frame (or once per draw surface)
@@ -478,18 +444,18 @@ void Renderer::render_draw_buffer()
             static GLuint vao = (glGenVertexArrays(1, &vao), vao);
             static GLuint vbo = (glGenBuffers(1, &vbo), vbo);
 
-            Vec2 cam_position = { main_camera->position.x, main_camera->position.y };
-            Vec2 viewport     = { main_camera->viewport_size.x, main_camera->viewport_size.y };
+            Vec2 cam_position = { renderer->camera->position.x, renderer->camera->position.y };
+            Vec2 viewport     = { renderer->camera->viewport_size.x, renderer->camera->viewport_size.y };
 
-            glUseProgram(shaders[(uint32)data.shader].shader_handle);
+            glUseProgram(renderer->shaders[(uint32)data.shader].shader_handle);
 
             {
                 GLuint active_tex = 0;
                 glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
 
-                if (active_tex != textures[(uint32)data.image].texture_handle)
+                if (active_tex != renderer->textures[(uint32)data.image].texture_handle)
                 {
-                    glBindTexture(GL_TEXTURE_2D, textures[(uint32)data.image].texture_handle);
+                    glBindTexture(GL_TEXTURE_2D, renderer->textures[(uint32)data.image].texture_handle);
                 }
             }
 
@@ -499,8 +465,8 @@ void Renderer::render_draw_buffer()
                     {
                         // TODO(cgenova): handle rotated scaling;
 
-                        int32 tw = textures[(uint32)data.image].w;
-                        int32 th = textures[(uint32)data.image].h;
+                        int32 tw = renderer->textures[(uint32)data.image].w;
+                        int32 th = renderer->textures[(uint32)data.image].h;
 
                         float tex_left  = (float)data.sd.tex_rect.left / tw;
                         float tex_right = (float)(data.sd.tex_rect.left + data.sd.tex_rect.width) / tw;
@@ -611,10 +577,10 @@ void Renderer::render_draw_buffer()
                         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
                         glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
 
-                        GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+                        GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "cam_pos");
                         glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
 
-                        GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+                        GLint viewport_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "viewport");
                         glUniform2f(viewport_loc, viewport.x, viewport.y);
 
                         glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
@@ -647,16 +613,16 @@ void Renderer::render_draw_buffer()
                         if(data.lbd.line_draw_flags & LineDrawOptions::SCREEN_SPACE)
                         {
                             // Screen space drawing is in range [0,1];
-                            GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
+                            GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
                             glUniform2f(cam_pos_loc, 0.5f, 0.5f);
-                            GLint viewport_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "viewport");
+                            GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
                             glUniform2f(viewport_loc, 1, 1);
                         }
                         else
                         {
-                            GLint cam_pos_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "cam_pos");
+                            GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
                             glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-                            GLint viewport_loc = glGetUniformLocation(shaders[data.shader].shader_handle, "viewport");
+                            GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
                             glUniform2f(viewport_loc, viewport.x, viewport.y);
                         }
 
@@ -674,15 +640,16 @@ void Renderer::render_draw_buffer()
                         glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
                         glBindVertexArray(data.abd.vao);
 
-                        float world_scale = viewport_width();
-                        GLint scl_loc = glGetUniformLocation(shaders[Shader_Particle].shader_handle, "w_scale");
+
+                        float world_scale = ViewportWidth(renderer);
+                        GLint scl_loc = glGetUniformLocation(renderer->shaders[Shader_Particle].shader_handle, "w_scale");
                         glUniform1f(scl_loc, world_scale);
 
 
-                        GLint cam_pos_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "cam_pos");
+                        GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "cam_pos");
                         glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
 
-                        GLint viewport_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "viewport");
+                        GLint viewport_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "viewport");
                         glUniform2f(viewport_loc, viewport.x, viewport.y);
 
 
@@ -707,7 +674,7 @@ void Renderer::render_draw_buffer()
     DebugPrintPopColor();
 }
 
-void ConvertToGLRect(Rectf* rect)
+static void ConvertToGLRect(Rectf* rect)
 {
     rect->x = rect->x * 2.f - 1.f;
     rect->y = rect->y * 2.f - 1.f;
@@ -715,7 +682,7 @@ void ConvertToGLRect(Rectf* rect)
     rect->h *= 2.f;
 }
 
-void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, LineDrawParams* params)
+void DrawLine(Renderer* renderer, Vec2 start, Vec2 end, Vec4 color, LineDrawParams* params)
 {
     LineDrawParams default_params;
     LineDrawParams* using_params = params ? params : &default_params;
@@ -726,51 +693,10 @@ void Renderer::DrawLine(Vec2 start, Vec2 end, Vec4 color, LineDrawParams* params
     v[0].color = color;
     v[1].position = end;
     v[1].color = color;
-    DrawLine(v, params);
+    DrawLine(renderer, v, params);
 }
 
-#if 0
-void Renderer::DrawLine(std::vector<SimpleVertex>& vertices, uint8 line_width, DrawLayer dl, uint32 line_draw_flags)
-{
-	DrawCall dc = {};
-	dc.draw_type = DrawType::LINE_BUFFER;
-    dc.shader = Shader_Line;
-
-    if(line_buffer_loc == line_buffer.size())
-    {
-		LineBufferData a = {};
-		glGenBuffers(1, &a.vbo);
-		glGenVertexArrays(1, &a.vao);
-		glBindVertexArray(a.vao);
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
-
-        line_buffer.push_back(a);
-    }
-
-    LineBufferData* lbd = &line_buffer[line_buffer_loc++];
-    lbd->num_vertices = (uint32)vertices.size();
-
-    lbd->draw_method = (line_draw_flags & LineDrawOptions::LOOPED) ? GL_LINE_LOOP : GL_LINE_STRIP;
-    lbd->line_draw_flags = line_draw_flags;
-
-    if(line_width)
-    {
-        lbd->line_draw_flags |= LineDrawOptions::CUSTOM_SIZE;
-        lbd->line_draw_flags |= ((uint32)line_width << 24);
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(SimpleVertex), &vertices[0], GL_STREAM_DRAW);
-    dc.lbd = *lbd;
-    push_draw_call(dc, dl);
-}
-#endif
-
-// Collapse this one with the std::vector version
-void Renderer::DrawLine(Array<SimpleVertex>& vertices, LineDrawParams* params)
+void DrawLine(Renderer* renderer, Array<SimpleVertex>& vertices, LineDrawParams* params)
 {
     LineDrawParams default_params;
     LineDrawParams* using_params = params ? params : &default_params;
@@ -779,7 +705,7 @@ void Renderer::DrawLine(Array<SimpleVertex>& vertices, LineDrawParams* params)
 	dc.draw_type = DrawType::LINE_BUFFER;
     dc.shader = Shader_Line;
 
-    if(line_buffer_loc == line_buffer.size())
+    if(renderer->line_buffer_loc == renderer->line_buffer.size())
     {
 		LineBufferData a = {};
 		glGenBuffers(1, &a.vbo);
@@ -790,10 +716,10 @@ void Renderer::DrawLine(Array<SimpleVertex>& vertices, LineDrawParams* params)
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
 
-        line_buffer.push_back(a);
+        renderer->line_buffer.push_back(a);
     }
 
-    LineBufferData* lbd = &line_buffer[line_buffer_loc++];
+    LineBufferData* lbd = &renderer->line_buffer[renderer->line_buffer_loc++];
     lbd->num_vertices = vertices.Size();
 
     lbd->draw_method = (using_params->line_draw_flags & LineDraw_Looped) ? GL_LINE_LOOP : GL_LINE_STRIP;
@@ -808,10 +734,10 @@ void Renderer::DrawLine(Array<SimpleVertex>& vertices, LineDrawParams* params)
     glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);
     glBufferData(GL_ARRAY_BUFFER, vertices.Size() * sizeof(SimpleVertex), &vertices[0], GL_STREAM_DRAW);
     dc.lbd = *lbd;
-    push_draw_call(dc, using_params->draw_layer);
+    PushDrawCall(renderer, dc, using_params->draw_layer);
 }
 
-void Renderer::DrawRect(const Rectf& rect, Vec4 color, LineDrawParams* params)
+void DrawRect(Renderer* renderer, const Rectf& rect, Vec4 color, LineDrawParams* params)
 {
     Array<SimpleVertex> verts(4);
 
@@ -833,10 +759,10 @@ void Renderer::DrawRect(const Rectf& rect, Vec4 color, LineDrawParams* params)
     LineDrawParams* using_params = params ? params : &default_params;
     using_params->line_draw_flags |= LineDraw_Looped;
 
-	DrawLine(verts, using_params);
+	DrawLine(renderer, verts, using_params);
 }
 
-void Renderer::DrawRotatedRect(const Rectf& rect, float rotation, Vec4 color, LineDrawParams* params)
+void DrawRotatedRect(Renderer* renderer, const Rectf& rect, float rotation, Vec4 color, LineDrawParams* params)
 {
     Vec2_4 points = RotatedRect(rect, rotation);
 
@@ -860,5 +786,5 @@ void Renderer::DrawRotatedRect(const Rectf& rect, float rotation, Vec4 color, Li
     LineDrawParams* using_params = params ? params : &default_params;
     using_params->line_draw_flags |= LineDraw_Looped;
 
-	DrawLine(verts, using_params);
+	DrawLine(renderer, verts, using_params);
 }

@@ -1,5 +1,4 @@
 #include "mathops.h"
-#include <float.h>
 
 /*************************************************
 *
@@ -7,7 +6,7 @@
 *
 *************************************************/
 
-// TODO: fixme
+// TODO: This should be done in SIMD as well
 Vec2 RotatePoint(Vec2 in_point, float theta, Vec2 rotate_point)
 {
     Vec2 result = { };
@@ -15,13 +14,6 @@ Vec2 RotatePoint(Vec2 in_point, float theta, Vec2 rotate_point)
     {
         return in_point;
     }
-
-#if 0
-    float left = rect.x;
-    float right = rect.x + rect.w;
-    float top = rect.y;
-    float bot = rect.y + rect.h;
-#endif
 
     float sin_t = sin(theta);
     float cos_t = cos(theta);

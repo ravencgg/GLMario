@@ -7,7 +7,6 @@
 #include "types.h"
 #include "mathops.h"
 
-#include <vector>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -27,6 +26,7 @@
 #include "entity.h"
 
 #include "audio.h"
+#include "platform.h"
 
 
 // Should be like 16.66666
@@ -43,15 +43,15 @@
 
 void DebugControlCamera(Camera* camera)
 {
-	if(KeyIsDown(SDLK_LEFT))
-	{
-		camera->position.x -= 0.1f;
-	}
+    if(KeyIsDown(SDLK_LEFT))
+    {
+        camera->position.x -= 0.1f;
+    }
 
-	if(KeyIsDown(SDLK_RIGHT))
-	{
-		camera->position.x += 0.1f;
-	}
+    if(KeyIsDown(SDLK_RIGHT))
+    {
+        camera->position.x += 0.1f;
+    }
 
     if(KeyIsDown(SDLK_UP))
     {
@@ -80,59 +80,65 @@ void DebugControlCamera(Camera* camera)
 
 void StartupWindow(Window* window, char* title, int32 width, int32 height)
 {
-	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
-	{
-		printf("SDL init error\n");
-	}
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
+    {
+        printf("SDL init error\n");
+    }
 
-    window->resolution.width  = width;
-    window->resolution.height = height;
+    window->resolution.x = width;
+    window->resolution.y = height;
     window->current_mode = ScreenMode_Windowed;
 
-	window->sdl_window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    window->sdl_window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                   width, height,
                                   SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-	if(window->sdl_window == nullptr)
-	{
-		printf("Window creation error\n");
-	}
+    if(window->sdl_window == nullptr)
+    {
+        printf("Window creation error\n");
+    }
 
-	window->sdl_gl_context = SDL_GL_CreateContext(window->sdl_window);
-	if(window->sdl_gl_context == nullptr)
-	{
-		printf("GL Context creation error\n");
-	}
+    window->sdl_gl_context = SDL_GL_CreateContext(window->sdl_window);
+    if(window->sdl_gl_context == nullptr)
+    {
+        printf("GL Context creation error\n");
+    }
 
-	SDL_GL_MakeCurrent(window->sdl_window, window->sdl_gl_context);
+    SDL_GL_MakeCurrent(window->sdl_window, window->sdl_gl_context);
 }
 
 void ShutdownWindow(Window* window)
 {
-	if(window->sdl_gl_context) SDL_GL_DeleteContext(window->sdl_gl_context);
-	if(window->sdl_window)	   SDL_DestroyWindow(window->sdl_window);
+    if(window->sdl_gl_context) SDL_GL_DeleteContext(window->sdl_gl_context);
+    if(window->sdl_window)     SDL_DestroyWindow(window->sdl_window);
 }
 
 void WindowSetResolution(Window* window, uint32 w, uint32 h)
 {
-    window->resolution.width = w;
-    window->resolution.height = h;
-	SDL_SetWindowSize(window->sdl_window, w, h);
+    window->resolution.x = w;
+    window->resolution.y = h;
+    SDL_SetWindowSize(window->sdl_window, w, h);
 }
 
 void WindowSetScreenMode(Window* window, ScreenMode mode)
 {
     window->current_mode = mode;
-	SDL_SetWindowFullscreen(window->sdl_window, (uint32)mode);
+    SDL_SetWindowFullscreen(window->sdl_window, (uint32)mode);
 }
 
 static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
 {
-    // TODO: allocate the permanent memory first and place a GameState at the front of it?
-    GameState* result = new GameState;
+    MemoryArena arena;
+    // NOTE: this is the allocation for the game, store this somewhere if this should be freed manually at some point
+    AllocateMemoryArena(&arena, sizeof(GameState) + GAME_PERMANENT_MEMORY_SIZE + FRAME_TEMPORARY_MEMORY_SIZE);
 
-    AllocateMemoryArena(&result->temporary_memory, FRAME_TEMPORARY_MEMORY_SIZE);
-    AllocateMemoryArena(&result->permanent_memory, GAME_PERMANENT_MEMORY_SIZE);
-    StartupWindow(&result->window, window_title, res_x, res_y);
+    GameState* result = PushStruct(&arena, GameState);
+    result->temporary_memory = CreateSubArena(&arena, FRAME_TEMPORARY_MEMORY_SIZE);
+    result->permanent_memory = CreateSubArena(&arena, GAME_PERMANENT_MEMORY_SIZE);
+    assert(arena.used == arena.size);
+
+    StartupWindow(&result->window, window_title, res_x, res_y); 
+
+    result->renderer = CreateRenderer(&result->permanent_memory);
     InitializeTime(result, MS_PER_FRAME);
     return result;
 }
@@ -157,13 +163,13 @@ static Scene* PushScene(MemoryArena* arena, uint32 num_entities, uint32 num_obje
 
 int main(int argc, char* argv[])
 {
-	assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
+    assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 
     GameState* game_state = CreateNewGameState("EnGen", 1200, 700);
+    Renderer* renderer = game_state->renderer;
     game_state->active_scene = PushScene(&game_state->permanent_memory, MAX_GAME_ENTITES, MAX_GAME_OBJECTS);
 
 // Global initialization
-	Renderer::create_instance(&game_state->window);
     InitializeInput();
     InitializeDebugConsole();
 //    InitializeAudio();
@@ -199,35 +205,32 @@ int main(int argc, char* argv[])
     PauseAudio(false);
 #endif
 
-// TODO: no more singletons!
-	Renderer* renderer = Renderer::get();
-
-//	SceneManager scene;
-	Camera main_camera = {}; // maybe put this in game_state?
+//  SceneManager scene;
+    Camera main_camera = {}; // maybe put this in game_state?
     main_camera.position = vec2(0, 0);
     main_camera.viewport_size.x = 16;
     main_camera.viewport_size.y = 9;
 
-//	scene.SetMainCamera(&main_camera);
-	renderer->set_camera(&main_camera);
+    renderer->camera = &main_camera;
+//    renderer->set_camera(&main_camera);
 
-	uint32 frame_count = 0;
-	uint32 fps = 0;
-	double last_fps_time = 0;
+    uint32 frame_count = 0;
+    uint32 fps = 0;
+    double last_fps_time = 0;
 
-	SDL_Event e;
-	bool running = true;
+    bool running = true;
 
-	while(running)
-	{
+    while(running)
+    {
+        SDL_Event e;
         ProfileBeginFrame();
 
         ProfileBeginSection(Profile_Frame);
         ProfileBeginSection(Profile_Input);
 
-		InputBeginFrame();
-		while (SDL_PollEvent(&e))
-		{
+        InputBeginFrame();
+        while (SDL_PollEvent(&e))
+        {
             switch(e.type)
             {
 
@@ -265,14 +268,14 @@ int main(int argc, char* argv[])
                     case SDL_WINDOWEVENT_RESIZED:
                     case SDL_WINDOWEVENT_SIZE_CHANGED:
                     {
-                        game_state->window.resolution.width  = e.window.data1;
-                        game_state->window.resolution.height = e.window.data2;
+                        game_state->window.resolution.x = e.window.data1;
+                        game_state->window.resolution.y = e.window.data2;
                     }break;
 
                     }
                 }
             }
-		}
+        }
 
         UpdateMouseWorldPosition(game_state->window.resolution, main_camera.viewport_size, main_camera.position);
 
@@ -282,23 +285,31 @@ int main(int argc, char* argv[])
         DebugPrintf("Mouse World Position: (%.2f, %.2f)",  mouse_pos.x, mouse_pos.y);
         DebugPrintf("Main Camera Position: (%.2f, %.2f)",  main_camera.position.x, main_camera.position.y);
 
-		if(KeyFrameDown(SDLK_ESCAPE))
-		{
-			running = false;
-			break;
-		}
+        if(KeyFrameDown(SDLK_ESCAPE))
+        {
+            running = false;
+            break;
+        }
 
-		if(KeyFrameDown(SDLK_z))
-		{
-			WindowSetScreenMode(&game_state->window, ScreenMode_Windowed);
-			renderer->force_color_clear(); // TODO: useless if it doesn't swap the buffers
-                                            // but that may look bad with vsync
-		}
-		else if(KeyFrameDown(SDLK_c))
-		{
+        if(KeyFrameDown(SDLK_F1))
+        if(KeyFrameDown(SDLK_F1))
+        {
+            running = false;
+            break;
+        }
+
+        if(KeyFrameDown(SDLK_z))
+        {
+            ForceColorClear();
+            SwapBuffer(game_state);
+            WindowSetScreenMode(&game_state->window, ScreenMode_Windowed);
+        }
+        else if(KeyFrameDown(SDLK_c))
+        {
+            ForceColorClear();
+            SwapBuffer(game_state);
             WindowSetScreenMode(&game_state->window, ScreenMode_Borderless);
-			renderer->force_color_clear();
-		}
+        }
 
         static bool draw_debug = true;
         if(KeyFrameDown(SDLK_BACKQUOTE))
@@ -308,30 +319,30 @@ int main(int argc, char* argv[])
 
         Renderer* debug_renderer = draw_debug ? renderer : 0;
 
-	    TimeBeginFrame(game_state);
+        TimeBeginFrame(game_state);
 
-		// Update the scene first, pushing draw calls if necessary.
-		// Then call begin_frame which builds matrices and clears buffers;
+        // Update the scene first, pushing draw calls if necessary.
+        // Then call begin_frame which builds matrices and clears buffers;
         float current_time = CurrentTime(game_state);
-		if(current_time - last_fps_time > 1.0f)
-		{
-			last_fps_time = current_time;
-			fps = frame_count;
-			frame_count = 0;
+        if(current_time - last_fps_time > 1.0f)
+        {
+            last_fps_time = current_time;
+            fps = frame_count;
+            frame_count = 0;
 #if _DEBUG
             printf("FPS: %d\n", fps);
 #endif
-		}
-		frame_count++;
-		DebugPrintf("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount(game_state));
+        }
+        frame_count++;
+        DebugPrintf("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount(game_state));
 
         DebugControlCamera(&main_camera);
 
-		// TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
-		renderer->begin_frame();
+        // TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
+        BeginFrame(renderer, &game_state->window);
 
         game_state->active_scene->tmap->update();
-        game_state->active_scene->tmap->draw();
+        game_state->active_scene->tmap->draw(game_state); // TODO: lol
 
         ProfileBeginSection(Profile_SceneUpdate);
 
@@ -340,13 +351,13 @@ int main(int argc, char* argv[])
         DebugPrintPopColor();
 
         UpdateSceneEntities(game_state, game_state->active_scene);
-        DrawSceneEntities(game_state->active_scene);
+        DrawSceneEntities(game_state->active_scene, renderer);
 
-        game_state->active_scene->physics->DebugDraw();
+        game_state->active_scene->physics->DebugDraw(game_state); // TODO: lol
 
         ProfileEndSection(Profile_SceneUpdate);
 
-#if 0 // Spaghetti test
+#if 1 // Spaghetti test
         static Array<SimpleVertex> v;
         static bool initialized = false;
         if(!initialized)
@@ -364,16 +375,16 @@ int main(int argc, char* argv[])
         {
             for(uint32 i = 0; i < v.Size(); ++i)
             {
-				v[i].position.y = sin(CurrentTime(game_state) + i / (PI * 20));
+                v[i].position.y = sin(CurrentTime(game_state) + i / (PI * 20));
             }
         }
 
         LineDrawParams spaghetti_params;
         spaghetti_params.line_draw_flags |= LineDraw_Smooth;
-        renderer->DrawLine(v, &spaghetti_params);
+        DrawLine(renderer, v, &spaghetti_params);
 #endif
 
-#if 0 // Rotation test
+#if 1 // Rotation test
         static Rectf rot_rect = { -15.f, 0, 30.f, 1.f };
         static Rectf rot_rect2 = { 2.f, 1.f, 1.f, 3.f };
 
@@ -394,7 +405,6 @@ int main(int argc, char* argv[])
         }
 
         DebugPrintf("Angle 1: %.2f, Angle2: %.2f", rot_angle, rot_angle2);
-
 
         if(KeyFrameDown(SDLK_1))
         {
@@ -433,7 +443,7 @@ int main(int argc, char* argv[])
 
         Rectf aabb;
         Vec2_8 rot_sum = MinkowskiSum(rot_rect, rot_angle, rot_rect2, rot_angle2, &aabb);
-        renderer->DrawRect(aabb, vec4(0, 1.f, 1.f, 1.f));
+        DrawRect(renderer, aabb, vec4(0, 1.f, 1.f, 1.f));
 
         Vec2 vpoint = { 1.f, 1.f };
 
@@ -447,7 +457,7 @@ int main(int argc, char* argv[])
             point_color = vec4(1.f, 0, 0, 1.f);
         }
 
-        renderer->DrawRect(point, point_color);
+        DrawRect(renderer, point, point_color);
 
 #if 0
         for(uint32 i = 0; i < 4; ++i)
@@ -463,20 +473,20 @@ int main(int argc, char* argv[])
 
         LineDrawParams rot_params;
         rot_params.line_draw_flags |= LineDraw_Looped;
-        renderer->DrawLine(rot_array, &rot_params);
+        DrawLine(renderer, rot_array, &rot_params);
 
         for(uint32 i = 0; i < rot_array.Size(); ++i)
         {
             DebugPrintf("Point %d: is (%.1f,%.1f)", i, rot_array[i].position.x, rot_array[i].position.y);
         }
 
-        renderer->DrawRotatedRect(rot_rect, rot_angle, vec4(0.5f, 0.5f, 0.5f, 0.5f));
-        renderer->DrawRotatedRect(rot_rect2, rot_angle2, vec4(0.8f, 0.8f, 0.8f, 1.f));
+        DrawRotatedRect(renderer, rot_rect, rot_angle, vec4(0.5f, 0.5f, 0.5f, 0.5f));
+        DrawRotatedRect(renderer, rot_rect2, rot_angle2, vec4(0.8f, 0.8f, 0.8f, 1.f));
 #endif
 
         //DrawTileMap(&game_state->active_scene->tilemap);
 
-		renderer->Flush();
+        Flush(renderer);
 
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(debug_renderer, TARGET_FPS);
@@ -484,25 +494,25 @@ int main(int argc, char* argv[])
 
         // For drawing Debug info, the profiling in this section will be discarded,
         // but it is only drawing text and the debug graph.
-        renderer->Flush();
+        Flush(renderer);
 
         SwapBuffer(game_state);
 
-		// TODO(cgenova): High granularity sleep function!
-		//uint32 delay_time = RemainingTicksInFrame();
-		//if(delay_time > 10) {
-  		  //std::cout << "Delaying: " << delay_time << " ms" << std::endl;
-		//	SDL_Delay(delay_time);
-		//}
-		//std::cout << "Delta T : " << delay_time << " ms" << std::endl;
+        // TODO(cgenova): High granularity sleep function!
+        //uint32 delay_time = RemainingTicksInFrame();
+        //if(delay_time > 10) {
+          //std::cout << "Delaying: " << delay_time << " ms" << std::endl;
+        //  SDL_Delay(delay_time);
+        //}
+        //std::cout << "Delta T : " << delay_time << " ms" << std::endl;
         //
 
         ResetArena(&game_state->temporary_memory);
 
-	}// End main loop
+    }// End main loop
 
-	SDL_Quit();
+    SDL_Quit();
 
-	return 0;
+    return 1;
 }
 
