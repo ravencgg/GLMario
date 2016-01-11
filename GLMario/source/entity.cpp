@@ -146,14 +146,14 @@ EntityUpdateFunc(UpdateCamera)
     EntityCamera* camera = &entity->camera;
 
     Entity* follow_target;
-    if(FindEntityWithID(scene, camera->follow_target_id, &follow_target))
+    if(GetEntityWithID(scene, camera->follow_target_id, &follow_target))
     {
         entity->transform.position = follow_target->transform.position;
         entity->camera.camera.position = follow_target->transform.position;
     }
     else
     {
-        camera->follow_target_id = 0;
+        camera->follow_target_id.generation = 0;
     }
 }
 
@@ -202,23 +202,21 @@ EntityDrawFunc(DrawSpawner)
     PushDrawCall(renderer, draw_call, DrawLayer_Player);
 }
 
-
-bool FindEntityWithID(Scene* scene, uint32 id, Entity** out)
+// Pass nullptr to "out" to see if an EntityID is valid
+bool GetEntityWithID(Scene* scene, EntityID id, Entity** out)
 {
-    if(id == 0) return false;
-
     bool result = false;
+    assert(id.index < scene->max_entities);
+    if(id.index >= scene->max_entities || id.generation == 0) return result;
 
-    Entity* entity = scene->entities;
-    for(uint32 i = 0; i < scene->max_entities; ++i, ++entity)
+    Entity* entity = scene->entities + id.index;
+
+    if(entity->id.generation == id.generation)
     {
-        if(entity->id == id)
-        {
-            result = true;
-            *out = entity;
-            break;
-        }
+        result = true;
+        if(out) *out = entity;
     }
+
     return result;
 }
 
@@ -238,8 +236,14 @@ static void DespawnRemovedEntities(Scene* scene)
                     }break;
             }
             --scene->active_entities;
+            uint32 old_generation = entity->id.generation;
+
             // This resets EntityType to EntityType_Null!
             memset(entity, 0, sizeof(*entity));
+
+            // 0 is not a valid generation id
+            ++old_generation;
+            entity->id.generation = old_generation ? old_generation : 1;
         }
     }
 }
@@ -253,14 +257,14 @@ static Entity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
     {
         if(entity->type != EntityType_Null)
         {
-            entity++;
+            ++entity;
             continue;
         }
         else
         {
-            entity->id = ++scene->next_entity_id;
+            entity->id.index = i;
+            if(entity->id.generation == 0) entity->id.generation = 1;
             entity->type = new_type;
-            assert(entity->id != 0); // NOTE: handle wrapping?
             entity->flags |= EntityFlag_Enabled;
 
             ++scene->active_entities;
@@ -292,7 +296,7 @@ EntitySpawnFunc(SpawnPlayer)
 {
     EntityPlayer* player = &entity->player;
 
-    if(scene->player_id == 0)
+    if(!GetEntityWithID(scene, scene->player_id, 0))
     {
         scene->player_id = entity->id;
     }
@@ -352,7 +356,8 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
         {
             for(int i = 0; i < 1; ++i)
             {
-                SpawnEntity(game_state, scene, EntityType_Player, { 1.f, 2.0f });
+                Entity* new_player = SpawnEntity(game_state, scene, EntityType_Player, { 1.f, 2.0f });
+                scene->player_id = new_player->id;
             }
         }
 
@@ -372,7 +377,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
         if(KeyFrameDown(SDLK_r))
         {
             Entity* new_cam = SpawnEntity(game_state, scene, EntityType_Camera, { 1.f, 1.f });
-            if(scene->player_id)
+            if(GetEntityWithID(scene, scene->player_id, 0))
             {
                 new_cam->camera.follow_target_id = scene->player_id;
             }

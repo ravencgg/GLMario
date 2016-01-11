@@ -26,6 +26,13 @@ enum EntityType : uint32
     EntityType_Count
 };
 
+// NOTE: could just use 32 bits for both, but don't need 4 billion simultaneous entity indexes
+struct EntityID
+{
+    uint32 index      : 12;
+    uint32 generation : 22;
+};
+
 enum EntityFlags
 {
     EntityFlag_Enabled  = 0x1,
@@ -58,14 +65,14 @@ struct EntitySpawner
 };
 struct EntityCamera
 {
-    uint32 follow_target_id;
+    EntityID follow_target_id;
     Camera camera;
 };
 
 struct Entity
 {
+    EntityID id;
     uint32 flags;
-    uint32 id;
     EntityType type;
     Transform transform;
     Sprite sprite;
@@ -93,7 +100,7 @@ void DrawSceneEntities(Scene* scene, Renderer* renderer);
 void BuildEntityVTable(Scene* scene);
 
 //
-bool FindEntityWithID(Scene* scene, uint32 id, Entity** out);
+bool GetEntityWithID(Scene* scene, EntityID, Entity** out);
 
 // Will be removed at the end of the frame
 void RemoveEntity(Scene* scene, Entity* entity);

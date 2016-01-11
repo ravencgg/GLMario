@@ -59,8 +59,7 @@ struct Scene
 {
     uint32 max_entities;
     uint32 active_entities;
-    uint32 next_entity_id;
-    uint32 player_id;
+    EntityID player_id;
     EntityVtable entity_vtable[EntityType_Count];
     Entity*  entities;
     Entity** entity_delete_list;

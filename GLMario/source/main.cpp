@@ -37,8 +37,7 @@
 
 #define TOTAL_MEMORY_ALLOCATION_SIZE FRAME_TEMPORARY_MEMORY_SIZE + GAME_PERMANENT_MEMORY_SIZE
 
-#define MAX_GAME_ENTITES 5000
-#define MAX_GAME_OBJECTS 500
+#define MAX_GAME_ENTITES 4096
 
 void DebugControlCamera(Camera* camera)
 {
@@ -142,7 +141,7 @@ static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
     return result;
 }
 
-static Scene* PushScene(MemoryArena* arena, uint32 num_entities, uint32 num_objects)
+static Scene* PushScene(MemoryArena* arena, uint32 num_entities)
 {
     Scene* result = PushStruct(arena, Scene);
 
@@ -168,7 +167,7 @@ int main(int argc, char* argv[])
 
     GameState* game_state = CreateNewGameState("EnGen", 1200, 700);
     Renderer* renderer = game_state->renderer;
-    game_state->active_scene = PushScene(&game_state->permanent_memory, MAX_GAME_ENTITES, MAX_GAME_OBJECTS);
+    game_state->active_scene = PushScene(&game_state->permanent_memory, MAX_GAME_ENTITES);
 
     TileMap* tilemap = game_state->active_scene->tilemap;
 
@@ -260,7 +259,9 @@ int main(int argc, char* argv[])
             }
         }
 
-        UpdateMouseWorldPosition(game_state->window.resolution, default_camera.viewport_size, default_camera.position);
+        Camera* draw_camera = game_state->active_camera ? game_state->active_camera : &default_camera;
+
+        UpdateMouseWorldPosition(game_state->window.resolution, draw_camera->viewport_size, draw_camera->position);
 
         ProfileEndSection(Profile_Input);
 
@@ -363,8 +364,6 @@ int main(int argc, char* argv[])
 #endif
 
         DrawTileMap(game_state, game_state->active_scene->tilemap);
-
-        Camera* draw_camera = game_state->active_camera ? game_state->active_camera : &default_camera;
 
         Flush(renderer, draw_camera);
 
