@@ -54,7 +54,7 @@ struct LineDrawParams
 {
     uint32 line_draw_flags = LineDraw_Default;
     DrawLayer draw_layer   = DrawLayer_UI;
-    uint8 line_width       = 3;
+    uint8 line_width       = 1;
 };
 
 namespace DrawType
@@ -211,8 +211,6 @@ struct Renderer
     std::vector<LineBufferData> line_buffer;
     // TODO: switch to frame buffer, then sort before drawing?
 	Array<DrawCall> draw_buffer[DrawLayer_Count];
-
-    Camera* camera;
 };
 
 void SwapBuffer(GameState*);
@@ -222,13 +220,13 @@ void LoadImage(Renderer*, char*, ImageFiles);
 void LoadShader(Renderer*, char*, char*, ShaderTypes);
 
 void BeginFrame(Renderer*, Window*);
-void Flush(Renderer*);
+void Flush(Renderer*, Camera*);
 void ForceColorClear();
 void SetClearColor(Vec4);
 
 Vec2i GetResolution(Renderer*);
 float ViewportWidth(Renderer*);
-void RenderDrawBuffer(Renderer*);
+void RenderDrawBuffer(Renderer*, Camera*);
 
 TextDrawResult DrawString(Renderer*, char* string, uint32 string_size, float start_x, float start_y, StringTextColor* = 0, size_t = 0);
 void PushDrawCall(Renderer*, DrawCall, DrawLayer);

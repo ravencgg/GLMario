@@ -15,7 +15,6 @@
 
 #include "time.h"
 #include "renderer.h"
-#include "physics.h"
 #include "entity.h"
 #include "particles.h"
 #include "input.h"
@@ -136,7 +135,7 @@ static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
     result->permanent_memory = CreateSubArena(&arena, GAME_PERMANENT_MEMORY_SIZE);
     assert(arena.used == arena.size);
 
-    StartupWindow(&result->window, window_title, res_x, res_y); 
+    StartupWindow(&result->window, window_title, res_x, res_y);
 
     result->renderer = CreateRenderer(&result->permanent_memory);
     InitializeTime(result, MS_PER_FRAME);
@@ -154,9 +153,11 @@ static Scene* PushScene(MemoryArena* arena, uint32 num_entities, uint32 num_obje
 
     // This should be done when loading a level
     // This needs to subarena for a quad tree
-    const uint32 width = 50; // LOAD FROM FILE!
-    const uint32 height = 50;
-    AllocateTileMap(arena, &result->tilemap, width, height);
+    result->tilemap = PushStruct(arena, TileMap);
+
+    Vec2 map_size = { 100.f, 100.f };
+    uint32 max_tiles = 1000;
+    AllocateTileMap(arena, result->tilemap, map_size, max_tiles);
 
     return result;
 }
@@ -169,33 +170,19 @@ int main(int argc, char* argv[])
     Renderer* renderer = game_state->renderer;
     game_state->active_scene = PushScene(&game_state->permanent_memory, MAX_GAME_ENTITES, MAX_GAME_OBJECTS);
 
-// Global initialization
+    TileMap* tilemap = game_state->active_scene->tilemap;
+
+    for(int32 i = 0; i < 10; ++i)
+    {
+        Vec2 pos = { (float) i, (float) i * 2.f };
+        AddTileToMap(tilemap, pos);
+    }
+
     InitializeInput();
     InitializeDebugConsole();
-//    InitializeAudio();
-// End Global initialization
-
-    game_state->active_scene->physics = new Physics;
-    // TODO: dynamically figure out max sizes of things like this
-    game_state->active_scene->physics->quadtree_memory = CreateSubArena(&game_state->permanent_memory, MEGABYTES(1));
-    game_state->active_scene->physics->quadtree.aabb = { -100.f, -100.f, 200.f, 200.f };
-    game_state->active_scene->tmap = new Tilemap(game_state->active_scene->physics);
 
 #if 0
-    game_state->active_scene->tmap->MakeWalledRoom(rect(-50, -20, 50, 50));
-    game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -20, 30, 3));
-    game_state->active_scene->tmap->MakeWalledRoom(rect(-25, -10, 5, 10));
-    game_state->active_scene->tmap->MakeWalledRoom(rect(20, 20, 10, 10));
-    game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 10, 2));
-    game_state->active_scene->tmap->MakeWalledRoom(rect(-5, -2, 4, 4));
-#else
-    game_state->active_scene->tmap->AddTile(-1.5f, -1.f);
-    game_state->active_scene->tmap->AddTile(-3.f, -1.f);
-
-    game_state->active_scene->tmap->AddTile(2.f, -1.f);
-#endif
-
-#if 0
+    InitializeAudio();
     char* test_sound_file = "C:\\projects\\imperial_march.wav";
     bool test_sound_loaded = LoadWavFile(test_sound_file);
     if(test_sound_loaded)
@@ -205,14 +192,10 @@ int main(int argc, char* argv[])
     PauseAudio(false);
 #endif
 
-//  SceneManager scene;
-    Camera main_camera = {}; // maybe put this in game_state?
-    main_camera.position = vec2(0, 0);
-    main_camera.viewport_size.x = 16;
-    main_camera.viewport_size.y = 9;
-
-    renderer->camera = &main_camera;
-//    renderer->set_camera(&main_camera);
+    Camera default_camera = {}; // maybe put this in game_state?
+    default_camera.position = vec2(0, 0);
+    default_camera.viewport_size.x = 16;
+    default_camera.viewport_size.y = 9;
 
     uint32 frame_count = 0;
     uint32 fps = 0;
@@ -277,13 +260,13 @@ int main(int argc, char* argv[])
             }
         }
 
-        UpdateMouseWorldPosition(game_state->window.resolution, main_camera.viewport_size, main_camera.position);
+        UpdateMouseWorldPosition(game_state->window.resolution, default_camera.viewport_size, default_camera.position);
 
         ProfileEndSection(Profile_Input);
 
         Vec2 mouse_pos = MouseWorldPosition();
         DebugPrintf("Mouse World Position: (%.2f, %.2f)",  mouse_pos.x, mouse_pos.y);
-        DebugPrintf("Main Camera Position: (%.2f, %.2f)",  main_camera.position.x, main_camera.position.y);
+        DebugPrintf("Main Camera Position: (%.2f, %.2f)",  default_camera.position.x, default_camera.position.y);
 
         if(KeyFrameDown(SDLK_ESCAPE))
         {
@@ -336,13 +319,10 @@ int main(int argc, char* argv[])
         frame_count++;
         DebugPrintf("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount(game_state));
 
-        DebugControlCamera(&main_camera);
+        DebugControlCamera(&default_camera);
 
         // TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
         BeginFrame(renderer, &game_state->window);
-
-        game_state->active_scene->tmap->update();
-        game_state->active_scene->tmap->draw(game_state); // TODO: lol
 
         ProfileBeginSection(Profile_SceneUpdate);
 
@@ -352,8 +332,6 @@ int main(int argc, char* argv[])
 
         UpdateSceneEntities(game_state, game_state->active_scene);
         DrawSceneEntities(game_state->active_scene, renderer);
-
-        game_state->active_scene->physics->DebugDraw(game_state); // TODO: lol
 
         ProfileEndSection(Profile_SceneUpdate);
 
@@ -384,128 +362,24 @@ int main(int argc, char* argv[])
         DrawLine(renderer, v, &spaghetti_params);
 #endif
 
-#if 1 // Rotation test
-        static Rectf rot_rect = { -15.f, 0, 30.f, 1.f };
-        static Rectf rot_rect2 = { 2.f, 1.f, 1.f, 3.f };
+        DrawTileMap(game_state, game_state->active_scene->tilemap);
 
-        static Array<SimpleVertex> rot_array(8);
-        static bool rot_init = false;
-        static float rot_angle = 0;
-        static float rot_angle2 = 0;
-        static uint32 num_elements = 8;
-        if(!rot_init)
-        {
-            rot_init = true;
-            for(uint32 i = 0; i < num_elements; ++i)
-            {
-                SimpleVertex verts = {};
-                verts.color = vec4(1, 1, (float) i / (float) num_elements, 1.f);
-                rot_array.Add(verts);
-            }
-        }
+        Camera* draw_camera = game_state->active_camera ? game_state->active_camera : &default_camera;
 
-        DebugPrintf("Angle 1: %.2f, Angle2: %.2f", rot_angle, rot_angle2);
-
-        if(KeyFrameDown(SDLK_1))
-        {
-            rot_rect = { 2.f, 1.f, 3.f, 3.f };
-            rot_rect2 = { 2.f, 1.f, 1.f, 3.f };
-            rot_angle = 0;
-            rot_angle2 = 0;
-        }
-
-        if(KeyIsDown(SDLK_6))
-        {
-            rot_angle += 0.02f;
-        }
-        if(KeyIsDown(SDLK_7))
-        {
-            rot_angle -= 0.02f;
-        }
-
-        if(KeyIsDown(SDLK_9))
-        {
-            rot_angle2 += 0.02f;
-        }
-        if(KeyIsDown(SDLK_0))
-        {
-            rot_angle2 -= 0.02f;
-        }
-
-        if(rot_angle > TAU)
-        {
-            rot_angle -= TAU;
-            rot_rect2.w = random_float(1.f, 4.f);
-            rot_rect2.h = random_float(1.f, 4.f);
-        }
-
-        //Vec2_4 rot_points = RotatedRect(rot_rect, rot_angle);
-
-        Rectf aabb;
-        Vec2_8 rot_sum = MinkowskiSum(rot_rect, rot_angle, rot_rect2, rot_angle2, &aabb);
-        DrawRect(renderer, aabb, vec4(0, 1.f, 1.f, 1.f));
-
-        Vec2 vpoint = { 1.f, 1.f };
-
-//        static float point_theta = 0;
-//        point_theta += 0.01f;
-//        vpoint = RotatePoint(vpoint, point_theta, vec2(0, 0));
-        Rectf point = { vpoint.x, vpoint.y, 0.1f, 0.1f };
-        Vec4 point_color = vec4(0.2f, 0.2f, 0.8f, 1.0f);
-        if(Contains(rot_rect, rot_angle, vpoint))
-        {
-            point_color = vec4(1.f, 0, 0, 1.f);
-        }
-
-        DrawRect(renderer, point, point_color);
-
-#if 0
-        for(uint32 i = 0; i < 4; ++i)
-        {
-            rot_array[i].position = rot_points.e[i];
-        }
-#endif
-
-        for(uint32 i = 0; i < 8; ++i)
-        {
-            rot_array[i].position = rot_sum.e[i];
-        }
-
-        LineDrawParams rot_params;
-        rot_params.line_draw_flags |= LineDraw_Looped;
-        DrawLine(renderer, rot_array, &rot_params);
-
-        for(uint32 i = 0; i < rot_array.Size(); ++i)
-        {
-            DebugPrintf("Point %d: is (%.1f,%.1f)", i, rot_array[i].position.x, rot_array[i].position.y);
-        }
-
-        DrawRotatedRect(renderer, rot_rect, rot_angle, vec4(0.5f, 0.5f, 0.5f, 0.5f));
-        DrawRotatedRect(renderer, rot_rect2, rot_angle2, vec4(0.8f, 0.8f, 0.8f, 1.f));
-#endif
-
-        //DrawTileMap(&game_state->active_scene->tilemap);
-
-        Flush(renderer);
+        Flush(renderer, draw_camera);
 
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(debug_renderer, TARGET_FPS);
         DebugDrawConsole(debug_renderer);
 
+        // NOTE:
         // For drawing Debug info, the profiling in this section will be discarded,
         // but it is only drawing text and the debug graph.
-        Flush(renderer);
+        Flush(renderer, draw_camera);
 
         SwapBuffer(game_state);
 
         // TODO(cgenova): High granularity sleep function!
-        //uint32 delay_time = RemainingTicksInFrame();
-        //if(delay_time > 10) {
-          //std::cout << "Delaying: " << delay_time << " ms" << std::endl;
-        //  SDL_Delay(delay_time);
-        //}
-        //std::cout << "Delta T : " << delay_time << " ms" << std::endl;
-        //
 
         ResetArena(&game_state->temporary_memory);
 

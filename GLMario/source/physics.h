@@ -153,22 +153,6 @@ struct PhysicsRect
 {
     Rectf col_rect;
 };
-
-inline
-Rectf make_rect(Vec2 pos, Vec2 size)
-{
-   Rectf result = {};
-   result.x = pos.x - size.x / 2.f;
-   result.y = pos.y - size.y / 2.f;
-   result.w = size.x;
-   result.h = size.y;
-   return result;
-}
-
 //bool CheckCollision(const Rectf& m, Vec2 velocity, Rectf& other, float other_rot, CollisionInfo& out);
-bool CheckCollision(const Rectf& m, Vec2 velocity, Vec2_8* mSum, CollisionInfo& out);
-
-
-
-
+bool CheckCollision(Renderer*, const Rectf& m, Vec2 velocity, Vec2_8* mSum, CollisionInfo& out);
 

@@ -57,7 +57,6 @@ void WindowSetScreenMode(Window* window, ScreenMode mode);
 
 struct Scene
 {
-//    SceneType type;
     uint32 max_entities;
     uint32 active_entities;
     uint32 next_entity_id;
@@ -67,13 +66,7 @@ struct Scene
     Entity** entity_delete_list;
     uint32   entity_delete_count;
 
-// The physics one
-    Tilemap* tmap;
-    Physics* physics;
-
-// TODO: combine tilemap code, or just pick one
-// The grid one
-    TileMap tilemap;
+    TileMap* tilemap;
 };
 
 
@@ -89,6 +82,7 @@ struct GameState
     MemoryArena permanent_memory;
 
     Scene* active_scene;
+    Camera* active_camera;
 
     Renderer* renderer;
     Window window;

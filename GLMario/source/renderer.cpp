@@ -28,7 +28,6 @@ void SwapBuffer(GameState* game_state)
 	SDL_GL_SwapWindow(game_state->window.sdl_window);
 }
 
-#if 1
 Renderer* CreateRenderer(MemoryArena* arena)
 {
     Renderer* result = PushStruct(arena, Renderer);
@@ -66,16 +65,8 @@ static void ActivateShader(Renderer* ren, ShaderTypes s)
     glUseProgram(ren->shaders[(uint32)s].shader_handle);
 }
 
-#endif
-
-void SetCamera(Renderer* renderer, Camera* camera)
-{
-	renderer->camera = camera;
-}
-
 void BeginFrame(Renderer* renderer, Window* window)
 {
-    // Resolution can't change mid frame, although the camera position can
     SDL_GL_GetDrawableSize(window->sdl_window, &renderer->frame_resolution.x, &renderer->frame_resolution.y);
 
 	glViewport(0, 0, renderer->frame_resolution.x, renderer->frame_resolution.y);
@@ -93,18 +84,18 @@ void ForceColorClear()
 	glClear(GL_COLOR_BUFFER_BIT); // Would have to put a swap buffer here to notice anything
 }
 
-void Flush(Renderer* renderer)
+void Flush(Renderer* renderer, Camera* render_camera)
 {
-    RenderDrawBuffer(renderer);
+    RenderDrawBuffer(renderer, render_camera);
 	for(uint32 i = 0; i < DrawLayer_Count; ++i)
 	{
 		renderer->draw_buffer[i].Clear();
 	}
 }
 
-float ViewportWidth(Renderer* renderer)
+float ViewportWidth(Camera* camera)
 {
-	float result = renderer->camera->viewport_size.x;
+	float result = camera->viewport_size.x;
 	return result;
 }
 
@@ -423,7 +414,7 @@ void PushDrawCall(Renderer* renderer, DrawCall draw_call, DrawLayer layer)
 	renderer->draw_buffer[(uint32) layer].AddBack(draw_call);
 }
 
-void RenderDrawBuffer(Renderer* renderer)
+void RenderDrawBuffer(Renderer* renderer, Camera* camera)
 {
     const Rectf ogl_screen_rect = { -1.f, -1.f, 2.0f, 2.0f };
 
@@ -444,8 +435,8 @@ void RenderDrawBuffer(Renderer* renderer)
             static GLuint vao = (glGenVertexArrays(1, &vao), vao);
             static GLuint vbo = (glGenBuffers(1, &vbo), vbo);
 
-            Vec2 cam_position = { renderer->camera->position.x, renderer->camera->position.y };
-            Vec2 viewport     = { renderer->camera->viewport_size.x, renderer->camera->viewport_size.y };
+            Vec2 cam_position = { camera->position.x, camera->position.y };
+            Vec2 viewport     = { camera->viewport_size.x, camera->viewport_size.y };
 
             glUseProgram(renderer->shaders[(uint32)data.shader].shader_handle);
 
@@ -641,7 +632,7 @@ void RenderDrawBuffer(Renderer* renderer)
                         glBindVertexArray(data.abd.vao);
 
 
-                        float world_scale = ViewportWidth(renderer);
+                        float world_scale = ViewportWidth(camera);
                         GLint scl_loc = glGetUniformLocation(renderer->shaders[Shader_Particle].shader_handle, "w_scale");
                         glUniform1f(scl_loc, world_scale);
 

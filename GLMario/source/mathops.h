@@ -548,6 +548,23 @@ inline float MinSigned(float in, float minValue)
 
 /*************************************************
 *
+*  Rectf Creation Utilities
+*
+*************************************************/
+
+inline Rectf
+RectFromDim(Vec2 pos, Vec2 dim)
+{
+    Rectf result;
+    result.x = pos.x - (dim.x * 0.5f);
+    result.y = pos.y - (dim.y * 0.5f);
+    result.w = dim.x;
+    result.h = dim.y;
+    return result;
+}
+
+/*************************************************
+*
 *  Minkowski Mathematics
 *
 *************************************************/

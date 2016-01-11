@@ -29,7 +29,6 @@ Console/Rendering:
      World space text rendering 
 
      Remove console from the debug profiling
-     Remove the Flush from the draw console 
         
 Optimization:
     Cull draws out of viewport

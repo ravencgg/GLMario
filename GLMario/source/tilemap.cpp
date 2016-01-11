@@ -1,316 +1,262 @@
 #include "tilemap.h"
 #include "game_types.h"
-#include "renderer.h"
+#include "input.h"
 
-void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, uint32 map_width, uint32 map_height)
+static bool AddTile(TileGroup* tile_group, MemoryArena* arena, Tile* tile);
+static void DrawBoundingBoxes(TileGroup* tile_group, Renderer* ren);
+static Tile** GetPotentialCollidingTiles(TileGroup* node, Rectf aabb, Tile** collision_list, uint32* list_size);
+
+void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, Vec2 map_size, uint32 max_tiles)
 {
-    tilemap->map_width = map_width;
-    tilemap->map_adjusted_width = map_width + (TILE_GROUP_SIDE_SIZE - (map_width % TILE_GROUP_SIDE_SIZE));
+    tilemap->size = map_size;
 
-    tilemap->map_height = map_height;
-    tilemap->map_adjusted_height = map_height + (TILE_GROUP_SIDE_SIZE - (map_height % TILE_GROUP_SIDE_SIZE));
+// TODO: accurate allocation of sub arena
 
-    tilemap->hor_groups = tilemap->map_adjusted_width  / TILE_GROUP_SIDE_SIZE;
-    tilemap->ver_groups = tilemap->map_adjusted_height / TILE_GROUP_SIDE_SIZE;
+    tilemap->tiles = PushArray(arena, Tile, max_tiles);
+    tilemap->max_tiles = max_tiles;
+    tilemap->num_tiles = 0;
 
-    tilemap->tile_groups = PushStructs(arena, TileGroup, tilemap->hor_groups * tilemap->ver_groups);
+    tilemap->quadtree_memory = CreateSubArena(arena, sizeof(TileGroup) * max_tiles);
+    tilemap->tile_quadtree = PushStruct(&tilemap->quadtree_memory, TileGroup);
+    tilemap->tile_quadtree->aabb = { 0, 0, map_size.x, map_size.y };
+}
 
-    TileGroup* group = tilemap->tile_groups;
-    for(uint16 y = 0; y < tilemap->ver_groups; ++y)
+void AddTileToMap(TileMap* tilemap, Rectf tile_rect)
+{
+    Tile* tile = tilemap->tiles + tilemap->num_tiles;
+    tile->aabb = tile_rect;
+    ++tilemap->num_tiles;
+
+    if(!AddTile(tilemap->tile_quadtree, &tilemap->quadtree_memory, tile))
     {
-        for(uint16 x = 0; x < tilemap->hor_groups; ++x)
-        {
-            group->group_coord_x = x;
-            group->group_coord_y = y;
-
-            Tile2* tile = group->tiles;
-            for(uint16 yy = 0; yy < TILE_GROUP_SIDE_SIZE; ++yy)
-            {
-                for(uint16 xx = 0; xx < TILE_GROUP_SIDE_SIZE; ++xx)
-                {
-                    tile->tile_coord_x = x * TILE_GROUP_SIDE_SIZE + xx;
-                    tile->tile_coord_y = y * TILE_GROUP_SIDE_SIZE + yy;
-
-                    ++tile;
-                }
-            }
-
-            ++group;
-        }
+        // Didn't add the tile to anything, reuse this for a future allocation
+        --tilemap->num_tiles;
+        memset(tile, 0, sizeof(Tile));
     }
 }
 
-void MakeCheckerboard(TileMap*, Rect)
+void AddTileToMap(TileMap* tilemap, Vec2 position)
 {
-
+    AddTileToMap(tilemap, RectFromDim(position, {1.f, 1.f}));
 }
-
-void MakeWalledRoom(TileMap*, Rect)
-{
-
-}
-
-void AddTile(TileMap* tilemap, uint32 x, uint32 y)
-{
-}
-
-struct TileMapTexture
-{
-    uint16 tile_width;
-    uint16 tile_height;
-
-    uint16 tile_border_x;
-    uint16 tile_border_y;
-
-    uint16 image_border_x;
-    uint16 image_border_y;
-
-    uint16 num_tiles_x;
-    uint16 num_tiles_y;
-
-
-    uint16 num_tiles() { uint16 result = num_tiles_x * num_tiles_y; return result; }
-};
-
-void FillTileTypeInfo(TileTypeInfo* tti, TileMapTexture* tex_info, bool use_default)
-{
-#if 0
-    static bool calculated = false;
-
-    if(use_default)
-    {
-        tex_info->tile_width = 16;
-        tex_info->tile_height = 16;
-        tex_info->tile_border_x = 1;
-        tex_info->tile_border_y = 1;
-        tex_info->image_border_x = 0;
-        tex_info->image_border_y = 0;
-        tex_info->num_tiles_x = 13;
-        tex_info->num_tiles_y = 11;
-    }
-
-    tex_info->num_tiles = tex_info->num_tiles_x * tex_info->num_tiles_y;
-
-    if(!calculated)
-    {
-        for(int y = 0; y < tex_info->num_tiles_y; ++y)
-        {
-            for(int x = 0; x < tex_info->num_tiles_x; ++x)
-            {
-                int index = (y * tex_info->num_tiles_x) + x;
-                tti[index].tex_coord_x = tex_info->image_border_x + (x * (tex_info->image_border_x + tex_info->tile_width));
-                tti[index].tex_coord_y = tex_info->image_border_y + (y * (tex_info->image_border_y + tex_info->tile_height));
-                tti[index].collision_type = 0;
-            }
-        }
-    }
-#endif
-};
-
-
-#if 0
-Tile* FindTile(TileMap* tilemap, uint32 x, uint32 y)
-{
-    assert(!"probably bogus with the new numbering system");
-    assert(x < tilemap->map_width);
-    assert(y < tilemap->map_height);
-
-    if(x >= tilemap->map_width || y >= tilemap->map_height)
-    {
-        return 0;
-    }
-    uint32 group_x = x / TILE_GROUP_SIDE_SIZE;
-    uint32 group_y = y / TILE_GROUP_SIDE_SIZE;
-
-    assert(group_x < tilemap->hor_groups);
-    assert(group_y < tilemap->ver_groups);
-
-    uint32 internal_x = x % TILE_GROUP_SIDE_SIZE;;
-    uint32 internal_y = y % TILE_GROUP_SIDE_SIZE;;
-    uint32 group_loc = group_y * tilemap->hor_groups + group_x;
-
-    assert(group_loc < tilemap->hor_groups * tilemap->ver_groups);
-    TileGroup* group = tilemap->tile_groups + group_loc;
-
-    Tile* result = group->tiles + (internal_x + (internal_y * TILE_GROUP_SIDE_SIZE));
-    return result;
-}
-#endif
 
 void DrawTileMap(GameState* game_state, TileMap* tilemap)
 {
-    uint32 num_groups = tilemap->hor_groups * tilemap->ver_groups;
-    uint32 tiles_per_group = TILE_GROUP_SIZE;
-
-    Array<SimpleVertex> line_vertices;
-    Vec4 color = vec4(0, 0, 1.0f, 1.0f);
-
-    uint8 color_to_mod = 0;
-
-    line_vertices.AddEmpty(tilemap->map_width * tilemap->map_height);
-
-    uint32 index = 0;
-
-    Renderer* ren = game_state->renderer;
-
-    TileGroup* group = tilemap->tile_groups;
-    for(uint32 group_num = 0; group_num < num_groups; ++group_num, ++group)
+    for(uint32 index = 0;
+        index < tilemap->num_tiles;
+        ++index)
     {
-        Tile2* tile = group->tiles;
+        Tile* tile = tilemap->tiles + index;
+        float green = Contains(tile->aabb, MouseWorldPosition()) ? 0.8f : 0.1f;
+        const Vec4 tile_color = { 1.f, green, 0, 0.5f };
 
-        color.e[color_to_mod] += 0.1f;
-        if(color.e[color_to_mod] > 1.f)
-        {
-            color.e[color_to_mod] = 0;
-            color_to_mod ^= 1;
-        }
-
-        for(uint32 tile_num = 0; tile_num < tiles_per_group; ++tile_num, ++tile)
-        {
-            float x = (float)tile->tile_coord_x;
-            float y = (float)tile->tile_coord_y;
-
-            LineDrawParams params;
-            params.line_width = 2;
-            Vec4 color = { 1, 0, 0, 1 };
-
-            Rectf r = { x, y, 1.f, 1.f };
-            if(tile->tile_coord_x > tilemap->map_width || tile->tile_coord_y > tilemap->map_height)
-            {
-                DrawRect(ren, r, vec4(1.0f, 0, 0, 1.f), &params);
-                DrawRect(ren, r, vec4(1.0f, 0, 0, 1.f), &params);
-            }
-            else
-            {
-                DrawRect(ren, r, color, &params);
-            }
-        }
+        DrawRect(game_state->renderer, tile->aabb, tile_color);
     }
 
-    DrawLine(ren, line_vertices);
+    Vec2 mouse_pos = MouseWorldPosition();
+    Rectf mouse_rect = {mouse_pos.x, mouse_pos.y, 0.01f, 0.01f};
+    Tile** active_tiles;
+    PushArrayScoped(active_tiles, &game_state->temporary_memory, Tile*, tilemap->num_tiles);
+    uint32 num_active_tiles = 0;
+    GetPotentialCollidingTiles(tilemap->tile_quadtree, mouse_rect, active_tiles, &num_active_tiles);
+
+    for(uint32 index = 0;
+        index < num_active_tiles;
+        ++index)
+    {
+        Tile* tile = active_tiles[index];
+        const Vec4 tile_color = { 1.f, 1.0f, 0, 0.5f };
+        DrawRect(game_state->renderer, tile->aabb, tile_color);
+    }
+
+    DrawBoundingBoxes(tilemap->tile_quadtree, game_state->renderer);
 }
 
-#if 1
+/**********************************************
+ *
+ * Tilemap Quadtree
+ *
+ ***************/
 
-#include "physics.h"
 
-Tile MakeTile(Physics* physics, Vec2 position, Vec2 size, TileType tile_type)
+static bool Contains(TileGroup* tile_group, Rectf rect)
 {
-    assert(physics);
-    Tile result = { };
-    result.position = position;
-    result.size = size;
-    result.tile_type = tile_type;
-
-    Rectf collider = { (float) position.x - size.x / 2.f, (float) position.y - size.y / 2.f, size.x, size.y };
-    result.collider = physics->AddStaticCollider(collider);
+    bool result = Intersects(tile_group->aabb, rect);
     return result;
 }
 
-Tilemap::Tilemap(Physics* p)
+static bool Contains(TileGroup* tile_group, Vec2 point)
 {
-    physics = p;
-	init();
+    bool result = Contains(tile_group->aabb, point);
+    return result;
 }
 
-Tilemap::~Tilemap()
+static bool IsLeaf(TileGroup* tile_group)
 {
+    bool result = !tile_group->is_parent;
+    return result;
 }
 
-void Tilemap::MakeCheckerboard(Rect r)
+// NOTE: could switch to doing this by ID instead of pointer?
+// @untested! We currently don't allow the removal of static colliders so this hasn't been used
+#if 0
+uint32 RemoveTile(TileGroup* node, Tile* to_delete)
 {
-	for(int32 y = 0; y < r.height; ++y)
-	{
-		for(int32 x = 0; x < r.width; ++x)
-		{
-			if(y & 1)
-			{
-				if(!(x & 1))
-                {
-                    Vec2 p = vec2((float) x, (float) y);
-                    Vec2 s = vec2(1, 1);
-                    tiles.Add(MakeTile(physics, p, s));
-                }
-			}
-			else
-			{
-				if (x & 1)
-				{
-                    Vec2 p = vec2((float) x, (float) y);
-                    Vec2 s = vec2(1, 1);
-                    tiles.Add(MakeTile(physics, p, s));
-				}
-			}
-		}
-	}
-}
+    uint32 num_removed = 0;
 
-void Tilemap::MakeWalledRoom(Rect r)
-{
-
-
-	for (int32 y = r.y, j = 0; j < r.height; ++y, ++j)
-	{
-		for (int32 x = r.x, i = 0; i < r.width; ++x, ++i)
-		{
-			if(y == r.y || j == (r.height - 1))
-			{
-                Vec2 p = vec2((float) x, (float) y);
-                Vec2 s = vec2(1, 1);
-                tiles.Add(MakeTile(physics, p, s));
-			}
-			else if(x == r.x || i == (r.width - 1))
-			{
-                Vec2 p = vec2((float) x, (float) y);
-                Vec2 s = vec2(1, 1);
-                tiles.Add(MakeTile(physics, p, s));
-				// tiles.back().collider.data->active = false;
-			}
-		}
-	}
-}
-
-void Tilemap::AddTile(float x, float y)
-{
-    Vec2 p = vec2(x, y);
-    Vec2 s = vec2(1.f, 1.f);
-    tiles.Add(MakeTile(physics, p, s));
-    tiles.GetBack().collider->active = true;
-}
-
-void Tilemap::update()
-{
-}
-
-void Tilemap::draw(GameState* game_state)
-{
-	static Rect brick_rect = { 85, 0, tile_width, tile_height };
-	static Rect ground_rect = { 0, 0, tile_width, tile_height };
-
-    for(uint32 i = 0; i < tiles.Size(); ++i)
+    if(IsLeaf(node))
     {
-        draw_call.sd.world_position = tiles[i].position;
-        draw_call.sd.world_size = tiles[i].size;
-        draw_call.sd.draw_angle = TAU / 12.f;
-        PushDrawCall(game_state->renderer, draw_call, DrawLayer_Tilemap);
+        for(uint8 i = 0; i < node->contained_colliders; ++i)
+        {
+            if(node->colliders[i] == to_delete)
+            {
+                num_removed++;
+                auto remaining = (MAX_LEAF_SIZE - 1) - node->contained_colliders;
+                if(remaining > 0)
+                {
+                    memmove(&node->colliders[i], &node->colliders[i + 1], sizeof((uint32)node->colliders[i] * remaining));
+                    node->colliders[i + 1] = 0;
+                }
+                else
+                {
+                    node->colliders[i] = 0; // This is the last one in the array
+                }
+            }
+        }
     }
+    else
+    {
+        TileGroup* child_node = node->child_nodes;
+        for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i)
+        {
+            num_removed += RemoveTile(child_node, to_delete);
+        }
+    }
+
+    return num_removed;
 }
-
-void Tilemap::init()
-{
-	tile_width = 16;
-	tile_height = 16;
-
-	draw_call = {};
-	draw_call.draw_type = DrawType::SINGLE_SPRITE;
-	draw_call.image = ImageFiles::MAIN_IMAGE;
-	draw_call.shader = Shader_Default;
-	draw_call.options = DrawOptions::TEXTURE_RECT;
-	draw_call.sd.tex_rect = { 0, 0, 16, 16 };
-
-	draw_call.sd.world_size = vec2(1.f, 1.f);
-	draw_call.sd.world_position = { 0, 0 };
-	draw_call.sd.draw_angle = 0;
-}
-
 #endif
+
+// Returns true if it was added to at least one quadtree, false if you are trying to add out of bounds
+static bool AddTile(TileGroup* tile_group, MemoryArena* arena, Tile* tile)
+{
+    if(!Contains(tile_group, tile->aabb))
+    {
+        // didn't add here, return false;
+        return false;
+    }
+
+    if(IsLeaf(tile_group))
+    {
+        if(tile_group->contained_colliders < MAX_LEAF_SIZE)
+        {
+            tile_group->colliders[tile_group->contained_colliders] = tile;
+            ++tile_group->contained_colliders;
+        }
+        else
+        {
+            // Split the node into 4
+            Tile* temp_colliders[MAX_LEAF_SIZE];
+            memcpy(temp_colliders, tile_group->colliders, sizeof(temp_colliders));
+
+            tile_group->child_nodes = PushArray(arena, TileGroup, QUADTREE_CHILDREN);
+            tile_group->is_parent = true;
+
+            uint16 new_depth = tile_group->depth + 1;
+            TileGroup* new_node = tile_group->child_nodes;
+
+            Rectf r = tile_group->aabb;
+            float half_width = r.w / 2.f;
+            float half_height = r.h / 2.f;
+
+            Rectf divided_rects[QUADTREE_CHILDREN] = {
+                { r.x              , r.y              , half_width, half_height },
+                { r.x + half_height, r.y              , half_width, half_height },
+                { r.x              , r.y + half_height, half_width, half_height },
+                { r.x + half_height, r.y + half_height, half_width, half_height },
+            };
+
+            for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i, ++new_node)
+            {
+                new_node->aabb  = divided_rects[i];
+                new_node->depth = new_depth;
+                new_node->is_parent = false;
+            }
+
+            // Add the original tile that was passed in.
+            AddTile(tile_group, arena, tile);
+
+            // re-add the old pointers to the new child nodes.
+            for(uint32 i = 0; i < MAX_LEAF_SIZE; ++i)
+            {
+                AddTile(tile_group, arena, temp_colliders[i]);
+            }
+        }
+    }
+    else
+    { // Not a leaf, recurse
+        TileGroup* child = tile_group->child_nodes;
+        for(uint32 j = 0; j < QUADTREE_CHILDREN; ++j, ++child)
+        {
+            if(Contains(child, tile->aabb))
+            {
+                AddTile(child, arena, tile);
+            }
+        }
+    }
+
+    // Either added here or in a child
+    return true;
+}
+
+static Tile** GetPotentialCollidingTiles(TileGroup* node, Rectf aabb, Tile** collision_list, uint32* list_size)
+{
+    Tile** index = collision_list;
+
+    if(Contains(node, aabb))
+    {
+        if(IsLeaf(node))
+        {
+            uint8 col_count = node->contained_colliders;
+            if(col_count > 0)
+            {
+                size_t copy_size = col_count * sizeof(node->colliders[0]);
+                memcpy(index, node->colliders, copy_size);
+
+                index += col_count;
+                *list_size += col_count;
+            }
+        }
+        else
+        {
+            TileGroup* child = node->child_nodes;
+            for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i, ++child)
+            {
+                index = GetPotentialCollidingTiles(child, aabb, index, list_size);
+            }
+        }
+    }
+    return index;
+}
+
+static void DrawBoundingBoxes(TileGroup* tile_group, Renderer* ren)
+{
+    const float blue  = (float)tile_group->depth / 10.f;
+    const float green = Contains(tile_group, MouseWorldPosition()) ? 0.8f : 0.1f;
+
+    Vec4 color = { 0, green, blue, 0.5f };
+
+    if(!IsLeaf(tile_group))
+    {
+        TileGroup* node = tile_group->child_nodes;
+        for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i, ++node)
+        {
+            DrawBoundingBoxes(node, ren);
+        }
+    }
+
+    LineDrawParams params;
+    params.line_width = 2;
+    DrawRect(ren, tile_group->aabb, color, &params);
+}
+

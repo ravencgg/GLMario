@@ -2,7 +2,8 @@
 
 #include "types.h"
 #include "time.h"
-#include "physics.h"
+#include "mathops.h"
+#include "renderer.h"
 
 struct GameState;
 
@@ -41,27 +42,23 @@ struct Transform
 
 struct EntityPlayer
 {
-    RArrayRef<DynamicCollider> collider;
     Vec2 velocity;
-    uint32 camera_id;
 };
-
 struct EntityEnemy
 {
     Vec2 velocity;
     Timer despawn_timer;
     uint32 health;
 };
-
 struct EntitySpawner
 {
     uint32 num_spawned;
     float last_spawn_time;
     float time_between_spawns;
 };
-
 struct EntityCamera
 {
+    uint32 follow_target_id;
     Camera camera;
 };
 

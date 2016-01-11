@@ -42,6 +42,7 @@ struct ProfileSection
     u64 max_cycles;
     u32 hits;
 
+// TODO: this never changes size, just replace this with a PushArray
     Array<SimpleVertex> history;
 };
 

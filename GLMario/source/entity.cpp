@@ -2,19 +2,20 @@
 #include "entity.h"
 #include "game_types.h"
 #include "particles.h"
+#include "console.h"
 
 #include "renderer.h"
 // Move this
 void RenderRandomParticles(GameState* game_state)
 {
-#if 0
-	static ParticleSystem ps1(10000);
+#if 1
+	static ParticleSystem ps1(game_state, 10000);
 	ps1.draw_layer = DrawLayer_PreTilemap;
 	//ps1.draw_layer = DrawLayer::POST_TILEMAP;
 	static ParticleEmissionData data[2];
 	static uint32 active_data = 0;
 
-	static ParticleSystem ps2(7500);
+	static ParticleSystem ps2(game_state, 7500);
 	ps2.draw_layer = DrawLayer_PreTilemap;
 	static bool setup = false;
 	if(!setup)
@@ -67,7 +68,7 @@ EntityUpdateFunc(UpdatePlayer)
 {
     EntityPlayer* player = &entity->player;
 
-    const float gravity = -20.f;
+//    const float gravity = -20.f;
     static uint32 count = 0;
 
     if(KeyIsDown(SDLK_SPACE))
@@ -77,7 +78,7 @@ EntityUpdateFunc(UpdatePlayer)
     }
     else
     {
-        player->velocity.y += gravity * dt;
+//        player->velocity.y += gravity * dt;
         player->velocity.y = max(player->velocity.y, -100.0f);
     }
     if(KeyIsDown(SDLK_d))
@@ -99,22 +100,9 @@ EntityUpdateFunc(UpdatePlayer)
         entity->delete_this_frame = true;
     }
 
-    Entity* camera = 0;
-    if(FindEntityWithID(scene, player->camera_id, &camera))
-    {
-        camera->transform.position = entity->transform.position;
-    }
+    entity->transform.position += player->velocity * dt;
 
-    //DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
-    //DebugPrintf("Player position: (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
     Vec2 old_velocity = player->velocity;
-    //TODO: integrate physics in the new system
-
-    entity->transform.position = scene->physics->StepCollider(game_state, &game_state->temporary_memory, player->collider, player->velocity, FrameTime(game_state));
-
-    const uint8 line_width = 3;
-    //Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + old_velocity, vec4(0, 1, 1, 1), line_width);
-    //DebugPrintf("Player collider.data->velocity: (%.2f, %.2f)", player->velocity.x, player->velocity.y);
 }
 
 EntityUpdateFunc(UpdateSpawner)
@@ -151,13 +139,22 @@ EntityUpdateFunc(UpdateEnemy)
     {
         RemoveEntity(scene, entity);
     }
+}
 
-    //enemy->velocity.y = -1.f;
-    //            DebugPrintf("Enemy position:  (%.2f, %.2f)", entity->transform.position.x, entity->transform.position.y);
-    //const uint8 line_width = 3;
-    //Renderer::get()->DrawLine(entity->transform.position, entity->transform.position + enemy->velocity, vec4(0, 1, 1, 1), line_width);
-    //TODO: physics
-    //            enemy->transform.position = parent_scene->physics->StepCollider(game_state->temporary_memory, collider, velocity, FrameTime(game_state));
+EntityUpdateFunc(UpdateCamera)
+{
+    EntityCamera* camera = &entity->camera;
+
+    Entity* follow_target;
+    if(FindEntityWithID(scene, camera->follow_target_id, &follow_target))
+    {
+        entity->transform.position = follow_target->transform.position;
+        entity->camera.camera.position = follow_target->transform.position;
+    }
+    else
+    {
+        camera->follow_target_id = 0;
+    }
 }
 
 EntityDrawFunc(DrawEnemy)
@@ -222,7 +219,7 @@ bool FindEntityWithID(Scene* scene, uint32 id, Entity** out)
             break;
         }
     }
-    return false;
+    return result;
 }
 
 static void DespawnRemovedEntities(Scene* scene)
@@ -238,12 +235,8 @@ static void DespawnRemovedEntities(Scene* scene)
             {
                 case EntityType_Player:
                     {
-                        // TODO: fix deallocation of dynamic colliders
-                        // scene->physics->DestroyCollider(entity->player.collider);
                     }break;
-
             }
-
             --scene->active_entities;
             // This resets EntityType to EntityType_Null!
             memset(entity, 0, sizeof(*entity));
@@ -309,24 +302,6 @@ EntitySpawnFunc(SpawnPlayer)
     entity->transform.scale = vec2( 1.f, 1.f );
 
     Vec2 size = vec2(1.0f, 1.5f);
-
-    DynamicCollider col;
-    col.active = true;
-    col.position = entity->transform.position;
-
-#if 1
-    col.rect = { -size.x / 2.f,
-        -size.y / 2.f,
-        size.x,
-        size.y };
-#else
-    col.rect = { -0.5f, -0.5f, 1.0f, 1.0f };
-#endif
-
-    col.parent = nullptr;
-
-    player->collider = scene->physics->AddDynamicCollider(col);
-    player->collider->position = entity->transform.position; // Should this be offset or actual position?
 }
 
 EntitySpawnFunc(SpawnEnemySpawner)
@@ -349,16 +324,6 @@ Entity* SpawnEntity(GameState* game_state, Scene* scene, EntityType type, Vec2 p
     }
 
     return result;
-}
-
-void AttachCameraToPlayer(Scene* scene, uint32 camera_id)
-{
-    Entity* entity = 0;
-    if(FindEntityWithID(scene, scene->player_id, &entity))
-    {
-        EntityPlayer* player = &entity->player;
-        player->camera_id = camera_id;
-    }
 }
 
 // TODO: despawn entity by ID
@@ -393,7 +358,6 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
 
         if (KeyFrameDown(SDLK_n))
         {
-
             uint32 random_spawn = (uint32)random_float(1.0f, 1000.f);
 
             for(uint32 i = 0; i < random_spawn; ++i)
@@ -405,22 +369,31 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
             }
         }
 
-        // @hack remove me
+        if(KeyFrameDown(SDLK_r))
+        {
+            Entity* new_cam = SpawnEntity(game_state, scene, EntityType_Camera, { 1.f, 1.f });
+            if(scene->player_id)
+            {
+                new_cam->camera.follow_target_id = scene->player_id;
+            }
+            new_cam->camera.camera.viewport_size = { 16.f, 9.f };
+            game_state->active_camera = &new_cam->camera.camera;
+        }
+
         if (MouseFrameDown(MouseButton::LEFT))
         {
             Vec2 mouse_pos = MouseWorldPosition();
-            scene->tmap->AddTile(mouse_pos.x, mouse_pos.y);
+            AddTileToMap(scene->tilemap, mouse_pos);
         }
     }
 
     scene->entity_delete_count = 0;
     scene->entity_delete_list = PushArray(&game_state->temporary_memory, Entity*, scene->max_entities);
 
-    DebugPrintf("Temporary memory base: %p", scene->entity_delete_list);
-
     Entity* entity = scene->entities;
     uint32 max_entities = scene->max_entities; // The maximum that could be looked for, though the
                                                // loop will generally early out
+                                               // TODO: This is wrong if entities are added during an update
     uint32 updated_entities = 0;
     for(uint32 i = 0; i < max_entities; ++i, ++entity)
     {
@@ -489,7 +462,7 @@ void BuildEntityVTable(Scene* scene)
         { EntityType_Enemy,    { UpdateEnemy,   DrawEnemy,   SpawnEnemy         } },
         { EntityType_Spawner,  { UpdateSpawner, DrawSpawner, SpawnEnemySpawner  } },
         { EntityType_Player,   { UpdatePlayer,  DrawPlayer,  SpawnPlayer        } },
-        { EntityType_Camera,   { nullptr,       nullptr,     nullptr            } },
+        { EntityType_Camera,   { UpdateCamera,  nullptr,     nullptr            } },
     };
 
 #ifdef _DEBUG

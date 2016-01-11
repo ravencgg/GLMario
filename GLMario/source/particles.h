@@ -3,9 +3,7 @@
 #include <assert.h>
 #include "entity.h"
 #include "types.h"
-
-class SceneManager;
-
+#include "renderer.h"
 
 namespace ParticleOptions
 {

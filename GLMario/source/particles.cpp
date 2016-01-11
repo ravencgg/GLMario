@@ -126,10 +126,9 @@ void ParticleSystem::update(GameState* game_state, Vec2 new_position)
 	Vec2 delta_p = ptd.world_position - ptd.last_world_position;
 	ptd.last_world_position = ptd.world_position;
 
-    if(1)// !KeyIsDown(SDLK_l)) // Hold l to disable SIMD
+    if(!KeyIsDown(SDLK_l)) // Hold l to disable SIMD
                                 // SIMD is currently ~2x as fast as normal path
     {
-        // #ifdef UPDATE_PARTICLE_WIDE
 
         const int wide_count = 4;
         uint32 j;

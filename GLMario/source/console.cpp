@@ -188,11 +188,6 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         params.line_width = 2;
         DrawRect(ren, data_box, color, &params);
     }
-
-// NOTE: Second flush of the frame, just to push out the console data;
-// TODO: don't do the performance stuff on that one, it will just get cleared at the beginning of the
-// frame anyway.
-//    ren->Flush();
 }
 
 // Note: won't be thread safe;
