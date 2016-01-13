@@ -173,12 +173,12 @@ private:
 	void reallocate(uint32 new_element_count = 1)
 	{
 		T* temp = data;
-		uint32 old_size = capacity;
+		uint32 old_capacity = capacity;
         uint32 half_size = capacity >> 1;
         uint32 grow_size = Maximum(new_element_count, half_size);
         capacity += grow_size;
 		data = new T[capacity] {};
-        memcpy(data, temp, old_size * sizeof(T));
+        memcpy(data, temp, old_capacity * sizeof(T));
 		delete[] temp;
 	}
 

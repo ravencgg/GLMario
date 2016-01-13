@@ -3,9 +3,10 @@
 #include "game_types.h"
 #include "particles.h"
 #include "console.h"
+#include "tilemap.h"
 
 #include "renderer.h"
-// Move this
+// TODO: Move this
 void RenderRandomParticles(GameState* game_state)
 {
 #if 1
@@ -64,144 +65,6 @@ void RenderRandomParticles(GameState* game_state)
 #endif
 }
 
-EntityUpdateFunc(UpdatePlayer)
-{
-    EntityPlayer* player = &entity->player;
-
-//    const float gravity = -20.f;
-    static uint32 count = 0;
-
-    if(KeyIsDown(SDLK_SPACE))
-    {
-        //RemoveEntity(entity);
-        player->velocity.y = 10.f;
-    }
-    else
-    {
-//        player->velocity.y += gravity * dt;
-        player->velocity.y = max(player->velocity.y, -100.0f);
-    }
-    if(KeyIsDown(SDLK_d))
-    {
-        player->velocity.x += 50.f * dt;
-        player->velocity.x = min(player->velocity.x, 5.0f);
-    }
-    else if(KeyIsDown(SDLK_a))
-    {
-        player->velocity.x -= 50.f * dt;
-        player->velocity.x = max(player->velocity.x, -5.0f);
-    }
-    else
-    {
-        player->velocity.x = 0;
-    }
-    if(KeyIsDown(SDLK_1))
-    {
-        entity->delete_this_frame = true;
-    }
-
-    entity->transform.position += player->velocity * dt;
-
-    Vec2 old_velocity = player->velocity;
-}
-
-EntityUpdateFunc(UpdateSpawner)
-{
-    EntitySpawner* spawner = &entity->spawner;
-
-    float current_time = CurrentTime(game_state);
-
-    if (current_time - spawner->last_spawn_time > spawner->time_between_spawns)
-    {
-        Vec2 spawn_pos = entity->transform.position;
-        if(spawner->num_spawned > 0)
-        {
-            spawn_pos.y += 1.0f * (float) spawner->num_spawned;
-            SpawnEntity(game_state, scene, EntityType_Enemy, spawn_pos);
-        }
-        else
-        {
-            spawn_pos.x -= 1.0f;
-            Entity* new_spawner = SpawnEntity(game_state, scene, EntityType_Spawner, spawn_pos);
-            new_spawner->spawner.last_spawn_time = current_time;
-        }
-
-        ++spawner->num_spawned;
-        spawner->last_spawn_time = current_time;
-    }
-}
-
-EntityUpdateFunc(UpdateEnemy)
-{
-    EntityEnemy* enemy = &entity->enemy;
-
-    if(TimerIsFinished(game_state, &enemy->despawn_timer))
-    {
-        RemoveEntity(scene, entity);
-    }
-}
-
-EntityUpdateFunc(UpdateCamera)
-{
-    EntityCamera* camera = &entity->camera;
-
-    Entity* follow_target;
-    if(GetEntityWithID(scene, camera->follow_target_id, &follow_target))
-    {
-        entity->transform.position = follow_target->transform.position;
-        entity->camera.camera.position = follow_target->transform.position;
-    }
-    else
-    {
-        camera->follow_target_id.generation = 0;
-    }
-}
-
-EntityDrawFunc(DrawEnemy)
-{
-    DrawCall draw_call = {};
-    draw_call.draw_type = DrawType::SINGLE_SPRITE;
-    draw_call.image = ImageFiles::MARIO_IMAGE;
-    draw_call.shader = Shader_Default;
-    draw_call.options = DrawOptions::TEXTURE_RECT;
-    draw_call.sd.tex_rect = { 17, 903, 34, 34 };
-    draw_call.sd.world_size = vec2(1.0f, 1.5f);
-    draw_call.sd.draw_angle = 0;
-
-    draw_call.sd.world_position = entity->transform.position;
-    PushDrawCall(renderer, draw_call, DrawLayer_Player);
-}
-
-EntityDrawFunc(DrawPlayer)
-{
-    DrawCall draw_call = {};
-    draw_call.draw_type = DrawType::SINGLE_SPRITE;
-    draw_call.image = ImageFiles::MARIO_IMAGE;
-    draw_call.shader = Shader_Default;
-    draw_call.options = DrawOptions::TEXTURE_RECT;
-    draw_call.sd.tex_rect = { 17, 903, 34, 34 };
-    draw_call.sd.world_size = vec2(1.0f, 1.5f);
-    draw_call.sd.draw_angle = 0;
-    draw_call.sd.world_position = entity->transform.position;
-
-    PushDrawCall(renderer, draw_call, DrawLayer_Player);
-}
-
-EntityDrawFunc(DrawSpawner)
-{
-    DrawCall draw_call = {};
-    draw_call.draw_type = DrawType::SINGLE_SPRITE;
-    draw_call.image = ImageFiles::MARIO_IMAGE;
-    draw_call.shader = Shader_Default;
-    draw_call.options = DrawOptions::TEXTURE_RECT;
-    draw_call.sd.tex_rect = { 34, 903, 34, 34 };
-    draw_call.sd.world_size = vec2(1.0f, 1.5f);
-    draw_call.sd.draw_angle = 0;
-    draw_call.sd.world_position = entity->transform.position;
-
-    PushDrawCall(renderer, draw_call, DrawLayer_Player);
-}
-
 // Pass nullptr to "out" to see if an EntityID is valid
 bool GetEntityWithID(Scene* scene, EntityID id, Entity** out)
 {
@@ -248,6 +111,182 @@ static void DespawnRemovedEntities(Scene* scene)
     }
 }
 
+Rectf GetEntityRect(Entity* entity)
+{
+    Vec2 half_dim = entity->size * 0.5f;
+    float x = entity->transform.position.x;
+    float y = entity->transform.position.y;
+
+    Rectf result = { x - half_dim.x, y - half_dim.y,
+                     entity->size.x, entity->size.y };
+
+    return result;
+}
+
+enum TileCollision
+{
+    TileCollision_NONE,
+    TileCollision_Left   = 0x1,
+    TileCollision_Top    = 0x2,
+    TileCollision_Right  = 0x4,
+    TileCollision_Bottom = 0x8,
+};
+
+uint32 MoveEntity(GameState* game_state, Entity* entity, Vec2 velocity)
+{
+    Scene* scene = game_state->active_scene;
+
+    entity->transform.position += velocity;
+
+    Rectf entity_bounds = GetEntityRect(entity);
+
+    Vec2 lb_corner = { entity_bounds.Left(), entity_bounds.Bot() };
+    Vec2 rb_corner = { entity_bounds.Right(), entity_bounds.Bot() };
+    Vec2 lt_corner = { entity_bounds.Left(), entity_bounds.Top() };
+    Vec2 rt_corner = { entity_bounds.Right(), entity_bounds.Top() };
+
+    // TODO: do a version where this gets passed in or is calculated based on the entity size
+    const uint32 points_per_side = 2;
+    const uint32 num_regions = points_per_side + 1;
+
+    Vec2 left[points_per_side];
+    Vec2 right[points_per_side];
+    Vec2 top[points_per_side];
+    Vec2 bottom[points_per_side];
+
+#if 0
+    Array<SimpleVertex> points;
+    points.Reserve(points_per_side * 4);
+    Renderer* renderer = game_state->renderer;
+    SimpleVertex vertex;
+    vertex.color = { 1.0f, 0.5f, 0.5f, 1.0f };
+
+        vertex.position = left[i];
+        points.Add(vertex);
+
+        vertex.position = top[i];
+        points.Add(vertex);
+
+        vertex.position = right[i];
+        points.Add(vertex);
+
+        vertex.position = bottom[i];
+        points.Add(vertex);
+
+    LineDrawParams params;
+    params.line_draw_flags = LineDraw_Looped;
+    DrawLine(renderer, points, &params);
+#endif
+
+    for (int i = 0; i < points_per_side; ++i)
+    {
+        float side_lerp_value = (i + 1) / (float)num_regions;
+        left[i] = Lerp(lb_corner, lt_corner, side_lerp_value);
+
+    }
+
+    for (int i = 0; i < points_per_side; ++i)
+    {
+        float side_lerp_value = (i + 1) / (float)num_regions;
+        top[i] = Lerp(lt_corner, rt_corner, side_lerp_value);
+
+    }
+
+    for (int i = 0; i < points_per_side; ++i)
+    {
+        float side_lerp_value = (i + 1) / (float)num_regions;
+        right[i] = Lerp(rb_corner, rt_corner, side_lerp_value);
+    }
+
+    for (int i = 0; i < points_per_side; ++i)
+    {
+        float side_lerp_value = (i + 1) / (float)num_regions;
+        bottom[i] = Lerp(lb_corner, rb_corner, side_lerp_value);
+
+    }
+
+    TileMap* tilemap = scene->tilemap;
+
+    // Find the potentially colliding statics
+    Rectf col_plus_velocity = entity_bounds;
+    col_plus_velocity.w += abs(velocity.x);
+    col_plus_velocity.h += abs(velocity.y);
+    if(velocity.x < 0)
+    {
+        col_plus_velocity.x += velocity.x;
+    }
+    if(velocity.y < 0)
+    {
+        col_plus_velocity.y += velocity.y;
+    }
+
+    uint32 num_tiles_found = 0;
+    MemoryArena* temp_memory = &game_state->temporary_memory;
+    Tile** possible_collision_list = GetPotentialCollidingTiles(temp_memory, tilemap, col_plus_velocity, &num_tiles_found);
+
+    Vec2 collision_adjustment = {};
+
+    bool collided_top = false;
+    bool collided_bot = false;
+    bool collided_left = false;
+    bool collided_right = false;
+
+    uint32 result = 0;
+
+    for (uint32 i = 0; i < num_tiles_found; ++i)
+    {
+        Tile* tile = possible_collision_list[i];
+
+        for (uint32 j = 0; j < points_per_side; ++j)
+        {
+            if (Contains(tile->aabb, left[j]))
+            {
+                collision_adjustment.x = tile->aabb.Right() - left[j].x;
+                collided_left = true;
+                result |= TileCollision_Left;
+            }
+        }
+
+        for (uint32 j = 0; j < points_per_side; ++j)
+        {
+            if (Contains(tile->aabb, right[j]))
+            {
+                collision_adjustment.x = tile->aabb.Left() - right[j].x;
+                collided_right = true;
+                result |= TileCollision_Right;
+            }
+        }
+
+        for (uint32 j = 0; j < points_per_side; ++j)
+        {
+            if (Contains(tile->aabb, top[j]))
+            {
+                collision_adjustment.y = tile->aabb.Bot() - top[j].y;
+                collided_top = true;
+                result |= TileCollision_Top;
+            }
+        }
+
+        for (uint32 j = 0; j < points_per_side; ++j)
+        {
+            if (Contains(tile->aabb, bottom[j]))
+            {
+                collision_adjustment.y = tile->aabb.Top() - bottom[j].y;
+                collided_bot = true;
+                result |= TileCollision_Bottom;
+            }
+        }
+    }
+
+    // NOTE: check for both top and bot collisions and left and right collisions.
+    // maybe switch to a penetration amount instead to give a bit of crushing leeway
+
+    entity->transform.position += collision_adjustment;
+    PopAllocation(temp_memory, possible_collision_list);
+
+    return result;
+}
+
 static Entity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
 {
     Entity* entity = scene->entities;
@@ -276,61 +315,53 @@ static Entity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
     return 0;
 }
 
-EntitySpawnFunc(SpawnEnemy)
-{
-    assert(entity);
-
-    EntityEnemy* enemy = &entity->enemy;
-
-    entity->transform.position = position;
-    entity->transform.rotation = 0.f;
-    entity->transform.scale = vec2( 1.f, 1.f );
-
-    // TODO: don't have this require a game_state?
-    StartTimer(game_state, &enemy->despawn_timer, random_float(1.f, 1.1f));
-
-    enemy->health = 3;
-}
-
-EntitySpawnFunc(SpawnPlayer)
-{
-    EntityPlayer* player = &entity->player;
-
-    if(!GetEntityWithID(scene, scene->player_id, 0))
-    {
-        scene->player_id = entity->id;
-    }
-
-    entity->transform.position = position;
-    entity->transform.rotation = 0.f;
-    entity->transform.scale = vec2( 1.f, 1.f );
-
-    Vec2 size = vec2(1.0f, 1.5f);
-}
-
-EntitySpawnFunc(SpawnEnemySpawner)
-{
-    EntitySpawner* spawner = &entity->spawner;
-
-    spawner->last_spawn_time = 0;
-    spawner->time_between_spawns = 2.0f;
-
-    entity->transform.position = position;
-}
-
 Entity* SpawnEntity(GameState* game_state, Scene* scene, EntityType type, Vec2 position)
 {
-    Entity* result = NextFreeEntitySlot(scene, type);
+    Entity* entity = NextFreeEntitySlot(scene, type);
 
-    if(result && scene->entity_vtable[type].spawn)
+    entity->size = { 1.f, 1.f };
+    switch(type)
     {
-        scene->entity_vtable[type].spawn(game_state, scene, result, position);
+
+        case EntityType_Player:
+        {
+            if(!GetEntityWithID(scene, scene->player_id, 0))
+            {
+                scene->player_id = entity->id;
+            }
+            entity->transform.position = position;
+            entity->transform.rotation = 0.f;
+            entity->transform.scale = vec2( 1.f, 1.f );
+            entity->size = vec2(1.0f, 1.5f);
+
+        }break;
+        case EntityType_Enemy:
+        {
+
+            entity->transform.position = position;
+            entity->transform.rotation = 0.f;
+            entity->transform.scale = vec2( 1.f, 1.f );
+
+            // TODO: don't have this require a game_state?
+            StartTimer(game_state, &entity->enemy.despawn_timer, random_float(1.f, 1.1f));
+
+            entity->enemy.health = 3;
+        }break;
+        case EntityType_Spawner:
+        {
+            entity->spawner.last_spawn_time = 0;
+            entity->spawner.time_between_spawns = 2.0f;
+            entity->transform.position = position;
+        }break;
+        case EntityType_Camera:
+        {
+        }break;
     }
 
-    return result;
+    return entity;
 }
 
-// TODO: despawn entity by ID
+// TODO: de-spawn entity by ID
 void RemoveEntity(Scene* scene, Entity* entity)
 {
     assert(scene->entity_delete_list);
@@ -356,7 +387,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
         {
             for(int i = 0; i < 1; ++i)
             {
-                Entity* new_player = SpawnEntity(game_state, scene, EntityType_Player, { 1.f, 2.0f });
+                Entity* new_player = SpawnEntity(game_state, scene, EntityType_Player, { 1.f, 4.0f });
                 scene->player_id = new_player->id;
             }
         }
@@ -411,10 +442,115 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
             continue;
         }
 
-        if(scene->entity_vtable[entity->type].update)
+        switch (entity->type)
         {
-            scene->entity_vtable[entity->type].update(game_state, scene, dt, entity);
+            case EntityType_Player:
+            {
+                const float gravity = -20.f;
+                static uint32 count = 0;
+                if(KeyIsDown(SDLK_SPACE))
+                {
+                    //RemoveEntity(entity);
+                    entity->player.velocity.y = 10.f;
+                }
+                else
+                {
+                    entity->player.velocity.y += gravity * dt;
+                    entity->player.velocity.y = max(entity->player.velocity.y, -100.0f);
+                }
+
+#if 0
+                if(KeyIsDown(SDLK_w))
+                {
+                    entity->player.velocity.y += 50.f * dt;
+                    entity->player.velocity.y = min(entity->player.velocity.y, 5.0f);
+                }
+                else if(KeyIsDown(SDLK_s))
+                {
+                    entity->player.velocity.y -= 50.f * dt;
+                    entity->player.velocity.y = min(entity->player.velocity.y, 5.0f);
+                }
+                else
+                {
+                    entity->player.velocity.y = 0;
+                }
+#endif
+
+                if(KeyIsDown(SDLK_d))
+                {
+                    entity->player.velocity.x += 50.f * dt;
+                    entity->player.velocity.x = min(entity->player.velocity.x, 5.0f);
+                }
+                else if(KeyIsDown(SDLK_a))
+                {
+                    entity->player.velocity.x -= 50.f * dt;
+                    entity->player.velocity.x = max(entity->player.velocity.x, -5.0f);
+                }
+                else
+                {
+                    entity->player.velocity.x = 0;
+                }
+
+                if(KeyIsDown(SDLK_1))
+                {
+                    entity->delete_this_frame = true;
+                }
+                //entity->transform.position += entity->player.velocity * dt;
+                uint32 collision_result = MoveEntity(game_state, entity, entity->player.velocity * dt);
+
+                if (collision_result & TileCollision_Bottom && entity->player.velocity.y < 0)
+                {
+                    entity->player.velocity.y = 0;
+                }
+                //Vec2 old_velocity = entity->player.velocity;
+            }break;
+            case EntityType_Enemy:
+            {
+                if(TimerIsFinished(game_state, &entity->enemy.despawn_timer))
+                {
+                    RemoveEntity(scene, entity);
+                }
+
+            }break;
+            case EntityType_Spawner:
+            {
+                float current_time = CurrentTime(game_state);
+
+                if (current_time - entity->spawner.last_spawn_time > entity->spawner.time_between_spawns)
+                {
+                    Vec2 spawn_pos = entity->transform.position;
+                    if(entity->spawner.num_spawned > 0)
+                    {
+                        spawn_pos.y += 1.0f * (float) entity->spawner.num_spawned;
+                        SpawnEntity(game_state, scene, EntityType_Enemy, spawn_pos);
+                    }
+                    else
+                    {
+                        spawn_pos.x -= 1.0f;
+                        Entity* new_spawner = SpawnEntity(game_state, scene, EntityType_Spawner, spawn_pos);
+                        new_spawner->spawner.last_spawn_time = current_time;
+                    }
+
+                    ++entity->spawner.num_spawned;
+                    entity->spawner.last_spawn_time = current_time;
+                }
+            }break;
+            case EntityType_Camera:
+            {
+
+                Entity* follow_target;
+                if(GetEntityWithID(scene, entity->camera.follow_target_id, &follow_target))
+                {
+                    entity->transform.position = follow_target->transform.position;
+                    entity->camera.camera.position = follow_target->transform.position;
+                }
+                else
+                {
+                    entity->camera.follow_target_id.generation = 0;
+                }
+            }break;
         }
+
         ++updated_entities;
     }
 
@@ -440,64 +576,57 @@ void DrawSceneEntities(Scene* scene, Renderer* renderer)
             continue;
         }
 
-        if(scene->entity_vtable[entity->type].draw)
+        switch(entity->type)
         {
-            scene->entity_vtable[entity->type].draw(entity, renderer);
+            case EntityType_Player:
+            {
+                DrawCall draw_call = {};
+                draw_call.draw_type = DrawType::SINGLE_SPRITE;
+                draw_call.image = ImageFiles::MARIO_IMAGE;
+                draw_call.shader = Shader_Default;
+                draw_call.options = DrawOptions::TEXTURE_RECT;
+                draw_call.sd.tex_rect = { 17, 903, 34, 34 };
+                draw_call.sd.world_size = vec2(1.0f, 1.5f);
+                draw_call.sd.draw_angle = 0;
+                draw_call.sd.world_position = entity->transform.position;
+
+                PushDrawCall(renderer, draw_call, DrawLayer_Player);
+            }break;
+            case EntityType_Enemy:
+            {
+                DrawCall draw_call = {};
+                draw_call.draw_type = DrawType::SINGLE_SPRITE;
+                draw_call.image = ImageFiles::MARIO_IMAGE;
+                draw_call.shader = Shader_Default;
+                draw_call.options = DrawOptions::TEXTURE_RECT;
+                draw_call.sd.tex_rect = { 17, 903, 34, 34 };
+                draw_call.sd.world_size = vec2(1.0f, 1.5f);
+                draw_call.sd.draw_angle = 0;
+
+                draw_call.sd.world_position = entity->transform.position;
+                PushDrawCall(renderer, draw_call, DrawLayer_Player);
+            }break;
+            case EntityType_Spawner:
+            {
+                DrawCall draw_call = {};
+                draw_call.draw_type = DrawType::SINGLE_SPRITE;
+                draw_call.image = ImageFiles::MARIO_IMAGE;
+                draw_call.shader = Shader_Default;
+                draw_call.options = DrawOptions::TEXTURE_RECT;
+                draw_call.sd.tex_rect = { 34, 903, 34, 34 };
+                draw_call.sd.world_size = vec2(1.0f, 1.5f);
+                draw_call.sd.draw_angle = 0;
+                draw_call.sd.world_position = entity->transform.position;
+
+                PushDrawCall(renderer, draw_call, DrawLayer_Player);
+            }break;
+            case EntityType_Camera:
+            {
+                // TODO: Draw camera bounds
+            }break;
         }
 
         ++drawn_entities;
     }
 }
 
-void BuildEntityVTable(Scene* scene)
-{
-    assert(ArrayCount(scene->entity_vtable) == EntityType_Count);
-    memset(&scene->entity_vtable[0], 0, sizeof(scene->entity_vtable));
-
-    EntityVtable* vtable = &scene->entity_vtable[0];
-
-    struct EntityVTableBuilder
-    {
-        EntityType type;
-        EntityVtable vtable;
-    };
-
-    EntityVTableBuilder vtable_builder[]
-    {
-        { EntityType_Enemy,    { UpdateEnemy,   DrawEnemy,   SpawnEnemy         } },
-        { EntityType_Spawner,  { UpdateSpawner, DrawSpawner, SpawnEnemySpawner  } },
-        { EntityType_Player,   { UpdatePlayer,  DrawPlayer,  SpawnPlayer        } },
-        { EntityType_Camera,   { UpdateCamera,  nullptr,     nullptr            } },
-    };
-
-#ifdef _DEBUG
-    // Don't duplicate an entity in the vtable, except the Null entity;
-    bool duplicate_check[EntityType_Count] = { 0 };
-    int32 max_iterations = Minimum(EntityType_Count, ArrayCount(vtable_builder));
-    for(int i = 0; i < max_iterations; ++i)
-    {
-        uint32 type = vtable_builder[i].type;
-
-        if(type) // Can have multiple Null entities if they aren't being updated
-        {
-            assert(duplicate_check[type] == false);
-            duplicate_check[type] = true;
-        }
-    }
-#endif
-
-    assert(ArrayCount(vtable_builder) <= EntityType_Count);
-
-    for(uint32 i = 0; i < EntityType_Count; ++i)
-    {
-        for(uint32 builder = 0; builder < EntityType_Count; ++builder)
-        {
-            if(vtable_builder[builder].type == i)
-            {
-                uint8* source = (uint8*) &vtable_builder[builder].vtable;
-                memcpy(&vtable[i], source, sizeof(EntityVtable));
-                break;
-            }
-        }
-    }
-}

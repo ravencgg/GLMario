@@ -1,6 +1,5 @@
 #define __GL_IMPLEMENTATION__
 #include "win32_gl.h"
-#include "platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "..\Dependencies\stb_image.h"

@@ -4,11 +4,11 @@
 
 #include "types.h"
 #include "mathops.h"
-#include "platform.h"
 
 #define NUM_KEYS SDL_NUM_SCANCODES
 
 #define OLD_INPUT
+
 #ifdef OLD_INPUT
 enum class MouseButton { LEFT, MIDDLE, RIGHT, COUNT };
 enum class KeyState { UP, FRAME_UP, DOWN, FRAME_DOWN, DOWN_UP, UP_DOWN };

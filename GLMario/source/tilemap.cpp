@@ -2,75 +2,25 @@
 #include "game_types.h"
 #include "input.h"
 
-static bool AddTile(TileGroup* tile_group, MemoryArena* arena, Tile* tile);
-static void DrawBoundingBoxes(TileGroup* tile_group, Renderer* ren);
-static Tile** GetPotentialCollidingTiles(TileGroup* node, Rectf aabb, Tile** collision_list, uint32* list_size);
+#include "entity.h"
 
-void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, Vec2 map_size, uint32 max_tiles)
+/**********************************************
+ *
+ * Tilemap Collision
+ *
+ ***************/
+
+enum CollisionInfo
 {
-    tilemap->size = map_size;
+    TileCollision_NONE,
+    TileCollision_Left   = 0x1,
+    TileCollision_Top    = 0x2,
+    TileCollision_Right  = 0x4,
+    TileCollision_Bottom = 0x8,
+};
 
-// TODO: accurate allocation of sub arena
 
-    tilemap->tiles = PushArray(arena, Tile, max_tiles);
-    tilemap->max_tiles = max_tiles;
-    tilemap->num_tiles = 0;
 
-    tilemap->quadtree_memory = CreateSubArena(arena, sizeof(TileGroup) * max_tiles);
-    tilemap->tile_quadtree = PushStruct(&tilemap->quadtree_memory, TileGroup);
-    tilemap->tile_quadtree->aabb = { 0, 0, map_size.x, map_size.y };
-}
-
-void AddTileToMap(TileMap* tilemap, Rectf tile_rect)
-{
-    Tile* tile = tilemap->tiles + tilemap->num_tiles;
-    tile->aabb = tile_rect;
-    ++tilemap->num_tiles;
-
-    if(!AddTile(tilemap->tile_quadtree, &tilemap->quadtree_memory, tile))
-    {
-        // Didn't add the tile to anything, reuse this for a future allocation
-        --tilemap->num_tiles;
-        memset(tile, 0, sizeof(Tile));
-    }
-}
-
-void AddTileToMap(TileMap* tilemap, Vec2 position)
-{
-    AddTileToMap(tilemap, RectFromDim(position, {1.f, 1.f}));
-}
-
-void DrawTileMap(GameState* game_state, TileMap* tilemap)
-{
-    for(uint32 index = 0;
-        index < tilemap->num_tiles;
-        ++index)
-    {
-        Tile* tile = tilemap->tiles + index;
-        float green = Contains(tile->aabb, MouseWorldPosition()) ? 0.8f : 0.1f;
-        const Vec4 tile_color = { 1.f, green, 0, 0.5f };
-
-        DrawRect(game_state->renderer, tile->aabb, tile_color);
-    }
-
-    Vec2 mouse_pos = MouseWorldPosition();
-    Rectf mouse_rect = {mouse_pos.x, mouse_pos.y, 0.01f, 0.01f};
-    Tile** active_tiles;
-    PushArrayScoped(active_tiles, &game_state->temporary_memory, Tile*, tilemap->num_tiles);
-    uint32 num_active_tiles = 0;
-    GetPotentialCollidingTiles(tilemap->tile_quadtree, mouse_rect, active_tiles, &num_active_tiles);
-
-    for(uint32 index = 0;
-        index < num_active_tiles;
-        ++index)
-    {
-        Tile* tile = active_tiles[index];
-        const Vec4 tile_color = { 1.f, 1.0f, 0, 0.5f };
-        DrawRect(game_state->renderer, tile->aabb, tile_color);
-    }
-
-    DrawBoundingBoxes(tilemap->tile_quadtree, game_state->renderer);
-}
 
 /**********************************************
  *
@@ -260,3 +210,92 @@ static void DrawBoundingBoxes(TileGroup* tile_group, Renderer* ren)
     DrawRect(ren, tile_group->aabb, color, &params);
 }
 
+
+/**********************************************
+ *
+ * Tilemap
+ *
+ ***************/
+
+void AllocateTileMap(MemoryArena* arena, TileMap* tilemap, Vec2 map_size, uint32 max_tiles)
+{
+    tilemap->size = map_size;
+
+// TODO: accurate allocation of sub arena
+
+    tilemap->tiles = PushArray(arena, Tile, max_tiles);
+    tilemap->max_tiles = max_tiles;
+    tilemap->num_tiles = 0;
+
+    tilemap->quadtree_memory = CreateSubArena(arena, sizeof(TileGroup) * max_tiles);
+    tilemap->tile_quadtree = PushStruct(&tilemap->quadtree_memory, TileGroup);
+    tilemap->tile_quadtree->aabb = { 0, 0, map_size.x, map_size.y };
+}
+
+void AddTileToMap(TileMap* tilemap, Rectf tile_rect)
+{
+    Tile* tile = tilemap->tiles + tilemap->num_tiles;
+    tile->aabb = tile_rect;
+    ++tilemap->num_tiles;
+
+    if(!AddTile(tilemap->tile_quadtree, &tilemap->quadtree_memory, tile))
+    {
+        // Didn't add the tile to anything, reuse this for a future allocation
+        --tilemap->num_tiles;
+        memset(tile, 0, sizeof(Tile));
+    }
+}
+
+void AddTileToMap(TileMap* tilemap, Vec2 position)
+{
+    AddTileToMap(tilemap, RectFromDim(position, {1.f, 1.f}));
+}
+
+void DrawTileMap(GameState* game_state, TileMap* tilemap)
+{
+    for(uint32 index = 0;
+        index < tilemap->num_tiles;
+        ++index)
+    {
+        Tile* tile = tilemap->tiles + index;
+        float green = Contains(tile->aabb, MouseWorldPosition()) ? 0.8f : 0.1f;
+        const Vec4 tile_color = { 1.f, green, 0, 0.5f };
+
+        DrawRect(game_state->renderer, tile->aabb, tile_color);
+    }
+
+    Vec2 mouse_pos = MouseWorldPosition();
+    Rectf mouse_rect = {mouse_pos.x, mouse_pos.y, 0.01f, 0.01f};
+    Tile** active_tiles;
+    PushArrayScoped(active_tiles, &game_state->temporary_memory, Tile*, tilemap->num_tiles);
+    uint32 num_active_tiles = 0;
+    GetPotentialCollidingTiles(tilemap->tile_quadtree, mouse_rect, active_tiles, &num_active_tiles);
+
+    for(uint32 index = 0;
+        index < num_active_tiles;
+        ++index)
+    {
+        Tile* tile = active_tiles[index];
+        const Vec4 tile_color = { 1.f, 1.0f, 0, 0.5f };
+        DrawRect(game_state->renderer, tile->aabb, tile_color);
+    }
+
+    DrawBoundingBoxes(tilemap->tile_quadtree, game_state->renderer);
+}
+
+Tile** GetPotentialCollidingTiles(MemoryArena* arena, TileMap* tilemap, Rectf rect_plus_velocity, uint32* num_tiles_found)
+{
+    Tile** result = PushArray(arena, Tile*, tilemap->num_tiles);
+//    PushArrayScoped(active_tiles, &game_state->temporary_memory, Tile*, tilemap->num_tiles);
+
+    uint32 num_active_tiles = 0;
+    Tile** active_tiles = result;
+    GetPotentialCollidingTiles(tilemap->tile_quadtree, rect_plus_velocity, active_tiles, &num_active_tiles);
+
+    if (num_tiles_found)
+    {
+        *num_tiles_found = num_active_tiles;
+    }
+
+    return result;
+}

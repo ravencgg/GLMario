@@ -48,6 +48,9 @@ void AddTileToMap(TileMap* tilemap, Rectf tile_rect);
 void AddTileToMap(TileMap* tilemap, Vec2 position);
 void DrawTileMap(GameState*, TileMap*);
 
+Tile** GetPotentialCollidingTiles(MemoryArena* arena, TileMap* tilemap, Rectf rect_plus_velocity, uint32* num_tiles_found);
+
+
 #if 0 // TODO: Renames
 StaticCollider** GetPotentialColliders(PhysicsNode* node, Rectf aabb, StaticCollider** collision_list, uint32* list_size);
 void DrawBoundingBoxes(PhysicsNode*, Renderer*);

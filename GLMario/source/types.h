@@ -99,6 +99,11 @@ struct Rectf
 		};
 		float E[4];
 	};
+
+    float Left()  { return x; }
+    float Right() { return x + w; }
+    float Bot()   { return y; }
+    float Top()   { return y + h; }
 };
 
 inline Rect rect(int32 x, int32 y, int32 w, int32 h)
@@ -133,3 +138,9 @@ inline Vec2i operator- (const Vec2i& lhs, const Vec2i& rhs)
     result.y = lhs.y - rhs.y;
     return result;
 }
+
+struct Timer
+{
+	float start_time;
+	float duration;
+};

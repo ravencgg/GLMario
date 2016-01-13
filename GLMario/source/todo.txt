@@ -15,11 +15,6 @@ TOREDO:
 Window
     Convert the viewport dimensions when resizing the window? Currently locked at 16:9
 
-Collision:
-    Support rotated rectangles, fill the aabb inside the StaticCollider struct
-
-    If you copy collider data from the quadtree instead of just the pointers then you could SIMD the raycasting
-
 Console/Rendering:
     Multi color text on a per letter basis 
         -> should the "start" variable be taken out of the StringTextColor struct?
@@ -30,17 +25,6 @@ Console/Rendering:
 
      Remove console from the debug profiling
         
-Optimization:
-    Cull draws out of viewport
-
-    Broad phase collision detection
-    
-    Split the entity array into groups for faster searching
-
-    Make a DebugMemoryArena for console string / debug graph memory storage
-        -> convert all the debug calls to macros so they can be compiled out of non-profiling builds
-
-
 To figure out:
 
     New project structure
@@ -51,3 +35,6 @@ To figure out:
         -> each could have their own memory and entities, multiple could be active at a time
 
     Global Unique IDs? or keep ids unique within their own system only?
+
+    Use a quadtree for all entities as well as the tilemap?
+        Could only update local entities, supporting huge worlds

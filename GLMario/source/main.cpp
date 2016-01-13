@@ -25,7 +25,6 @@
 #include "entity.h"
 
 #include "audio.h"
-#include "platform.h"
 
 
 // Should be like 16.66666
@@ -148,8 +147,6 @@ static Scene* PushScene(MemoryArena* arena, uint32 num_entities)
     result->max_entities = num_entities;
     result->entities = PushArray(arena, Entity, num_entities);
 
-    BuildEntityVTable(result);
-
     // This should be done when loading a level
     // This needs to subarena for a quad tree
     result->tilemap = PushStruct(arena, TileMap);
@@ -173,9 +170,16 @@ int main(int argc, char* argv[])
 
     for(int32 i = 0; i < 10; ++i)
     {
-        Vec2 pos = { (float) i, (float) i * 2.f };
+        Vec2 pos = { (float) i, 2.f };
         AddTileToMap(tilemap, pos);
     }
+
+    for(int32 i = 0; i < 10; ++i)
+    {
+        Vec2 pos = { 0, (float) i };
+        AddTileToMap(tilemap, pos);
+    }
+
 
     InitializeInput();
     InitializeDebugConsole();

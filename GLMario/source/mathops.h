@@ -516,6 +516,12 @@ Lerp(Vec4 A, float t, Vec4 B)
     return result;
 }
 
+inline Vec2 Lerp(Vec2 a, Vec2 b, float t)
+{
+	Vec2 result = (b - a) * t + a;
+	return result;
+}
+
 inline Vec2 lerp(Vec2 a, Vec2 b, float t)
 {
 	Vec2 result = (b - a) * t + a;
