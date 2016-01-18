@@ -19,8 +19,8 @@ enum EntityType
 // NOTE: could just use 32 bits for both, but don't need 4 billion simultaneous entity indexes
 struct EntityID
 {
-    uint32 index      : 12;
-    uint32 generation : 20;
+    uint32 index      : 13;
+    uint32 generation : 19;
 };
 
 enum EntityFlags
@@ -55,6 +55,7 @@ struct Entity
         struct
         {
             Vec2 velocity;
+            bool grounded;
         }player;
 
         struct

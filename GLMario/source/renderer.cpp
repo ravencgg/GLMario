@@ -27,12 +27,17 @@ void SwapBuffer(GameState* game_state)
 	SDL_GL_SwapWindow(game_state->window.sdl_window);
 }
 
+#define VERTEX_BUFFER_SIZE MEGABYTES(64)
+#define MAX_DRAW_COMMANDS (8192 * 2)
+
 Renderer* CreateRenderer(MemoryArena* arena)
 {
     Renderer* result = PushStruct(arena, Renderer);
-    // TODO: allocate text_array per frame based on how much text there is, or use separate arrays for separate text draw calls
-    result->text_array_size = 1024 * 8;
-    result->text_array = PushArray(arena, TextVertex, result->text_array_size);
+
+    result->vertex_buffer = CreateSubArena(arena, VERTEX_BUFFER_SIZE);
+    result->command_buffer.draw_commands = PushArray(arena, DrawCommand, MAX_DRAW_COMMANDS);
+    result->command_buffer.command_array_size = MAX_DRAW_COMMANDS;
+    result->command_buffer.num_commands = 0;
 
     if(!LoadGLFunctionPointers())
     {
@@ -70,7 +75,6 @@ void BeginFrame(Renderer* renderer, Window* window)
 
 	glViewport(0, 0, renderer->frame_resolution.x, renderer->frame_resolution.y);
 	glClear(GL_COLOR_BUFFER_BIT);
-	renderer->line_buffer_loc = 0;
 }
 
 void SetClearColor(Vec4 color)
@@ -83,22 +87,13 @@ void ForceColorClear()
 	glClear(GL_COLOR_BUFFER_BIT); // Would have to put a swap buffer here to notice anything
 }
 
-void Flush(Renderer* renderer, Camera* render_camera)
-{
-    RenderDrawBuffer(renderer, render_camera);
-	for(uint32 i = 0; i < DrawLayer_Count; ++i)
-	{
-		renderer->draw_buffer[i].Clear();
-	}
-}
-
 float ViewportWidth(Camera* camera)
 {
 	float result = camera->viewport_size.x;
 	return result;
 }
 
-void LoadImage(Renderer* renderer, char* filename, ImageFiles location)
+static void LoadImage(Renderer* renderer, char* filename, ImageFiles location)
 {
 	GLuint handle = 0;
 
@@ -136,7 +131,7 @@ void LoadImage(Renderer* renderer, char* filename, ImageFiles location)
 	renderer->textures[(uint32)location].bytes_per_color = n;
 }
 
-void LoadShader(Renderer* renderer, char* vert_file, char* frag_file, ShaderTypes location)
+static void LoadShader(Renderer* renderer, char* vert_file, char* frag_file, ShaderTypes location)
 {
 	GLuint vert_loc = glCreateShader(GL_VERTEX_SHADER);
 	GLuint frag_loc = glCreateShader(GL_FRAGMENT_SHADER);
@@ -185,13 +180,8 @@ void LoadShader(Renderer* renderer, char* vert_file, char* frag_file, ShaderType
 }
 
 /*  Text drawing TODO(cgenova):
-		* Character width is not correct
-		* Character height is probably not correct
 		* figure out the border color issue
         *      -> color not set in shader, though it wasn't being used, so it still doesn't make sense
-        *
-        * No more immediate mode! Make this use the ARRAY_BUFFER path
-        *      -> needs dynamic vao/vbo for this to happen
         *
         *      Read whole words in to judge whether a new line is needed
         * instead of splitting words up as soon as they hit the edge
@@ -199,19 +189,25 @@ void LoadShader(Renderer* renderer, char* vert_file, char* frag_file, ShaderType
 		*/
 
 TextDrawResult DrawString(Renderer* renderer, char* string, uint32 string_size, float start_x, float start_y,
-                             StringTextColor* text_colors, size_t text_color_size)
+                            StringTextColor* text_colors, size_t text_color_size, DrawLayer draw_layer)
 {
     // TODO: more sane way of storing these
     static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
     static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
 
     const uint32 verts_per_char = 6;
-    if(renderer->text_array_size < string_size * verts_per_char)
-    {
-        size_t new_size = string_size * verts_per_char;
-        renderer->text_array = ExpandArray<TextVertex>(renderer->text_array, renderer->text_array_size, new_size);
-        renderer->text_array_size = new_size;
-    }
+
+    DrawCommand command = {};
+    command.vertex_buffer_offset = renderer->vertex_buffer.used;
+    command.num_vertices = verts_per_char * string_size; // Remove spaces from calculation? 
+    TextVertex* base_text_vertex = PushArray(&renderer->vertex_buffer, TextVertex, command.num_vertices);
+
+    command.draw_call.draw_type = DrawType_Text; 
+    command.layer = draw_layer;
+    command.draw_call.draw_options |= Draw_ScreenSpace;
+
+    command.draw_call.shader = ShaderTypes::Shader_Text;
+    command.draw_call.text.image = ImageFiles::TEXT_IMAGE;
 
     Vec2 char_size = { 0.01f, 0.02f };
     uint32 array_pos = 0;
@@ -329,7 +325,7 @@ TextDrawResult DrawString(Renderer* renderer, char* string, uint32 string_size, 
             rect.height = char_size.y;
 
             // Char coords
-            Point2 char_pos;
+            Vec2i char_pos;
             char_pos.x = ascii_position % renderer->text_data.chars_per_line;
             char_pos.x *= renderer->text_data.char_size.x;
             char_pos.y = ascii_position / renderer->text_data.chars_per_line;
@@ -338,17 +334,17 @@ TextDrawResult DrawString(Renderer* renderer, char* string, uint32 string_size, 
             // Texture coords
             float left = (float)char_pos.x / tw;
             float right = (float)(char_pos.x + renderer->text_data.char_size.x) / tw;
-            float bot = (float)(th - (char_pos.y + renderer->text_data.char_size.y)) / th;
-            float top = (float)(th - char_pos.y) / th;
+            float top = (float)(th - (char_pos.y + renderer->text_data.char_size.y)) / th;
+            float bot = (float)(th - char_pos.y) / th;
 
-            TextVertex* current_vertex = renderer->text_array + array_pos;
+            TextVertex* current_vertex = base_text_vertex + array_pos;
 
-            *current_vertex++ = { rect.left              , rect.bot               , left , bot, start_color };
-            *current_vertex++ = { rect.left              , rect.bot + rect.height , left , top, start_color };
-            *current_vertex++ = { rect.left + rect.width , rect.bot               , right, bot, end_color   };
-            *current_vertex++ = { rect.left              , rect.bot + rect.height , left , top, start_color };
-            *current_vertex++ = { rect.left + rect.width , rect.bot               , right, bot, end_color   };
-            *current_vertex++ = { rect.left + rect.width , rect.bot + rect.height , right, top, end_color   };
+            *current_vertex++ = { rect.left              , rect.bot               , left , top, start_color };
+            *current_vertex++ = { rect.left              , rect.bot + rect.height , left , bot, start_color };
+            *current_vertex++ = { rect.left + rect.width , rect.bot               , right, top, end_color   };
+            *current_vertex++ = { rect.left              , rect.bot + rect.height , left , bot, start_color };
+            *current_vertex++ = { rect.left + rect.width , rect.bot               , right, top, end_color   };
+            *current_vertex++ = { rect.left + rect.width , rect.bot + rect.height , right, bot, end_color   };
 
             array_pos += 6;
             x += char_size.x;
@@ -360,38 +356,7 @@ TextDrawResult DrawString(Renderer* renderer, char* string, uint32 string_size, 
 	result.bottom_right = { x, y };
 	result.lines_drawn = lines_drawn;
 
-	glUseProgram(renderer->shaders[Shader_Text].shader_handle);
-
-    //GLint color_loc = glGetUniformLocation(shaders[Shader_Text].shader_handle, "color_modifier");
-    //glUniform4f(color_loc, color.x, color.y, color.z, color.w);
-
-	{
-        // TODO(cgenova): convert to function and pull this and the one in draw_call out
-		GLuint active_tex = 0;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
-		if (active_tex != renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle)
-		{
-			glBindTexture(GL_TEXTURE_2D, renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].texture_handle);
-		}
-	}
-
-    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
-    glBindVertexArray(textVAO);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
-
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(4 * sizeof(float)));
-
-	glBufferData(GL_ARRAY_BUFFER, array_pos * sizeof(renderer->text_array[0]), renderer->text_array, GL_STREAM_DRAW);
-
-    GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[Shader_Text].shader_handle, "cam_pos");
-    glUniform2f(cam_pos_loc, 0.5f, 0.5f);
-    GLint viewport_loc = glGetUniformLocation(renderer->shaders[Shader_Text].shader_handle, "viewport");
-    glUniform2f(viewport_loc, 1, 1);
-
-    glDrawArrays(GL_TRIANGLES, 0, array_pos);
+    PushDrawCommand(renderer, command);
 
 	return result;
 #undef NEW_LINE
@@ -408,11 +373,76 @@ inline Vec2 ScreenToOpenGL(Vec2 input, Vec2 viewport)
 #undef TO_OGL
 }
 
-void PushDrawCall(Renderer* renderer, DrawCall draw_call, DrawLayer layer)
+void PushDrawCommand(Renderer* renderer, DrawCommand command)
 {
-	renderer->draw_buffer[(uint32) layer].AddBack(draw_call);
+    DrawCommand* draw_command = renderer->command_buffer.draw_commands + renderer->command_buffer.num_commands++;
+
+    if (renderer->command_buffer.num_commands == renderer->command_buffer.command_array_size)
+    {
+        assert(!"Ran out of command storage");
+        return;
+    }
+
+    *draw_command = command;
 }
 
+#define TO_OGL(pos, dir) ((((pos + (dir / 2)) / dir) * 2) - 1)
+#undef TO_OGL
+
+void DrawSprite(Renderer* renderer, DrawCall draw_call, DrawLayer layer)
+{
+    DrawCall data = draw_call; // lol
+    size_t start_offset = renderer->vertex_buffer.used;
+    SpriteVertex* vertex = PushArray(&renderer->vertex_buffer, SpriteVertex, 4);
+    assert(renderer->vertex_buffer.used - sizeof(SpriteVertex) * 4 == start_offset);
+
+    DrawCommand command = {};
+    command.draw_call = draw_call;
+    command.num_vertices = 4;
+    command.vertex_type = VertexType_Sprite;
+    command.vertex_buffer_offset = start_offset;
+
+    int32 tw = renderer->textures[(uint32)data.sprite.image].w;
+    int32 th = renderer->textures[(uint32)data.sprite.image].h;
+
+    float tex_left  = (float)data.sprite.tex_rect.left / tw;
+    float tex_right = (float)(data.sprite.tex_rect.left + data.sprite.tex_rect.width) / tw;
+    float tex_bot   = (float)(th - (data.sprite.tex_rect.bot + data.sprite.tex_rect.height)) / th;
+    float tex_top   = (float)(th - data.sprite.tex_rect.bot) / th;
+
+    float width  = data.sprite.world_size.x;
+    float height = data.sprite.world_size.y;
+
+    float left = data.sprite.world_position.x - width / 2.f;
+    float bot = data.sprite.world_position.y - height / 2.f;
+
+    Rectf draw_rect = { left, bot, width, height };
+    Vec2_4 points = RotatedRect(draw_rect, draw_call.sprite.draw_angle, &command.draw_aabb);
+
+    *vertex++ = { points.e[1], { tex_left, tex_bot  } }; 
+    *vertex++ = { points.e[2], { tex_right, tex_bot } };
+    *vertex++ = { points.e[0], { tex_left, tex_top  } };
+    *vertex++ = { points.e[3], { tex_right, tex_top } };
+
+    DrawRect(renderer, command.draw_aabb, vec4(1, 1, 1, 1));
+
+    PushDrawCommand(renderer, command);
+}
+
+static inline void SetImage(Renderer* renderer, ImageFiles image)
+{
+    {
+        GLuint active_tex = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
+
+        if (active_tex != renderer->textures[(uint32) image].texture_handle)
+        {
+            glBindTexture(GL_TEXTURE_2D, renderer->textures[(uint32)image].texture_handle);
+        }
+    }
+}
+
+// TODO: update shader uniforms once per frame
 void RenderDrawBuffer(Renderer* renderer, Camera* camera)
 {
     const Rectf ogl_screen_rect = { -1.f, -1.f, 2.0f, 2.0f };
@@ -420,244 +450,188 @@ void RenderDrawBuffer(Renderer* renderer, Camera* camera)
     uint32 num_drawn = 0;
     uint32 num_culled = 0;
 
-	for (uint32 layer = 0; layer < DrawLayer_Count; ++layer)
-	{
-		for (uint32 i = 0; i < renderer->draw_buffer[layer].Size(); ++i)
-		{
-            DrawCall& data = renderer->draw_buffer[layer][i];
+    static GLuint vao = (glGenVertexArrays(1, &vao), vao);
+    static GLuint vbo = (glGenBuffers(1, &vbo), vbo);
 
-            ProfileBeginSection(Profile_RenderFinish);
-            // TODO: set up the shaders once per frame (or once per draw surface)
-            // TODO: don't have every draw type specify a shader e.g. lines only have the line shader
-            // and text will ony have the text shader. Oh, and TODO: Batch text draws into a buffer.
+    Vec2 cam_position = { camera->position.x, camera->position.y };
+    Vec2 viewport     = { camera->viewport_size.x, camera->viewport_size.y };
 
-            static GLuint vao = (glGenVertexArrays(1, &vao), vao);
-            static GLuint vbo = (glGenBuffers(1, &vbo), vbo);
+    Rectf view_rect = { cam_position.x - viewport.x / 2.f, cam_position.y - viewport.y / 2.f, viewport.x, viewport.y };
 
-            Vec2 cam_position = { camera->position.x, camera->position.y };
-            Vec2 viewport     = { camera->viewport_size.x, camera->viewport_size.y };
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, renderer->vertex_buffer.used, renderer->vertex_buffer.base, GL_STATIC_DRAW);
 
-            glUseProgram(renderer->shaders[(uint32)data.shader].shader_handle);
+    for (uint32 command_index = 0; command_index < renderer->command_buffer.num_commands; ++command_index)
+    {
+        ProfileBeginSection(Profile_RenderFinish);
 
+        DrawCommand* command = renderer->command_buffer.draw_commands + command_index;
+        DrawCall data = command->draw_call;
+
+        glUseProgram(renderer->shaders[(uint32)data.shader].shader_handle); 
+
+        GLsizei buffer_offset = command->vertex_buffer_offset;
+
+        switch (data.draw_type)
+        {
+        case DrawType_Sprite:
+        {
+            assert(command->vertex_type == VertexType_Sprite);
+
+            SetImage(renderer, data.sprite.image);
+
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+            if (Intersects(view_rect, command->draw_aabb))
             {
-                GLuint active_tex = 0;
-                glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&active_tex);
+                glBindVertexArray(vao);
 
-                if (active_tex != renderer->textures[(uint32)data.image].texture_handle)
-                {
-                    glBindTexture(GL_TEXTURE_2D, renderer->textures[(uint32)data.image].texture_handle);
-                }
+                glEnableVertexAttribArray(0);
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex), (GLvoid*)buffer_offset);
+                glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex), (GLvoid*)(buffer_offset + 2 * sizeof(float)));
+
+                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+
+                GLint viewport_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, viewport.x, viewport.y);
+
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+                ++num_drawn;
+            }
+            else
+            {
+                ++num_culled;
+            }
+        }break;
+        case DrawType_Text:
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBindVertexArray(vao);
+
+            SetImage(renderer, data.text.image);
+
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) buffer_offset);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(buffer_offset + 4 * sizeof(float)));
+
+            assert(data.shader == Shader_Text);
+            if (data.draw_options & Draw_ScreenSpace)
+            {
+                // Screen space drawing is in range [0,1];
+                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, 0.5f, 0.5f);
+                GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, 1, 1);
+            }
+            else
+            {
+                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+                GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, viewport.x, viewport.y);
             }
 
-            switch(data.draw_type)
+            glDrawArrays(GL_TRIANGLES, 0, command->num_vertices);
+            ++num_drawn;
+
+        }break;
+        case DrawType_Primitive:
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBindVertexArray(vao);
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*) buffer_offset);
+            glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(buffer_offset + sizeof(Vec2)));
+
+            if (data.draw_options & PrimitiveDraw_Smooth)
             {
-                case DrawType::SINGLE_SPRITE:
-                    {
-                        // TODO(cgenova): handle rotated scaling;
-
-                        int32 tw = renderer->textures[(uint32)data.image].w;
-                        int32 th = renderer->textures[(uint32)data.image].h;
-
-                        float tex_left  = (float)data.sd.tex_rect.left / tw;
-                        float tex_right = (float)(data.sd.tex_rect.left + data.sd.tex_rect.width) / tw;
-                        float tex_bot   = (float)(th - (data.sd.tex_rect.top + data.sd.tex_rect.height)) / th;
-                        float tex_top   = (float)(th - data.sd.tex_rect.top) / th;
-
-                        float width  = data.sd.world_size.x;
-                        float height = data.sd.world_size.y;
-
-                        float x_pos = (data.sd.world_position.x - cam_position.x) - width / 2;
-                        float y_pos = (data.sd.world_position.y - cam_position.y) - height / 2;
-
-#define TO_OGL(pos, dir) ((((pos + (dir / 2)) / dir) * 2) - 1)
-
-                        Rectf rect = { x_pos, y_pos, width, height };
-                        Vec2_4 positions = RotatedRect(rect, data.sd.draw_angle);
-
-                        Vec2 left_top = ScreenToOpenGL(positions.e[0], viewport);
-                        Vec2 left_bot = ScreenToOpenGL(positions.e[1], viewport);
-                        Vec2 right_bot = ScreenToOpenGL(positions.e[2], viewport);
-                        Vec2 right_top = ScreenToOpenGL(positions.e[3], viewport);
-
-                        x_pos = TO_OGL(x_pos, viewport.x);
-                        y_pos = TO_OGL(y_pos, viewport.y);
-                        width = TO_OGL(width, viewport.x);
-                        height = TO_OGL(height, viewport.y);
-
-#undef TO_OGL
-
-#if 0
-                        SpriteVertex sprite_vertices[4] = {
-                            {
-                                { x_pos, y_pos },                    // World position
-                                { tex_left, tex_bot }                // UV coords
-                            },
-                            {
-                                { x_pos + width, y_pos },            // World position
-                                { tex_right, tex_bot }               // UV coords
-                            },
-                            {
-                                { x_pos, y_pos + height },           // World position
-                                { tex_left, tex_top }                // UV coords
-                            },
-                            {
-                                { x_pos + width, y_pos + height },   // World position
-                                { tex_right, tex_top }               // UV coords
-                            },
-                        };
-#else
-                        SpriteVertex sprite_vertices[4] = {
-                            {
-                                left_bot,                    // World position
-                                { tex_left, tex_bot }                // UV coords
-                            },
-                            {
-                                right_bot,            // World position
-                                { tex_right, tex_bot }               // UV coords
-                            },
-                            {
-                                left_top,           // World position
-                                { tex_left, tex_top }                // UV coords
-                            },
-                            {
-                                right_top,   // World position
-                                { tex_right, tex_top }               // UV coords
-                            },
-                        };
-#endif
-
-                        Rectf sprite_rect = { x_pos, y_pos, width, height };
-                        Rectf msum = MinkowskiSum(ogl_screen_rect, sprite_rect);
-
-                        if(Intersects(ogl_screen_rect, sprite_rect))
-                        {
-                            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                            glBufferData(GL_ARRAY_BUFFER, sizeof(sprite_vertices), sprite_vertices, GL_STREAM_DRAW);
-                            glBindVertexArray(vao);
-
-                            glEnableVertexAttribArray(0);
-                            glEnableVertexAttribArray(1);
-                            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-                            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (GLvoid*)(2 * sizeof(float)) );
-
-                            // NOTE(cgenova): unused, passing time to shaders should be done in separate function, not on every draw call
-                            //float time = 1.f;
-                            //GLint time_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "time");
-                            //glUniform1f(time_loc, time);
-
-                            //GLint color_loc = glGetUniformLocation(shaders[(uint32)data.shader].shader_handle, "color_in");
-                            //glUniform4f(color_loc, data.sd.color_mod.x, data.sd.color_mod.y, data.sd.color_mod.z, data.sd.color_mod.w);
-
-                            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-                            ++num_drawn;
-                        }
-                        else
-                        {
-                            ++num_culled;
-                        }
-
-                    }break;
-                case DrawType::ARRAY_BUFFER:
-                    {
-                        glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
-                        glBindVertexArray(data.abd.vao);
-                        glEnableVertexAttribArray(0);
-                        glEnableVertexAttribArray(1);
-                        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
-                        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
-
-                        GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "cam_pos");
-                        glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-
-                        GLint viewport_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "viewport");
-                        glUniform2f(viewport_loc, viewport.x, viewport.y);
-
-                        glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
-                        ++num_drawn;
-
-                    }break;
-                case DrawType::LINE_BUFFER:
-                    {
-                        glBindBuffer(GL_ARRAY_BUFFER, data.lbd.vbo);
-                        glBindVertexArray(data.lbd.vao);
-                        glEnableVertexAttribArray(0);
-                        glEnableVertexAttribArray(1);
-                        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
-                        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
-
-                        if(data.lbd.line_draw_flags & LineDrawOptions::SMOOTH)
-                        {
-                            glEnable(GL_LINE_SMOOTH);
-                            glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-                        }
-                        else
-                        {
-                            glDisable(GL_LINE_SMOOTH);
-                        }
-
-                        uint8 s = ((data.lbd.line_draw_flags & (0xFF << 24)) >> 24);
-                        float size = (float) s;
-                        glLineWidth(size);
-
-                        if(data.lbd.line_draw_flags & LineDrawOptions::SCREEN_SPACE)
-                        {
-                            // Screen space drawing is in range [0,1];
-                            GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
-                            glUniform2f(cam_pos_loc, 0.5f, 0.5f);
-                            GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
-                            glUniform2f(viewport_loc, 1, 1);
-                        }
-                        else
-                        {
-                            GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
-                            glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-                            GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
-                            glUniform2f(viewport_loc, viewport.x, viewport.y);
-                        }
-
-                        glDrawArrays(data.lbd.draw_method, 0, data.lbd.num_vertices);
-                        //glDrawArrays(GL_LINE_LOOP, 0, data.lbd.num_vertices);
-
-                        ++num_drawn;
-
-                    }break;
-                case DrawType::PARTICLE_ARRAY_BUFFER:
-                    {
-                        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-                        glEnable(GL_POINT_SPRITE);
-
-                        glBindBuffer(GL_ARRAY_BUFFER, data.abd.vbo);
-                        glBindVertexArray(data.abd.vao);
-
-
-                        float world_scale = ViewportWidth(camera);
-                        GLint scl_loc = glGetUniformLocation(renderer->shaders[Shader_Particle].shader_handle, "w_scale");
-                        glUniform1f(scl_loc, world_scale);
-
-
-                        GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "cam_pos");
-                        glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-
-                        GLint viewport_loc = glGetUniformLocation(renderer->shaders[(uint32)data.shader].shader_handle, "viewport");
-                        glUniform2f(viewport_loc, viewport.x, viewport.y);
-
-
-                        //glDrawArrays(data.pbd.draw_method, 0, data.pbd.num_vertices);
-                        //glDrawArrays(GL_TRIANGLE_FAN, 0, data.pbd.num_vertices);
-                        glDrawArrays(data.abd.draw_method, 0, data.abd.num_vertices);
-
-                        ++num_drawn;
-
-                    }break;
-                default:
-                    assert(0);
-                    break;
+                glEnable(GL_LINE_SMOOTH);
+                glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+            }
+            else
+            {
+                glDisable(GL_LINE_SMOOTH);
             }
 
-            ProfileEndSection(Profile_RenderFinish);
-		}
-	}
+            uint8 s = 1;
+            if (data.draw_options & PrimitiveDraw_CustomWidth)
+            {
+                s = data.line.line_width;
+            }
+            float size = (float)s;
+            glLineWidth(size);
+
+            if (data.draw_options & Draw_ScreenSpace)
+            {
+                // Screen space drawing is in range [0,1];
+                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, 0.5f, 0.5f);
+                GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, 1, 1);
+            }
+            else
+            {
+                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+                GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, viewport.x, viewport.y);
+            }
+
+            // TODO: culling?
+            glDrawArrays(data.line.draw_method, 0, command->num_vertices);
+            //glDrawArrays(GL_LINE_LOOP, 0, data.lbd.num_vertices);
+
+            ++num_drawn;
+
+        }break;
+        case DrawType_Particles:
+        {
+            glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+            glEnable(GL_POINT_SPRITE);
+
+            SetImage(renderer, data.owning_buffer.image);
+
+            glBindBuffer(GL_ARRAY_BUFFER, data.owning_buffer.vbo);
+            glBindVertexArray(data.owning_buffer.vao);
+
+            float world_scale = ViewportWidth(camera);
+            GLint scl_loc = glGetUniformLocation(renderer->shaders[Shader_Particle].shader_handle, "w_scale");
+            glUniform1f(scl_loc, world_scale);
+
+            if (data.draw_options & Draw_ScreenSpace)
+            {
+                // Screen space drawing is in range [0,1];
+                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, 0.5f, 0.5f);
+                GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, 1, 1);
+            }
+            else
+            {
+                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
+                glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+                GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
+                glUniform2f(viewport_loc, viewport.x, viewport.y);
+            }
+
+            glDrawArrays(data.owning_buffer.draw_method, 0, data.owning_buffer.num_vertices);
+
+            ++num_drawn;
+
+        }break;
+        InvalidDefaultCase;
+        }
+
+        ProfileEndSection(Profile_RenderFinish);
+    }
+
+    ClearArena(&renderer->vertex_buffer);
+    renderer->command_buffer.num_commands = 0;
 
     DebugPrintPushColor(vec4(0.8f, 0.2f, 0.2f, 1.0f));
     DebugPrintf("Draw calls drawn: %d/%d", num_drawn, (num_drawn + num_culled));
@@ -672,109 +646,98 @@ static void ConvertToGLRect(Rectf* rect)
     rect->h *= 2.f;
 }
 
-void DrawLine(Renderer* renderer, Vec2 start, Vec2 end, Vec4 color, LineDrawParams* params)
+void DrawLine(Renderer* renderer, Vec2 start, Vec2 end, Vec4 color, PrimitiveDrawParams params)
 {
-    LineDrawParams default_params;
-    LineDrawParams* using_params = params ? params : &default_params;
-
-    Array<SimpleVertex> v(2);
-    v.AddEmpty(2);
+    SimpleVertex v[2];
     v[0].position = start;
     v[0].color = color;
     v[1].position = end;
     v[1].color = color;
-    DrawLine(renderer, v, params);
+    DrawLine(renderer, v, 2, params);
 }
 
-void DrawLine(Renderer* renderer, Array<SimpleVertex>& vertices, LineDrawParams* params)
+static void DrawPrimitive(Renderer* renderer, size_t vertex_buffer_start, size_t num_vertices, PrimitiveDrawParams params)
 {
-    LineDrawParams default_params;
-    LineDrawParams* using_params = params ? params : &default_params;
+    DrawCommand command = {};
+    command.vertex_type = VertexType_Simple;
+    command.draw_call.draw_type = DrawType_Primitive;
+    command.draw_call.shader = Shader_Line;
+    command.vertex_buffer_offset = vertex_buffer_start;
+    command.num_vertices = num_vertices;
+    command.layer = params.draw_layer;
 
-	DrawCall dc = {};
-	dc.draw_type = DrawType::LINE_BUFFER;
-    dc.shader = Shader_Line;
-
-    if(renderer->line_buffer_loc == renderer->line_buffer.size())
+    if (params.line_draw_flags & PrimitiveDraw_Filled)
     {
-		LineBufferData a = {};
-		glGenBuffers(1, &a.vbo);
-		glGenVertexArrays(1, &a.vao);
-		glBindVertexArray(a.vao);
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), 0);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(sizeof(Vec2)));
-
-        renderer->line_buffer.push_back(a);
+        command.draw_call.line.draw_method = GL_TRIANGLE_STRIP;
+    }
+    else
+    {
+        command.draw_call.line.draw_method = (params.line_draw_flags & PrimitiveDraw_Looped) ? GL_LINE_LOOP : GL_LINE_STRIP;
     }
 
-    LineBufferData* lbd = &renderer->line_buffer[renderer->line_buffer_loc++];
-    lbd->num_vertices = vertices.Size();
+    command.draw_call.draw_options |= params.line_draw_flags;
 
-    lbd->draw_method = (using_params->line_draw_flags & LineDraw_Looped) ? GL_LINE_LOOP : GL_LINE_STRIP;
-    lbd->line_draw_flags = using_params->line_draw_flags;
-
-    if(using_params->line_width)
+    if(params.line_width)
     {
-        lbd->line_draw_flags |= LineDraw_CustomWidth;
-        lbd->line_draw_flags |= ((uint32)using_params->line_width << 24);
+        command.draw_call.draw_options |= PrimitiveDraw_CustomWidth;
+        command.draw_call.line.line_width = params.line_width;
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, lbd->vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.Size() * sizeof(SimpleVertex), &vertices[0], GL_STREAM_DRAW);
-    dc.lbd = *lbd;
-    PushDrawCall(renderer, dc, using_params->draw_layer);
+    command.draw_call.draw_options |= params.line_draw_flags & Draw_ScreenSpace;
+
+    PushDrawCommand(renderer, command);
 }
 
-void DrawRect(Renderer* renderer, const Rectf& rect, Vec4 color, LineDrawParams* params)
+void DrawLine(Renderer* ren, SimpleVertex* verts, size_t num_vertices, PrimitiveDrawParams params)
 {
-    Array<SimpleVertex> verts(4);
-
-    SimpleVertex v;
-	v.color = color;
-	v.position = vec2(rect.left, rect.bot);
-    verts.Add(v);
-
-	v.position = vec2(rect.left + rect.width, rect.bot);
-	verts.Add(v);
-
-	v.position = vec2(rect.left + rect.width, rect.bot + rect.height);
-	verts.Add(v);
-
-	v.position = vec2(rect.left, rect.bot + rect.height);
-	verts.Add(v);
-
-    LineDrawParams default_params;
-    LineDrawParams* using_params = params ? params : &default_params;
-    using_params->line_draw_flags |= LineDraw_Looped;
-
-	DrawLine(renderer, verts, using_params);
+    size_t buffer_start = ren->vertex_buffer.used;
+    SimpleVertex* v = PushArray(&ren->vertex_buffer, SimpleVertex, num_vertices);
+    memcpy(v, verts, sizeof(SimpleVertex) * num_vertices);
+    DrawPrimitive(ren, buffer_start, num_vertices, params);
 }
 
-void DrawRotatedRect(Renderer* renderer, const Rectf& rect, float rotation, Vec4 color, LineDrawParams* params)
+void DrawRect(Renderer* renderer, Rectf rect, Vec4 color, float rotation,  PrimitiveDrawParams params)
 {
     Vec2_4 points = RotatedRect(rect, rotation);
 
-    Array<SimpleVertex> verts(4);
+    size_t start_offset = renderer->vertex_buffer.used;
+    SimpleVertex* verts = PushArray(&renderer->vertex_buffer, SimpleVertex, 4);
 
-    SimpleVertex v;
-	v.color = color;
-	v.position = points.e[0];
-    verts.Add(v);
+    if (params.line_draw_flags & PrimitiveDraw_Filled)
+    {
+        SimpleVertex v;
+        v.color = color;
 
-	v.position = points.e[1];
-	verts.Add(v);
+        v.position = points.e[0];
+        *verts++ = v;
 
-	v.position = points.e[2];
-	verts.Add(v);
+        v.position = points.e[1];
+        *verts++ = v;
 
-	v.position = points.e[3];
-	verts.Add(v);
+        v.position = points.e[3];
+        *verts++ = v;
 
-    LineDrawParams default_params;
-    LineDrawParams* using_params = params ? params : &default_params;
-    using_params->line_draw_flags |= LineDraw_Looped;
+        v.position = points.e[2];
+        *verts = v;
+    }
+    else
+    {
+        SimpleVertex v;
+        v.color = color;
+        v.position = points.e[0];
+        *verts++ = v;
 
-	DrawLine(renderer, verts, using_params);
+        v.position = points.e[1];
+        *verts++ = v;
+
+        v.position = points.e[2];
+        *verts++ = v;
+
+        v.position = points.e[3];
+        *verts = v;
+
+        params.line_draw_flags |= PrimitiveDraw_Looped;
+    }
+
+    DrawPrimitive(renderer, start_offset, 4, params); 
 }

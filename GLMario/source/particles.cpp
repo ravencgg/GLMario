@@ -1,5 +1,4 @@
 #include "particles.h"
-#include "containers.h"
 #include "renderer.h"
 
 #include "console.h"
@@ -295,7 +294,6 @@ inline void ParticleSystem::update_particle(ParticleVertexData& pvd, ParticleFra
 	pvd.color = lerp(pfd.start_color, pfd.end_color, 1.f - pfd.remaining_lifetime_percent(current_time));
 }
 
-#ifdef UPDATE_PARTICLE_WIDE
 void ParticleSystem::update_particle_wide(uint32 s_index, Vec2& frame_gravity, float dt, float current_time, Vec2& delta_p, uint32 count)
 {
 	__m128 x_gravity = _mm_set1_ps(frame_gravity.x);
@@ -421,13 +419,6 @@ void ParticleSystem::update_particle_wide(uint32 s_index, Vec2& frame_gravity, f
 		particles.pfd[p].velocity.y = ((float *)&(y_vel))[i];
 	}
 }
-#endif
-/*
-	pfd.velocity += frame_gravity;
-	pvd.position += pfd.velocity * dt;
-	pvd.color = lerp(pfd.start_color, pfd.end_color, 1.f - pfd.remaining_lifetime_percent(current_time));
-*/
-
 
 void ParticleSystem::create_particle(ParticleVertexData& pvd, ParticleFrameData& pfd, float start_time)
 {
@@ -447,20 +438,22 @@ void ParticleSystem::create_particle(ParticleVertexData& pvd, ParticleFrameData&
 
 void ParticleSystem::render()
 {
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleVertexData) * active_particles, particles.pvd);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleVertexData) * active_particles, particles.pvd);
 
-	DrawCall draw_call = {};
-	draw_call.draw_type = DrawType::PARTICLE_ARRAY_BUFFER;
-	draw_call.image = ImageFiles::PARTICLE_IMAGE;
-	draw_call.shader = Shader_Particle;
-	draw_call.options |= DrawOptions::WHOLE_TEXTURE; //TODO(cgenova): support animated textures
-	draw_call.abd.vao = vao;
-	draw_call.abd.vbo = vbo;
-	draw_call.abd.draw_method = GL_POINTS;
-	draw_call.abd.num_vertices = active_particles;
+    DrawCommand command = {};
+    command.layer = this->draw_layer;
 
-    PushDrawCall(ren, draw_call, draw_layer);
+    command.draw_call.draw_type = DrawType_Particles;
+    command.draw_call.owning_buffer.image = ImageFiles::PARTICLE_IMAGE;
+    command.draw_call.shader = Shader_Particle;
+    command.draw_call.draw_options |= Draw_TextureWhole; //TODO(cgenova): support animated textures
+    command.draw_call.owning_buffer.vao = vao;
+    command.draw_call.owning_buffer.vbo = vbo;
+    command.draw_call.owning_buffer.draw_method = GL_POINTS;
+    command.draw_call.owning_buffer.num_vertices = active_particles;
+
+    PushDrawCommand(ren, command);
 }
 
 void ParticleSystem::Tick(GameState* game_state)

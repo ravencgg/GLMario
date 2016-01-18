@@ -10,13 +10,16 @@
 #include <inttypes.h>
 
 // Immediate mode text output / per frame rendering
+#define DEBUG_CONSOLE_STACK_SIZE 1024
 struct DebugConsole
 {
     char* output_string;
     uint32 used_chars;
     uint32 array_size;
-    Array<StringTextColor> text_color_stack;
-    Array<StringTextColor> text_format_array;
+    StringTextColor text_color_stack[DEBUG_CONSOLE_STACK_SIZE];
+    size_t text_color_stack_used = 0;
+    StringTextColor text_format_array[DEBUG_CONSOLE_STACK_SIZE];
+    size_t text_format_array_used = 0;
 	Vec2 screen_start = vec2( 0.01f, 0.95f);
 };
 
@@ -81,11 +84,6 @@ void ProfileBeginFrame()
         ps->hits = 0;
         ps->min_cycles = (uint64)-1;
         ps->max_cycles = 0;
-
-        if(ps->history.Size() == 0)
-        {
-            ps->history.Reserve(PROFILE_HISTORY_SIZE);
-        }
     }
 }
 
@@ -113,12 +111,12 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         }
 
         // Text output
-        if(0)
+        if(1)
         {
             u32 hits = section->hits;
 
-            DebugPrintPushColor(profile_colors[i]);
-//            DebugPrintPushGradient(profile_colors[i], profile_colors[i + 1]);
+//            DebugPrintPushColor(profile_colors[i]);
+            DebugPrintPushGradient(profile_colors[i], profile_colors[i + 1]);
 
             if(hits > 1)
             {
@@ -144,23 +142,27 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
         }
 
         {
-            if(section->history.Size() < PROFILE_HISTORY_SIZE)
+            if(section->used_history < PROFILE_HISTORY_SIZE)
             {
-                section->history.AddEmpty();
+                ++section->used_history;
             }
             else
             {
-                for(uint32 j = 0; j < section->history.Size() - 1; ++j)
+                SimpleVertex* curr = section->history;
+                SimpleVertex* next = curr + 1;
+                for (size_t i = 0; i < section->used_history - 1; ++i)
                 {
-                    section->history[j].position.y = section->history[j + 1].position.y;
+                    curr->position.y = next->position.y;
+                    //curr->color = next->color; // Only needed if changing the color per vertex, not per type
+                    ++curr;
+                    ++next;
                 }
             }
 
-            SimpleVertex* vertex = section->history.GetBackPtr();
-            float current_pos  = section->history.Size() / (float)PROFILE_HISTORY_SIZE;
+            SimpleVertex* vertex = section->history + section->used_history - 1;
+            float current_pos  = section->used_history / (float)PROFILE_HISTORY_SIZE;
             vertex->position.x = current_pos * data_box.w + data_box.x;
 
-            //assert(section->sum < frame_cycles);
             vertex->position.y = ((float)(section->sum) / (float)target_cycles) * data_box.h;
             vertex->position.y += data_box.y;
 
@@ -169,10 +171,10 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
             if(ren)
             {
-                LineDrawParams params;
-                params.line_draw_flags |= LineDraw_ScreenSpace;
+                PrimitiveDrawParams params = {};
+                params.line_draw_flags |= Draw_ScreenSpace;
                 params.line_width = 1;
-                DrawLine(ren, section->history, &params);
+                DrawLine(ren, section->history, section->used_history, params);
             }
         }
     }
@@ -183,10 +185,10 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 
     if(ren)
     {
-        LineDrawParams params;
-        params.line_draw_flags = LineDraw_ScreenSpace;
+        PrimitiveDrawParams params = {};
+        params.line_draw_flags = Draw_ScreenSpace;
         params.line_width = 2;
-        DrawRect(ren, data_box, color, &params);
+        DrawRect(ren, data_box, color, 0, params);
     }
 }
 
@@ -225,8 +227,12 @@ void InitializeDebugConsole()
 
 void DebugPrintPushGradient(Vec4 start_color, Vec4 end_color)
 {
-    console.text_color_stack.AddEmpty();
-    StringTextColor* stc = console.text_color_stack.GetBackPtr();
+    if (console.text_color_stack_used == DEBUG_CONSOLE_STACK_SIZE)
+    {
+        assert(!"Full Stack");
+        return;
+    }
+    StringTextColor* stc = &console.text_color_stack[console.text_color_stack_used++];
 
     stc->c.gradient_start = start_color;
     stc->c.gradient_end   = end_color;
@@ -235,8 +241,12 @@ void DebugPrintPushGradient(Vec4 start_color, Vec4 end_color)
 
 void DebugPrintPushColor(Vec4 solid_color)
 {
-    console.text_color_stack.AddEmpty();
-    StringTextColor* stc = console.text_color_stack.GetBackPtr();
+    if (console.text_color_stack_used == DEBUG_CONSOLE_STACK_SIZE)
+    {
+        assert(!"Full Stack");
+        return;
+    }
+    StringTextColor* stc = &console.text_color_stack[console.text_color_stack_used++];
 
     stc->c.solid_color = solid_color;
     stc->color_options = StringColorOptions_Solid;
@@ -244,30 +254,32 @@ void DebugPrintPushColor(Vec4 solid_color)
 
 void DebugPrintPopColor()
 {
-    // Don't delete the default color
-    if(console.text_color_stack.Size() > 1)
-    {
-        console.text_color_stack.RemoveBack();
-    }
+    console.text_color_stack_used = MAX(1, console.text_color_stack_used - 1);
 }
 
 void DebugPrintf(char* format, ... )
 {
     uint32 remaining_buffer_size = console.array_size - console.used_chars;
 
-    console.text_format_array.AddEmpty();
-    StringTextColor* current_color = console.text_format_array.GetBackPtr();
-    current_color->color_options = console.text_color_stack.GetBack().color_options;
+    if (console.text_format_array_used == DEBUG_CONSOLE_STACK_SIZE)
+    {
+        assert(!"Full Stack");
+        return;
+    }
+    StringTextColor* current_color = &console.text_format_array[console.text_format_array_used++];
+    StringTextColor* color_stack_back = &console.text_color_stack[console.text_color_stack_used - 1];
+
+    current_color->color_options = color_stack_back->color_options;
 
     if(current_color->color_options == StringColorOptions_Solid)
     {
-        current_color->c.solid_color = console.text_color_stack.GetBack().c.solid_color;
+        current_color->c.solid_color = color_stack_back->c.solid_color;
         current_color->start = console.used_chars;
     }
     else if(current_color->color_options == StringColorOptions_Gradient)
     {
-        current_color->c.gradient_start = console.text_color_stack.GetBack().c.gradient_start;
-        current_color->c.gradient_end   = console.text_color_stack.GetBack().c.gradient_end;
+        current_color->c.gradient_start = color_stack_back->c.gradient_start; 
+        current_color->c.gradient_end   = color_stack_back->c.gradient_end; 
     }
     else
     {
@@ -332,17 +344,11 @@ void DebugDrawConsole(Renderer* ren)
     if(ren)
     {
         DrawString(ren, console.output_string, console.used_chars, draw_x, draw_y,
-                        &console.text_format_array[0], console.text_format_array.Size());
+                        console.text_format_array, console.text_format_array_used);
     }
-    //ren->DrawString(console.output_string, console.used_chars, draw_x, draw_y, colors, array_size);
-    //ren->DrawString(this->output_string, 100, 100, this->used_chars);
+
     console.used_chars = 0;
-
-    console.text_format_array.Clear();
-
-    while(console.text_color_stack.Size() > 1)
-    {
-        console.text_color_stack.RemoveBack();
-    }
+    console.text_format_array_used = 0;
+    console.text_color_stack_used = 1;
 }
 

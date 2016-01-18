@@ -50,16 +50,6 @@ typedef int32_t b32;
 #define InvalidDefaultCase default:  \
                             assert(!"Invalid default case!");
 
-struct Point2
-{
-	int32 x, y;
-};
-
-struct Point3
-{
-	int32 x, y, z;
-};
-
 struct FRange
 {
 	float min_range;
@@ -79,10 +69,15 @@ struct Rect
 		};
 		struct
 		{
-			int32 left, top, width, height;
+			int32 left, bot, width, height;
 		};
 		int32 E[4];
 	};
+
+    int32 Left()  { return x; }
+    int32 Right() { return x + w; }
+    int32 Bot()   { return y; }
+    int32 Top()   { return y + h; }
 };
 
 struct Rectf

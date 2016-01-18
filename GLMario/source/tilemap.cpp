@@ -205,9 +205,9 @@ static void DrawBoundingBoxes(TileGroup* tile_group, Renderer* ren)
         }
     }
 
-    LineDrawParams params;
+    PrimitiveDrawParams params = {};
     params.line_width = 2;
-    DrawRect(ren, tile_group->aabb, color, &params);
+    DrawRect(ren, tile_group->aabb, color, 0, params);
 }
 
 
@@ -248,7 +248,7 @@ void AddTileToMap(TileMap* tilemap, Rectf tile_rect)
 
 void AddTileToMap(TileMap* tilemap, Vec2 position)
 {
-    AddTileToMap(tilemap, RectFromDim(position, {1.f, 1.f}));
+    AddTileToMap(tilemap, RectFromDimCenter(position, {1.f, 1.f}));
 }
 
 void DrawTileMap(GameState* game_state, TileMap* tilemap)

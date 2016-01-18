@@ -7,6 +7,17 @@ static Input s_input;
 
 static void UpdateKeys()
 {
+}
+
+void InitializeInput()
+{
+	memset(&s_input.key_states[0], 0, NUM_KEYS * sizeof(s_input.key_states[0]));
+	s_input.mouse = {};
+}
+
+void InputBeginFrame()
+{
+    // Update Keys
 	for(int i = 0; i < NUM_KEYS; ++i)
 	{
 		if(s_input.key_states[i] == KeyState::FRAME_UP || s_input.key_states[i] == KeyState::DOWN_UP)
@@ -18,34 +29,37 @@ static void UpdateKeys()
 			s_input.key_states[i] = KeyState::DOWN;
 		}
 	}
-}
 
-static void UpdateMouse()
-{
-	if(s_input.mouse.buttons[(int32)MouseButton::LEFT] == KeyState::FRAME_UP) s_input.mouse.buttons[(int32)MouseButton::LEFT] = KeyState::UP;
-	else if(s_input.mouse.buttons[(int32)MouseButton::LEFT] == KeyState::FRAME_DOWN) s_input.mouse.buttons[(int32)MouseButton::LEFT] = KeyState::DOWN;
+    // Mouse
+    if (s_input.mouse.buttons[(int32)MouseButton::LEFT] == KeyState::FRAME_UP) 
+    {
+        s_input.mouse.buttons[(int32)MouseButton::LEFT] = KeyState::UP;
+    } 
+    else if (s_input.mouse.buttons[(int32)MouseButton::LEFT] == KeyState::FRAME_DOWN) 
+    {
+        s_input.mouse.buttons[(int32)MouseButton::LEFT] = KeyState::DOWN;
+    }
 
-	if(s_input.mouse.buttons[(int32)MouseButton::MIDDLE] == KeyState::FRAME_UP) s_input.mouse.buttons[(int32)MouseButton::MIDDLE] = KeyState::UP;
-	else if(s_input.mouse.buttons[(int32)MouseButton::MIDDLE] == KeyState::FRAME_DOWN) s_input.mouse.buttons[(int32)MouseButton::MIDDLE] = KeyState::DOWN;
+    if (s_input.mouse.buttons[(int32)MouseButton::MIDDLE] == KeyState::FRAME_UP) 
+    {
+        s_input.mouse.buttons[(int32)MouseButton::MIDDLE] = KeyState::UP;
+    } 
+    else if (s_input.mouse.buttons[(int32)MouseButton::MIDDLE] == KeyState::FRAME_DOWN) 
+    {
+        s_input.mouse.buttons[(int32)MouseButton::MIDDLE] = KeyState::DOWN;
+    }
 
-	if(s_input.mouse.buttons[(int32)MouseButton::RIGHT] == KeyState::FRAME_UP) s_input.mouse.buttons[(int32)MouseButton::RIGHT] = KeyState::UP;
-	else if(s_input.mouse.buttons[(int32)MouseButton::RIGHT] == KeyState::FRAME_DOWN) s_input.mouse.buttons[(int32)MouseButton::RIGHT] = KeyState::DOWN;
-}
+    if (s_input.mouse.buttons[(int32)MouseButton::RIGHT] == KeyState::FRAME_UP) 
+    {
+        s_input.mouse.buttons[(int32)MouseButton::RIGHT] = KeyState::UP;
+    } 
+    else if (s_input.mouse.buttons[(int32)MouseButton::RIGHT] == KeyState::FRAME_DOWN) 
+    {
+        s_input.mouse.buttons[(int32)MouseButton::RIGHT] = KeyState::DOWN;
+    }
 
-
-void InitializeInput()
-{
-	memset(&s_input.key_states[0], 0, NUM_KEYS * sizeof(s_input.key_states[0]));
-	s_input.mouse = {};
-}
-
-
-void InputBeginFrame()
-{
-    s_input.mouse_loc_updated_this_frame = false;
-
-    UpdateKeys();
-    UpdateMouse();
+    s_input.mouse.delta.x = 0;
+    s_input.mouse.delta.y = 0;
 }
 
 void ProcessKeyPress(int32 key)
@@ -118,15 +132,8 @@ bool KeyIsUp(int32 key)
 
 void UpdateMousePosition()
 {
-    Point2 new_position = {};
+    Vec2i new_position = {};
 	SDL_GetMouseState(&new_position.x, &new_position.y);
-
-	if(!s_input.mouse_loc_updated_this_frame)
-	{
-		s_input.mouse_loc_updated_this_frame = true;
-		s_input.mouse.delta.x = 0;
-		s_input.mouse.delta.y = 0;
-	}
 
 	s_input.mouse.delta.x += new_position.x - s_input.mouse.p.x;
 	s_input.mouse.delta.y += new_position.y - s_input.mouse.p.y;
@@ -200,12 +207,12 @@ void MouseButtonEvent()
 	}
 }
 
-Point2 MouseScreenPoint()
+Vec2i MouseScreenPoint()
 {
 	return s_input.mouse.p;
 }
 
-Point2 MouseFrameDelta()
+Vec2i MouseFrameDelta()
 {
 	return s_input.mouse.delta;
 }

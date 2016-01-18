@@ -1,13 +1,11 @@
 #pragma once
 
+// TODO: Remove this from public visibility
 #include "win32_gl.h"
 
 #include "types.h"
-#include "containers.h"
 #include "mathops.h"
 #include "utility.h"
-
-#include <vector>
 
 struct Window;
 struct GameState;
@@ -22,57 +20,44 @@ struct Camera
     Vec2 viewport_size;
 };
 
-namespace DrawOptions
+enum DrawOptions
 {
-	enum : uint32  {
-		WHOLE_TEXTURE = 0x1, // TODO(cgenova): remove this? pointless with flags
-		TEXTURE_RECT  = 0x2,
-	};
-}
+    Draw_ScreenSpace             = 0x1,       // Uses [0,1] coords instead of world space coordinates
 
-namespace LineDrawOptions
-{
-    enum : uint32 {
-        NONE          = 0x0,
-        LOOPED        = 0x1,
-        SCREEN_SPACE  = 0x2, // Uses [0,1] coords instead of world space coordinates
-        CUSTOM_SIZE   = 0x4, // top byte of the uint32 holding these flags data is the size in pixels of the line;
-        SMOOTH        = 0x8,
-    };
-}
+	Draw_TextureWhole            = 0x10, // TODO(cgenova): remove this? pointless with flags
+	Draw_TextureRect             = 0x20,
 
-enum LineDrawFlags : uint32
-{
-    LineDraw_Default      = 0x0,
-    LineDraw_Looped       = 0x1,
-    LineDraw_ScreenSpace  = 0x2,// Uses [0,1] coords instead of world space coordinates
-    LineDraw_CustomWidth  = 0x4,// top byte of the uint32 holding these flags data is the size in pixels of the line;
-    LineDraw_Smooth       = 0x8,
+    PrimitiveDraw_Looped         = 0x100,
+    PrimitiveDraw_Filled         = 0x200,
+    PrimitiveDraw_CustomWidth    = 0x400,// top byte of the uint32 holding these flags data is the size in pixels of the line;
+    PrimitiveDraw_Smooth         = 0x800,
+
+    StringColorOptions_Solid     = 0x1000,
+    StringColorOptions_Gradient  = 0x2000,
 };
 
-struct LineDrawParams
+struct PrimitiveDrawParams
 {
-    uint32 line_draw_flags = LineDraw_Default;
-    DrawLayer draw_layer   = DrawLayer_UI;
-    uint8 line_width       = 1;
+    uint32 line_draw_flags;
+    DrawLayer draw_layer;
+    uint8 line_width;
 };
 
-namespace DrawType
+enum DrawType
 {
-	enum Type : uint32 { UNINITIALIZED, SINGLE_SPRITE, LINE_BUFFER, ARRAY_BUFFER, PARTICLE_ARRAY_BUFFER, DRAW_TYPE_COUNT};
-}
+    DrawType_Unknown,
+    DrawType_Sprite,
+    DrawType_Primitive,
+    DrawType_Particles,
+    DrawType_Text,
+};
+
 
 // Pass color in as a uniform if it is desired
 struct SpriteVertex
 {
     Vec2 position;
     Vec2 uv;
-};
-
-enum StringColorOptions
-{
-    StringColorOptions_Solid,
-    StringColorOptions_Gradient,
 };
 
 struct StringTextColor
@@ -101,13 +86,6 @@ struct TextVertex
     Vec4 color;
 };
 
-struct Vertex
-{
-    Vec2 position;
-    Vec2 uv;
-    Vec4 color;
-};
-
 struct SimpleVertex
 {
     Vec2 position;
@@ -117,48 +95,43 @@ struct SimpleVertex
     SimpleVertex(Vec2 p, Vec4 c) : position(p), color(c) {}
 };
 
-struct SpriteData
-{
-	Rect tex_rect;
-	Vec2 world_size;
-	Vec2 world_position;
-	Vec4 color_mod;
-	float draw_angle;
-};
-
-struct ArrayBufferData
-{
-	GLuint vao;
-	GLuint vbo;
-	GLuint draw_method;
-	uint32 num_vertices;
-    bool screen_space;  // @cleanup Combine array and line buffer drawing? Possibly
-                        // even particle buffer stuff, use flags to control it all
-};
-
-// TODO: Change this to a system that stores indices in an array of line buffer data.
-struct LineBufferData
-{
-	GLuint vao;
-	GLuint vbo;
-	GLuint draw_method;
-    uint32 line_draw_flags;
-	uint32 num_vertices;
-};
-
 struct DrawCall// Used for drawing to the screen.
 {
-	DrawType::Type draw_type;
-
-	ImageFiles image;
+	DrawType draw_type;
 	ShaderTypes shader;
-	uint32 options;
+	uint32 draw_options;
 
 	union
 	{
-		SpriteData sd;
-        LineBufferData lbd;
-		ArrayBufferData abd;
+        struct
+        {
+            ImageFiles image;
+            Rect tex_rect;
+            Vec2 world_size;
+            Vec2 world_position;
+            Vec4 color_mod;
+            float draw_angle;
+        }sprite;
+
+        struct
+        {
+            ImageFiles image;
+
+        } text;
+        struct
+        {
+            uint8 line_width;
+            GLuint draw_method;
+        } line;
+
+        struct
+        {
+            ImageFiles image;
+            GLuint vao;
+            GLuint vbo;
+            GLuint draw_method;
+            uint32 num_vertices;
+        } owning_buffer;
 	};
 };
 
@@ -196,22 +169,55 @@ struct Shader
     GLuint shader_handle;
 };
 
+enum VertexType
+{
+    VertexType_Null,  //Used for things that draw and own their own VBOs
+    VertexType_Sprite,
+    VertexType_Line,
+    VertexType_Text,
+    VertexType_Simple,
+
+    VertexType_Count,
+};
+
+struct DrawCommand
+{
+    VertexType vertex_type;
+    DrawCall draw_call;
+    DrawLayer layer;
+    size_t vertex_buffer_offset;
+    size_t num_vertices;
+    Rectf draw_aabb;
+};
+
+struct CommandBuffer
+{
+    DrawCommand* draw_commands;
+    size_t num_commands;
+    size_t command_array_size;
+};
+
 struct Renderer
 {
 	Vec2i frame_resolution;
 	TextData text_data;
-    TextVertex* text_array;
-    size_t text_array_size;
-    uint32 line_buffer_loc = 0;
 
     Texture textures[(uint32) ImageFiles::IMAGE_COUNT];
     Shader shaders[Shader_Count];
 
-    // TODO: remove this, make a single buffer for lines and draw out of that with draw commands
-    std::vector<LineBufferData> line_buffer;
-    // TODO: switch to frame buffer, then sort before drawing?
-	Array<DrawCall> draw_buffer[DrawLayer_Count];
+    MemoryArena vertex_buffer;
+    CommandBuffer command_buffer;
 };
+
+inline PrimitiveDrawParams DefaultPrimitiveDrawParams()
+{
+    PrimitiveDrawParams result = {};
+
+    result.line_draw_flags  = 0;
+    result.draw_layer       = DrawLayer_UI;
+    result.line_width       = 1;
+    return result;
+}
 
 void SwapBuffer(GameState*);
 
@@ -228,12 +234,16 @@ Vec2i GetResolution(Renderer*);
 float ViewportWidth(Renderer*);
 void RenderDrawBuffer(Renderer*, Camera*);
 
-TextDrawResult DrawString(Renderer*, char* string, uint32 string_size, float start_x, float start_y, StringTextColor* = 0, size_t = 0);
-void PushDrawCall(Renderer*, DrawCall, DrawLayer);
-//void DrawCall(Renderer*, DrawCall);
-void DrawLine(Renderer*, Vec2, Vec2, Vec4, LineDrawParams* params = nullptr);
-void DrawLine(Renderer*, Array<SimpleVertex>& vertices, LineDrawParams* params = nullptr);
-void DrawRect(Renderer*, const Rectf&, Vec4 color, LineDrawParams* params = nullptr);
-void DrawRotatedRect(Renderer*, const Rectf&, float rotation, Vec4 color, LineDrawParams* params = nullptr);
+TextDrawResult DrawString(Renderer*, char* string, uint32 string_size, float start_x, float start_y, 
+                            StringTextColor* = 0, size_t = 0, DrawLayer draw_layer = DrawLayer_UI);
 
+void PushDrawCommand(Renderer*, DrawCommand);
+
+void DrawSprite(Renderer*, DrawCall, DrawLayer);
+
+void DrawLine(Renderer* ren, SimpleVertex* verts, size_t num_vertices, PrimitiveDrawParams params = DefaultPrimitiveDrawParams());
+
+void DrawLine(Renderer*, Vec2, Vec2, Vec4, PrimitiveDrawParams params = DefaultPrimitiveDrawParams());
+
+void DrawRect(Renderer*, Rectf, Vec4 color, float rotation = 0, PrimitiveDrawParams params = DefaultPrimitiveDrawParams());
 

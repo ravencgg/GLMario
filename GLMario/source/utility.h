@@ -40,6 +40,8 @@ struct MemoryArena
     size_t size;
     size_t used;
     uint8* base;
+
+    size_t RemainingSize() { return size - used; }
 };
 
 #define ArrayCount(array) sizeof(array) / sizeof(array[0])
@@ -55,6 +57,8 @@ void AllocateMemoryArena(MemoryArena*, size_t);
 MemoryArena CreateSubArena(MemoryArena* base, size_t size);
 
 // Resets the arena without clearing any of the data since it will be cleared on allocation
+void ClearArena(MemoryArena*);
+// Resets the arena without clearing any of the data since it will be cleared on allocation
 void ResetArena(MemoryArena*);
 
 void FreeMemoryArena(MemoryArena*);
@@ -66,7 +70,6 @@ void PopAllocation(MemoryArena* arena, void*);
 
 // Clears the memory as well, since PushSize clears by default
 #define PushArray(arena, type, count)   (type*) PushSize(arena, sizeof(type) * (count))
-#define PushStructs(arena, type, count) (type*) PushSize(arena, sizeof(type) * (count)) // @deprecate
 #define PushStruct(arena, type)         (type*) PushSize(arena, sizeof(type))
 
 struct AutoPopAllocation

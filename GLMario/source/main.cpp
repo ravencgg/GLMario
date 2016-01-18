@@ -24,6 +24,8 @@
 #include "game_types.h"
 #include "entity.h"
 
+#include "Editor.h"
+
 #include "audio.h"
 
 
@@ -36,7 +38,7 @@
 
 #define TOTAL_MEMORY_ALLOCATION_SIZE FRAME_TEMPORARY_MEMORY_SIZE + GAME_PERMANENT_MEMORY_SIZE
 
-#define MAX_GAME_ENTITES 4096
+#define MAX_GAME_ENTITES 4096 * 2
 
 void DebugControlCamera(Camera* camera)
 {
@@ -180,6 +182,14 @@ int main(int argc, char* argv[])
         AddTileToMap(tilemap, pos);
     }
 
+    for(int32 i = 0; i < 10; ++i)
+    {
+        Vec2 pos = { 10.f, (float) i };
+        AddTileToMap(tilemap, pos);
+    }
+
+    EditorUI* ui = PushStruct(&game_state->permanent_memory, EditorUI);
+    SetSize(ui, { 0.1f, 0.3f, 0.2f, 0.2f }, 0.05f);
 
     InitializeInput();
     InitializeDebugConsole();
@@ -279,13 +289,6 @@ int main(int argc, char* argv[])
             break;
         }
 
-        if(KeyFrameDown(SDLK_F1))
-        if(KeyFrameDown(SDLK_F1))
-        {
-            running = false;
-            break;
-        }
-
         if(KeyFrameDown(SDLK_z))
         {
             ForceColorClear();
@@ -299,7 +302,7 @@ int main(int argc, char* argv[])
             WindowSetScreenMode(&game_state->window, ScreenMode_Borderless);
         }
 
-        static bool draw_debug = true;
+        static bool draw_debug = false;
         if(KeyFrameDown(SDLK_BACKQUOTE))
         {
             draw_debug = !draw_debug;
@@ -317,9 +320,6 @@ int main(int argc, char* argv[])
             last_fps_time = current_time;
             fps = frame_count;
             frame_count = 0;
-#if _DEBUG
-            printf("FPS: %d\n", fps);
-#endif
         }
         frame_count++;
         DebugPrintf("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount(game_state));
@@ -341,35 +341,40 @@ int main(int argc, char* argv[])
         ProfileEndSection(Profile_SceneUpdate);
 
 #if 1 // Spaghetti test
-        static Array<SimpleVertex> v;
+        const size_t num_verts = 200;
+        static SimpleVertex v[num_verts];
         static bool initialized = false;
         if(!initialized)
         {
             initialized = true;
-            for(uint32 i = 0; i < 200; ++i)
+            for(uint32 i = 0; i < num_verts; ++i)
             {
                 SimpleVertex verts = {};
                 verts.position = vec2((float) (i / 50.f) - 2.f, (float) i);
                 verts.color = vec4(1, 1, 0, 1.f);
-                v.Add(verts);
+                v[i] = verts;
             }
         }
         else
         {
-            for(uint32 i = 0; i < v.Size(); ++i)
+            for(uint32 i = 0; i < num_verts; ++i)
             {
                 v[i].position.y = sin(CurrentTime(game_state) + i / (PI * 20));
             }
         }
 
-        LineDrawParams spaghetti_params;
-        spaghetti_params.line_draw_flags |= LineDraw_Smooth;
-        DrawLine(renderer, v, &spaghetti_params);
+        PrimitiveDrawParams spaghetti_params = {};
+        spaghetti_params.line_draw_flags |= PrimitiveDraw_Smooth;
+//      spaghetti_params.line_draw_flags |= Draw_ScreenSpace;
+        spaghetti_params.line_width = 0;
+        DrawLine(renderer, v, num_verts, spaghetti_params);
 #endif
 
         DrawTileMap(game_state, game_state->active_scene->tilemap);
 
-        Flush(renderer, draw_camera);
+        UpdateEditorUI(ui, game_state->renderer);
+
+        RenderDrawBuffer(renderer, draw_camera);
 
         ProfileEndSection(Profile_Frame);
         ProfileEndFrame(debug_renderer, TARGET_FPS);
@@ -378,7 +383,7 @@ int main(int argc, char* argv[])
         // NOTE:
         // For drawing Debug info, the profiling in this section will be discarded,
         // but it is only drawing text and the debug graph.
-        Flush(renderer, draw_camera);
+        RenderDrawBuffer(renderer, draw_camera);
 
         SwapBuffer(game_state);
 

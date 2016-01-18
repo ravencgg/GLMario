@@ -3,8 +3,6 @@
 #include "types.h"
 #include "renderer.h"
 #include "mathops.h"
-#include <vector>
-#include <string>
 
 
 #define PROFILE_HISTORY_SIZE 100
@@ -42,8 +40,8 @@ struct ProfileSection
     u64 max_cycles;
     u32 hits;
 
-// TODO: this never changes size, just replace this with a PushArray
-    Array<SimpleVertex> history;
+    SimpleVertex history[PROFILE_HISTORY_SIZE];
+    size_t used_history;
 };
 
 struct DebugProfile

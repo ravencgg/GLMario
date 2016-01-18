@@ -161,9 +161,6 @@ public:
 private:
 
 	inline void update_particle(ParticleVertexData&, ParticleFrameData&, Vec2&, float, float, Vec2&);
-#define UPDATE_PARTICLE_WIDE
-#ifdef UPDATE_PARTICLE_WIDE
 	void update_particle_wide(uint32, Vec2&, float, float, Vec2&, uint32 count = 4);
-#endif
 };
 

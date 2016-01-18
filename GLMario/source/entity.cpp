@@ -154,29 +154,6 @@ uint32 MoveEntity(GameState* game_state, Entity* entity, Vec2 velocity)
     Vec2 top[points_per_side];
     Vec2 bottom[points_per_side];
 
-#if 0
-    Array<SimpleVertex> points;
-    points.Reserve(points_per_side * 4);
-    Renderer* renderer = game_state->renderer;
-    SimpleVertex vertex;
-    vertex.color = { 1.0f, 0.5f, 0.5f, 1.0f };
-
-        vertex.position = left[i];
-        points.Add(vertex);
-
-        vertex.position = top[i];
-        points.Add(vertex);
-
-        vertex.position = right[i];
-        points.Add(vertex);
-
-        vertex.position = bottom[i];
-        points.Add(vertex);
-
-    LineDrawParams params;
-    params.line_draw_flags = LineDraw_Looped;
-    DrawLine(renderer, points, &params);
-#endif
 
     for (int i = 0; i < points_per_side; ++i)
     {
@@ -318,6 +295,7 @@ static Entity* NextFreeEntitySlot(Scene* scene, EntityType new_type)
 Entity* SpawnEntity(GameState* game_state, Scene* scene, EntityType type, Vec2 position)
 {
     Entity* entity = NextFreeEntitySlot(scene, type);
+    if (!entity) return nullptr;
 
     entity->size = { 1.f, 1.f };
     switch(type)
@@ -446,63 +424,68 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
         {
             case EntityType_Player:
             {
+                auto* player = &entity->player;
+
                 const float gravity = -20.f;
                 static uint32 count = 0;
-                if(KeyIsDown(SDLK_SPACE))
+                if(KeyIsDown(SDLK_SPACE) && player->grounded)
                 {
-                    //RemoveEntity(entity);
-                    entity->player.velocity.y = 10.f;
+                    player->velocity.y = 10.f;
                 }
                 else
                 {
-                    entity->player.velocity.y += gravity * dt;
-                    entity->player.velocity.y = max(entity->player.velocity.y, -100.0f);
+                    player->velocity.y += gravity * dt;
+                    player->velocity.y = max(player->velocity.y, -100.0f);
                 }
 
 #if 0
                 if(KeyIsDown(SDLK_w))
                 {
-                    entity->player.velocity.y += 50.f * dt;
-                    entity->player.velocity.y = min(entity->player.velocity.y, 5.0f);
+                    player->velocity.y += 50.f * dt;
+                    player->velocity.y = min(player->velocity.y, 5.0f);
                 }
                 else if(KeyIsDown(SDLK_s))
                 {
-                    entity->player.velocity.y -= 50.f * dt;
-                    entity->player.velocity.y = min(entity->player.velocity.y, 5.0f);
+                    player->velocity.y -= 50.f * dt;
+                    player->velocity.y = min(player->velocity.y, 5.0f);
                 }
                 else
                 {
-                    entity->player.velocity.y = 0;
+                    player->velocity.y = 0;
                 }
 #endif
 
                 if(KeyIsDown(SDLK_d))
                 {
-                    entity->player.velocity.x += 50.f * dt;
-                    entity->player.velocity.x = min(entity->player.velocity.x, 5.0f);
+                    player->velocity.x += 50.f * dt;
+                    player->velocity.x = min(player->velocity.x, 5.0f);
                 }
                 else if(KeyIsDown(SDLK_a))
                 {
-                    entity->player.velocity.x -= 50.f * dt;
-                    entity->player.velocity.x = max(entity->player.velocity.x, -5.0f);
+                    player->velocity.x -= 50.f * dt;
+                    player->velocity.x = max(player->velocity.x, -5.0f);
                 }
                 else
                 {
-                    entity->player.velocity.x = 0;
+                    player->velocity.x = 0;
                 }
 
                 if(KeyIsDown(SDLK_1))
                 {
                     entity->delete_this_frame = true;
                 }
-                //entity->transform.position += entity->player.velocity * dt;
-                uint32 collision_result = MoveEntity(game_state, entity, entity->player.velocity * dt);
+                //entity->transform.position += player->velocity * dt;
+                uint32 collision_result = MoveEntity(game_state, entity, player->velocity * dt);
 
-                if (collision_result & TileCollision_Bottom && entity->player.velocity.y < 0)
+                if (collision_result & TileCollision_Bottom && player->velocity.y < 0)
                 {
-                    entity->player.velocity.y = 0;
+                    player->grounded = true;
+                    player->velocity.y = 0;
                 }
-                //Vec2 old_velocity = entity->player.velocity;
+                else
+                {
+                    player->grounded = false;
+                }
             }break;
             case EntityType_Enemy:
             {
@@ -581,44 +564,44 @@ void DrawSceneEntities(Scene* scene, Renderer* renderer)
             case EntityType_Player:
             {
                 DrawCall draw_call = {};
-                draw_call.draw_type = DrawType::SINGLE_SPRITE;
-                draw_call.image = ImageFiles::MARIO_IMAGE;
+                draw_call.draw_type = DrawType_Sprite;
+                draw_call.sprite.image = ImageFiles::MARIO_IMAGE;
                 draw_call.shader = Shader_Default;
-                draw_call.options = DrawOptions::TEXTURE_RECT;
-                draw_call.sd.tex_rect = { 17, 903, 34, 34 };
-                draw_call.sd.world_size = vec2(1.0f, 1.5f);
-                draw_call.sd.draw_angle = 0;
-                draw_call.sd.world_position = entity->transform.position;
+                draw_call.draw_options = Draw_TextureRect;
+                draw_call.sprite.tex_rect = { 17, 903, 34, 34 };
+                draw_call.sprite.world_size = vec2(1.0f, 1.5f);
+                draw_call.sprite.draw_angle = 0;
+                draw_call.sprite.world_position = entity->transform.position;
 
-                PushDrawCall(renderer, draw_call, DrawLayer_Player);
+                DrawSprite(renderer, draw_call, DrawLayer_Player);
             }break;
             case EntityType_Enemy:
             {
                 DrawCall draw_call = {};
-                draw_call.draw_type = DrawType::SINGLE_SPRITE;
-                draw_call.image = ImageFiles::MARIO_IMAGE;
+                draw_call.draw_type = DrawType_Sprite;
+                draw_call.sprite.image = ImageFiles::MARIO_IMAGE;
                 draw_call.shader = Shader_Default;
-                draw_call.options = DrawOptions::TEXTURE_RECT;
-                draw_call.sd.tex_rect = { 17, 903, 34, 34 };
-                draw_call.sd.world_size = vec2(1.0f, 1.5f);
-                draw_call.sd.draw_angle = 0;
+                draw_call.draw_options = Draw_TextureRect;
+                draw_call.sprite.tex_rect = { 17, 903, 34, 34 };
+                draw_call.sprite.world_size = vec2(1.0f, 1.5f);
+                draw_call.sprite.draw_angle = 0;
 
-                draw_call.sd.world_position = entity->transform.position;
-                PushDrawCall(renderer, draw_call, DrawLayer_Player);
+                draw_call.sprite.world_position = entity->transform.position;
+                DrawSprite(renderer, draw_call, DrawLayer_Player);
             }break;
             case EntityType_Spawner:
             {
                 DrawCall draw_call = {};
-                draw_call.draw_type = DrawType::SINGLE_SPRITE;
-                draw_call.image = ImageFiles::MARIO_IMAGE;
+                draw_call.draw_type = DrawType_Sprite;
+                draw_call.sprite.image = ImageFiles::MARIO_IMAGE;
                 draw_call.shader = Shader_Default;
-                draw_call.options = DrawOptions::TEXTURE_RECT;
-                draw_call.sd.tex_rect = { 34, 903, 34, 34 };
-                draw_call.sd.world_size = vec2(1.0f, 1.5f);
-                draw_call.sd.draw_angle = 0;
-                draw_call.sd.world_position = entity->transform.position;
+                draw_call.draw_options = Draw_TextureRect;
+                draw_call.sprite.tex_rect = { 34, 903, 34, 34 };
+                draw_call.sprite.world_size = vec2(1.0f, 1.5f);
+                draw_call.sprite.draw_angle = 0;
+                draw_call.sprite.world_position = entity->transform.position;
 
-                PushDrawCall(renderer, draw_call, DrawLayer_Player);
+                DrawSprite(renderer, draw_call, DrawLayer_Player);
             }break;
             case EntityType_Camera:
             {

@@ -559,11 +559,21 @@ inline float MinSigned(float in, float minValue)
 *************************************************/
 
 inline Rectf
-RectFromDim(Vec2 pos, Vec2 dim)
+RectFromDimCenter(Vec2 pos, Vec2 dim)
 {
     Rectf result;
     result.x = pos.x - (dim.x * 0.5f);
     result.y = pos.y - (dim.y * 0.5f);
+    result.w = dim.x;
+    result.h = dim.y;
+    return result;
+}
+
+inline Rectf RectFromDimCorner(Vec2 pos, Vec2 dim)
+{
+    Rectf result;
+    result.x = pos.x;
+    result.y = pos.y;
     result.w = dim.x;
     result.h = dim.y;
     return result;
@@ -592,12 +602,23 @@ Vec2_4 RotatedRect(Rectf rect, float theta, Rectf* out_aabb = nullptr);
 inline bool Contains(Rectf rect, Vec2 point)
 {
 	if (point.x < rect.x + rect.w && point.x > rect.x
+		&& point.y > rect.bot && point.y < rect.bot + rect.h)
+	{
+		return true;
+	}
+	return false;
+}
+
+inline bool Contains(Rect rect, Vec2i point)
+{
+	if (point.x < rect.x + rect.w && point.x > rect.x
 		&& point.y > rect.bot && point.y < rect.y + rect.h)
 	{
 		return true;
 	}
 	return false;
 }
+
 
 inline Vec2 RectCenter(Rectf r)
 {

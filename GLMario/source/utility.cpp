@@ -130,6 +130,11 @@ void PopAllocation(MemoryArena* arena, void* position)
     assert(arena->used >= 0 && arena->used < arena->size);
 }
 
+void ClearArena(MemoryArena* arena)
+{
+    arena->used = 0;
+}
+
 void ResetArena(MemoryArena* arena)
 {
     arena->used = 0;

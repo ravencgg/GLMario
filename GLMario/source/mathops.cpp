@@ -86,6 +86,10 @@ Vec2_4 RotatedRect(Rectf rect, float theta, Rectf* out_aabb)
         result.e[2] = { right, bot };
         result.e[3] = { right, top };
 
+        if (out_aabb)
+        {
+            *out_aabb = rect;
+        }
         return result;
     }
 
