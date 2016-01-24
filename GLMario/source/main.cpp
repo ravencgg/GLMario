@@ -194,6 +194,11 @@ int main(int argc, char* argv[])
 
     SetSize(ui, { 0.1f, 0.3f, 0.2f, 0.2f }, 0.05f);
 
+    UIWindow* ui2 = PushStruct(&game_state->permanent_memory, UIWindow);
+    SetTitle(ui2, "Editor UI2!");
+
+    SetSize(ui2, { 0.2f, 0.3f, 0.2f, 0.2f }, 0.05f);
+
     InitializeInput();
     InitializeDebugConsole();
 
@@ -376,6 +381,7 @@ int main(int argc, char* argv[])
         DrawTileMap(game_state, game_state->active_scene->tilemap);
 
         UpdateUIWindow(ui, game_state->renderer);
+        UpdateUIWindow(ui2, game_state->renderer);
 
         RenderDrawBuffer(renderer, draw_camera);
 

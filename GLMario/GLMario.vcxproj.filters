@@ -12,7 +12,7 @@
     <ClCompile Include="source\tilemap.cpp" />
     <ClCompile Include="source\time.cpp" />
     <ClCompile Include="source\utility.cpp" />
-    <ClCompile Include="source\Editor.cpp" />
+    <ClCompile Include="source\editor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\audio.h" />
@@ -27,6 +27,6 @@
     <ClInclude Include="source\types.h" />
     <ClInclude Include="source\utility.h" />
     <ClInclude Include="source\win32_gl.h" />
-    <ClInclude Include="source\Editor.h" />
+    <ClInclude Include="source\editor.h" />
   </ItemGroup>
 </Project>

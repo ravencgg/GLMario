@@ -21,7 +21,7 @@
   <ItemGroup>
     <ClCompile Include="source\audio.cpp" />
     <ClCompile Include="source\console.cpp" />
-    <ClCompile Include="source\Editor.cpp" />
+    <ClCompile Include="source\editor.cpp" />
     <ClCompile Include="source\entity.cpp" />
     <ClCompile Include="source\input.cpp" />
     <ClCompile Include="source\main.cpp" />
@@ -35,7 +35,7 @@
   <ItemGroup>
     <ClInclude Include="source\audio.h" />
     <ClInclude Include="source\console.h" />
-    <ClInclude Include="source\Editor.h" />
+    <ClInclude Include="source\editor.h" />
     <ClInclude Include="source\entity.h" />
     <ClInclude Include="source\game_types.h" />
     <ClInclude Include="source\input.h" />

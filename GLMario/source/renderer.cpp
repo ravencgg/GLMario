@@ -680,6 +680,7 @@ static inline void SetImage(Renderer* renderer, ImageFiles image)
     }
 }
 
+// TODO: glMapBuffer to not allocate gl memory!
 // TODO: update shader uniforms once per frame
 void RenderDrawBuffer(Renderer* renderer, Camera* camera)
 {
