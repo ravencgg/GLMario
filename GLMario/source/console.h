@@ -41,7 +41,7 @@ struct ProfileSection
     u32 hits;
 
     SimpleVertex history[PROFILE_HISTORY_SIZE];
-    size_t used_history;
+    uint32 used_history;
 };
 
 struct DebugProfile

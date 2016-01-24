@@ -15,6 +15,20 @@
 #include <sys/stat.h>
 
 /**********************************************
+*
+* Utility Macros
+*
+***************/
+
+#define foru_iz(limit) for(uint32 i = 0; i < limit; ++i)
+#define foru_jz(limit) for(uint32 j = 0; j < limit; ++j)
+#define foru_kz(limit) for(uint32 k = 0; k < limit; ++k)
+
+#define foru_in(n, limit) for(uint32 i = n; i < limit; ++i)
+
+
+
+/**********************************************
  *
  * Memory
  *
@@ -63,10 +77,13 @@ void ResetArena(MemoryArena*);
 
 void FreeMemoryArena(MemoryArena*);
 
-uint8* PushSize(MemoryArena* arena, size_t size, bool clear = true);
+uint8* PushSize(MemoryArena* arena, size_t size, bool clear = true, uint32 alignment = 4);
 
 // Since this is a stack allocation, this will free all allocations made after the supplied pointer's position
 void PopAllocation(MemoryArena* arena, void*);
+
+#define PushArrayAligned(arena, type, count, align)   (type*) PushSize(arena, sizeof(type) * (count), true, align)
+#define PushStructAligned(arena, type, align)         (type*) PushSize(arena, sizeof(type), true, align)
 
 // Clears the memory as well, since PushSize clears by default
 #define PushArray(arena, type, count)   (type*) PushSize(arena, sizeof(type) * (count))
@@ -155,6 +172,16 @@ char* load_text_file(char*);
 //#define vsnprintf _vsnprintf
 #define snprintf  _snprintf
 #endif
+
+#define DEFAULT_WHITESPACE " \t\n"
+
+size_t StrPrintf(char* dest, size_t len, char* format, ...);
+
+size_t StrSkipWhitespace(char** string, uint32 = 1);
+
+size_t StrCountTrailingWhitespace(char* string, uint32 max_check, uint32* = nullptr);
+
+char* StrGetToken(char* string, size_t* token_size = nullptr, char* whitespace = DEFAULT_WHITESPACE);
 
 /**********************************************
  *

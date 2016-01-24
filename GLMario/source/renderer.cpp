@@ -24,6 +24,7 @@ char* particle_image = "..\\res\\particle.png";
 
 void SwapBuffer(GameState* game_state)
 {
+    Sleep(1);
 	SDL_GL_SwapWindow(game_state->window.sdl_window);
 }
 
@@ -54,8 +55,12 @@ Renderer* CreateRenderer(MemoryArena* arena)
     LoadShader(result, "..\\res\\line_vert.glsl", "..\\res\\line_frag.glsl", Shader_Line);
     LoadShader(result, "..\\res\\text_vert.glsl", "..\\res\\text_frag.glsl", Shader_Text);
 
+    // VSync ( 0 is disabled );
+    //SDL_GL_SetSwapInterval(0);
+
 	result->text_data.chars_per_line = 18;
 	result->text_data.char_size = { 7, 9 };
+    result->text_data.texture_size = result->textures[(uint32)ImageFiles::TEXT_IMAGE].size;
     return result;
 }
 
@@ -126,8 +131,8 @@ static void LoadImage(Renderer* renderer, char* filename, ImageFiles location)
 	stbi_image_free(data);
 
 	renderer->textures[(uint32)location].texture_handle = handle;
-	renderer->textures[(uint32)location].w = x;
-	renderer->textures[(uint32)location].h = y;
+	renderer->textures[(uint32)location].size.x = x;
+	renderer->textures[(uint32)location].size.y = y;
 	renderer->textures[(uint32)location].bytes_per_color = n;
 }
 
@@ -179,6 +184,241 @@ static void LoadShader(Renderer* renderer, char* vert_file, char* frag_file, Sha
 	renderer->shaders[(uint32)location].shader_handle = program;
 }
 
+static Rectf GetTextTextureCoord(TextData* text_data, char c)
+{
+    // NOTE: this assumes valid characters are being rendered
+    uint32 ascii_position = c - ' ';
+    assert(c >= ' ' && c <= '~');
+    if(c < ' ' || c > '~')
+    {
+        ascii_position = c - ' ';
+    }
+
+    // Char coords
+    Vec2i char_pos;
+    char_pos.x = ascii_position % text_data->chars_per_line;
+    char_pos.x *= text_data->char_size.x;
+    char_pos.y = ascii_position / text_data->chars_per_line + 1;
+    char_pos.y *= (text_data->char_size.y);
+
+    // Texture coords
+    Rectf result;
+    result.x = (float)(char_pos.x) / (float)text_data->texture_size.x;
+    result.w = (float)(text_data->char_size.x) / (float) text_data->texture_size.x;
+    result.y = (float)(text_data->texture_size.y - char_pos.y) / (float)text_data->texture_size.y;
+    result.h = (float)(text_data->char_size.y) / (float)text_data->texture_size.y;
+
+    return result;
+}
+
+// NOTE: Advances the vertex array
+static void DrawCharacter(TextVertex** vertex_array, char c, TextData* text_data, Vec4 color, Rectf pos)
+{
+    Rectf texture_coords = GetTextTextureCoord(text_data, c);
+
+    float left = texture_coords.left;
+    float right = texture_coords.Right();
+    float top = texture_coords.Top();
+    float bot = texture_coords.bot;
+
+    TextVertex* current_vertex = *vertex_array;
+    *current_vertex++ = { pos.left             , pos.bot              , left , bot, color };
+    *current_vertex++ = { pos.left             , pos.bot + pos.height , left , top, color };
+    *current_vertex++ = { pos.left + pos.width , pos.bot              , right, bot, color };
+    *current_vertex++ = { pos.left             , pos.bot + pos.height , left , top, color };
+    *current_vertex++ = { pos.left + pos.width , pos.bot              , right, bot, color };
+    *current_vertex++ = { pos.left + pos.width , pos.bot + pos.height , right, top, color };
+
+    *vertex_array = current_vertex;
+}
+
+
+void DrawStringInRect(Renderer* ren, char* string, Rectf bounds, Vec2 text_size, Vec4 color, uint32 options, DrawLayer draw_layer)
+{
+    const uint32 tab_advance = 3;
+    const uint32 verts_per_char = 6; // Could be 4 with element buffers
+    Vec2i texture_size = ren->textures[(uint32)ImageFiles::TEXT_IMAGE].size;
+    assert(string);
+    if (*string == 0) return;
+
+    DrawCommand command = {};
+    command.draw_call.draw_type = DrawType_Text;
+    command.layer = draw_layer;
+    command.draw_call.draw_options |= Draw_ScreenSpace; // NOTE: This could work with world space,
+                                                        // with more dynamic character sizes
+    command.draw_call.shader = ShaderTypes::Shader_Text;
+    command.draw_call.text.image = ImageFiles::TEXT_IMAGE;
+
+    Rectf char_rect;
+    char_rect.w = text_size.x;
+    char_rect.h = text_size.y;
+    char_rect.x = bounds.x;
+    char_rect.y = bounds.Top() - char_rect.h;
+
+    float chars_fit_hor_float = bounds.w / char_rect.w;
+    uint32 chars_fit_hor = (uint32) chars_fit_hor_float;
+    uint32 remaining_space_hor = chars_fit_hor;
+
+    float chars_fit_ver_float = bounds.h / char_rect.h;
+    uint32 chars_fit_ver = (uint32) chars_fit_ver_float;
+    uint32 remaining_space_ver = chars_fit_ver;
+
+	float y_spacing = char_rect.h * 1.1f;
+	uint32 lines_drawn = 0;
+
+    struct Line
+    {
+        char* start;
+        char* end;
+        uint32 drawn_chars; // includes non-leading and trailing whitespace
+    };
+
+    uint32 used_lines = 0;
+    Line lines[128] = { 0 };
+
+    uint32 chars_to_draw = 0;
+
+    while (*string)
+    {
+        assert(used_lines < ArrayCount(lines));
+        Line* current_line = lines + used_lines;
+
+        StrSkipWhitespace(&string);
+        current_line->start = string;
+
+        uint32 trailing_whitespace = 0;
+        while (*string && remaining_space_hor)
+        {
+            // Read until the line is full
+
+            if (remaining_space_hor <= 0) {
+                break;
+            }
+
+            if (*string == '\n')
+            {
+                string++;
+                break;
+            }
+
+            size_t token_size;
+            char* token_end = StrGetToken(string, &token_size);
+
+            if (token_size > remaining_space_hor)
+            {
+                if (token_size > (uint32)chars_fit_hor)
+                {
+                    current_line->drawn_chars += (uint32)trailing_whitespace;
+                    string = string + remaining_space_hor;
+                    chars_to_draw += remaining_space_hor;
+                    current_line->drawn_chars += remaining_space_hor;
+                    break;
+                }
+                else
+                {
+                    // Needs to go on the next line
+                    break;
+                }
+            }
+            else
+            {
+                current_line->drawn_chars += (uint32)trailing_whitespace;
+                current_line->drawn_chars += (uint32)token_size;
+                chars_to_draw += (uint32)token_size;
+                remaining_space_hor -= (uint32)token_size;
+                string += token_size;
+            }
+
+            if (*string == '\n') break; // handle on the next iteration
+
+            trailing_whitespace = (uint32)StrSkipWhitespace(&string, tab_advance);
+
+            if (trailing_whitespace >= remaining_space_hor)
+            {
+                break;
+            }
+            else
+            {
+                remaining_space_hor -= (uint32)trailing_whitespace;
+            }
+
+        }
+
+        remaining_space_hor = chars_fit_hor;
+        current_line->end = string;
+        ++used_lines;
+    }
+
+    command.vertex_buffer_offset = ren->vertex_buffer.used;
+    command.num_vertices = verts_per_char * chars_to_draw; // Remove spaces from calculation?
+    TextVertex* base_text_vertex = PushArray(&ren->vertex_buffer, TextVertex, command.num_vertices);
+    TextVertex* current_vertex = base_text_vertex;
+
+    float vert_space = used_lines * y_spacing;
+    float empty_space = bounds.h - vert_space;
+
+    char_rect.y = bounds.y + bounds.h; // Top aligned by default
+    if ((options & String_VerAlignCenter) == String_VerAlignCenter)
+    {
+        char_rect.y -= empty_space / 2.f;
+    }
+    else if (options & String_VerAlignBottom)
+    {
+        char_rect.y -= empty_space;
+    }
+
+    foru_iz(used_lines)
+    {
+        Line* current_line = lines + i;
+        size_t len = current_line->end - current_line->start;
+        char* c = current_line->start;
+
+        chars_fit_hor_float;
+
+        float line_width = current_line->drawn_chars * char_rect.w;
+        assert(bounds.w >= line_width);
+        float empty_space = bounds.w - line_width;
+
+        char_rect.x = bounds.x; // Default is left aligned
+
+        if ((options & String_HorAlignCenter) == String_HorAlignCenter)
+        {
+            char_rect.x += empty_space / 2;
+        }
+        else if (options & String_HorAlignRight)
+        {
+            char_rect.x += empty_space;
+        }
+
+        char_rect.y -= y_spacing;
+
+        while (c != current_line->end)
+        {
+            if (*c == '\n')
+            {
+                // Has to be a new line anyway, so just let it break out
+            }
+            else if (*c == ' ')
+            {
+                char_rect.x += char_rect.w;
+            }
+            else if (*c == '\t')
+            {
+                char_rect.x += char_rect.w * tab_advance;
+            }
+            else
+            {
+                DrawCharacter(&base_text_vertex, *c, &ren->text_data, color, char_rect);
+                char_rect.x += char_rect.w;
+            }
+
+            ++c;
+        }
+    }
+
+    PushDrawCommand(ren, command);
+}
+
 /*  Text drawing TODO(cgenova):
 		* figure out the border color issue
         *      -> color not set in shader, though it wasn't being used, so it still doesn't make sense
@@ -191,18 +431,15 @@ static void LoadShader(Renderer* renderer, char* vert_file, char* frag_file, Sha
 TextDrawResult DrawString(Renderer* renderer, char* string, uint32 string_size, float start_x, float start_y,
                             StringTextColor* text_colors, size_t text_color_size, DrawLayer draw_layer)
 {
-    // TODO: more sane way of storing these
-    static GLuint textVBO = (glGenBuffers(1, &textVBO), textVBO);
-    static GLuint textVAO = (glGenVertexArrays(1, &textVAO), textVAO);
 
     const uint32 verts_per_char = 6;
 
     DrawCommand command = {};
     command.vertex_buffer_offset = renderer->vertex_buffer.used;
-    command.num_vertices = verts_per_char * string_size; // Remove spaces from calculation? 
+    command.num_vertices = verts_per_char * string_size; // Remove spaces from calculation?
     TextVertex* base_text_vertex = PushArray(&renderer->vertex_buffer, TextVertex, command.num_vertices);
 
-    command.draw_call.draw_type = DrawType_Text; 
+    command.draw_call.draw_type = DrawType_Text;
     command.layer = draw_layer;
     command.draw_call.draw_options |= Draw_ScreenSpace;
 
@@ -226,7 +463,7 @@ TextDrawResult DrawString(Renderer* renderer, char* string, uint32 string_size, 
     default_color.c.solid_color = vec4(0, 1.0f, 0, 1.0f);
 
     StringTextColor* current_color = &default_color;
-    StringTextColor* next_color = &default_color;
+//    StringTextColor* next_color = &default_color;
 
     size_t text_color_index = 0;
 
@@ -307,8 +544,8 @@ TextDrawResult DrawString(Renderer* renderer, char* string, uint32 string_size, 
         {
             //DrawCharacter(text_array + array_pos, string[i], x, y, char_size);
 
-            int32 tw = renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].w;
-            int32 th = renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].h;
+            int32 tw = renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].size.x;
+            int32 th = renderer->textures[(uint32)ImageFiles::TEXT_IMAGE].size.y;
 
             // NOTE: this assumes valid characters are being rendered
             uint32 ascii_position = c - ' ';
@@ -401,9 +638,10 @@ void DrawSprite(Renderer* renderer, DrawCall draw_call, DrawLayer layer)
     command.num_vertices = 4;
     command.vertex_type = VertexType_Sprite;
     command.vertex_buffer_offset = start_offset;
+    command.layer = layer;
 
-    int32 tw = renderer->textures[(uint32)data.sprite.image].w;
-    int32 th = renderer->textures[(uint32)data.sprite.image].h;
+    int32 tw = renderer->textures[(uint32)data.sprite.image].size.x;
+    int32 th = renderer->textures[(uint32)data.sprite.image].size.y;
 
     float tex_left  = (float)data.sprite.tex_rect.left / tw;
     float tex_right = (float)(data.sprite.tex_rect.left + data.sprite.tex_rect.width) / tw;
@@ -419,7 +657,7 @@ void DrawSprite(Renderer* renderer, DrawCall draw_call, DrawLayer layer)
     Rectf draw_rect = { left, bot, width, height };
     Vec2_4 points = RotatedRect(draw_rect, draw_call.sprite.draw_angle, &command.draw_aabb);
 
-    *vertex++ = { points.e[1], { tex_left, tex_bot  } }; 
+    *vertex++ = { points.e[1], { tex_left, tex_bot  } };
     *vertex++ = { points.e[2], { tex_right, tex_bot } };
     *vertex++ = { points.e[0], { tex_left, tex_top  } };
     *vertex++ = { points.e[3], { tex_right, tex_top } };
@@ -445,8 +683,6 @@ static inline void SetImage(Renderer* renderer, ImageFiles image)
 // TODO: update shader uniforms once per frame
 void RenderDrawBuffer(Renderer* renderer, Camera* camera)
 {
-    const Rectf ogl_screen_rect = { -1.f, -1.f, 2.0f, 2.0f };
-
     uint32 num_drawn = 0;
     uint32 num_culled = 0;
 
@@ -461,6 +697,16 @@ void RenderDrawBuffer(Renderer* renderer, Camera* camera)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, renderer->vertex_buffer.used, renderer->vertex_buffer.base, GL_STATIC_DRAW);
 
+    // TODO: Stable sorting, on a smaller struct!
+    qsort(renderer->command_buffer.draw_commands, renderer->command_buffer.num_commands, sizeof(DrawCommand), [](const void* lhs, const void* rhs)-> int{
+        DrawCommand* l = (DrawCommand*)lhs;
+        DrawCommand* r = (DrawCommand*)rhs;
+        return l->layer.sort_key > r->layer.sort_key;
+    });
+
+    // TODO: perform culling at the beginning instead of per type. All commands will have to have the
+    // relevant screen_space and aabb information
+
     for (uint32 command_index = 0; command_index < renderer->command_buffer.num_commands; ++command_index)
     {
         ProfileBeginSection(Profile_RenderFinish);
@@ -468,9 +714,9 @@ void RenderDrawBuffer(Renderer* renderer, Camera* camera)
         DrawCommand* command = renderer->command_buffer.draw_commands + command_index;
         DrawCall data = command->draw_call;
 
-        glUseProgram(renderer->shaders[(uint32)data.shader].shader_handle); 
+        glUseProgram(renderer->shaders[(uint32)data.shader].shader_handle);
 
-        GLsizei buffer_offset = command->vertex_buffer_offset;
+        GLsizei buffer_offset = (GLsizei)command->vertex_buffer_offset;
 
         switch (data.draw_type)
         {
@@ -541,52 +787,62 @@ void RenderDrawBuffer(Renderer* renderer, Camera* camera)
         }break;
         case DrawType_Primitive:
         {
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBindVertexArray(vao);
-            glEnableVertexAttribArray(0);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*) buffer_offset);
-            glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(buffer_offset + sizeof(Vec2)));
+            Rectf view_bounds = (command->draw_call.draw_options & Draw_ScreenSpace)
+                                ? RectFromDimCorner({ 0, 0 }, { 1.f, 1.f }) : view_rect;
 
-            if (data.draw_options & PrimitiveDraw_Smooth)
+            if (Intersects(view_bounds, command->draw_aabb))
             {
-                glEnable(GL_LINE_SMOOTH);
-                glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBindVertexArray(vao);
+                glEnableVertexAttribArray(0);
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)buffer_offset);
+                glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (GLvoid*)(buffer_offset + sizeof(Vec2)));
+
+                if (data.draw_options & PrimitiveDraw_Smooth)
+                {
+                    glEnable(GL_LINE_SMOOTH);
+                    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+                }
+                else
+                {
+                    glDisable(GL_LINE_SMOOTH);
+                }
+
+                uint8 s = 1;
+                if (data.draw_options & PrimitiveDraw_CustomWidth)
+                {
+                    s = data.line.line_width;
+                }
+                float size = (float)s;
+                glLineWidth(size);
+
+                if (data.draw_options & Draw_ScreenSpace)
+                {
+                    // Screen space drawing is in range [0,1];
+                    GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
+                    glUniform2f(cam_pos_loc, 0.5f, 0.5f);
+                    GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
+                    glUniform2f(viewport_loc, 1, 1);
+                }
+                else
+                {
+                    GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
+                    glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
+                    GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
+                    glUniform2f(viewport_loc, viewport.x, viewport.y);
+                }
+
+                // TODO: culling?
+                glDrawArrays(data.line.draw_method, 0, (GLsizei)command->num_vertices);
+                //glDrawArrays(GL_LINE_LOOP, 0, data.lbd.num_vertices);
+
+                ++num_drawn;
             }
             else
             {
-                glDisable(GL_LINE_SMOOTH);
+                ++num_culled;
             }
-
-            uint8 s = 1;
-            if (data.draw_options & PrimitiveDraw_CustomWidth)
-            {
-                s = data.line.line_width;
-            }
-            float size = (float)s;
-            glLineWidth(size);
-
-            if (data.draw_options & Draw_ScreenSpace)
-            {
-                // Screen space drawing is in range [0,1];
-                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
-                glUniform2f(cam_pos_loc, 0.5f, 0.5f);
-                GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
-                glUniform2f(viewport_loc, 1, 1);
-            }
-            else
-            {
-                GLint cam_pos_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "cam_pos");
-                glUniform2f(cam_pos_loc, cam_position.x, cam_position.y);
-                GLint viewport_loc = glGetUniformLocation(renderer->shaders[data.shader].shader_handle, "viewport");
-                glUniform2f(viewport_loc, viewport.x, viewport.y);
-            }
-
-            // TODO: culling?
-            glDrawArrays(data.line.draw_method, 0, command->num_vertices);
-            //glDrawArrays(GL_LINE_LOOP, 0, data.lbd.num_vertices);
-
-            ++num_drawn;
 
         }break;
         case DrawType_Particles:
@@ -653,10 +909,12 @@ void DrawLine(Renderer* renderer, Vec2 start, Vec2 end, Vec4 color, PrimitiveDra
     v[0].color = color;
     v[1].position = end;
     v[1].color = color;
+
+
     DrawLine(renderer, v, 2, params);
 }
 
-static void DrawPrimitive(Renderer* renderer, size_t vertex_buffer_start, size_t num_vertices, PrimitiveDrawParams params)
+static void DrawPrimitive(Renderer* renderer, size_t vertex_buffer_start, uint32 num_vertices, PrimitiveDrawParams params, Rectf aabb)
 {
     DrawCommand command = {};
     command.vertex_type = VertexType_Simple;
@@ -665,6 +923,7 @@ static void DrawPrimitive(Renderer* renderer, size_t vertex_buffer_start, size_t
     command.vertex_buffer_offset = vertex_buffer_start;
     command.num_vertices = num_vertices;
     command.layer = params.draw_layer;
+    command.draw_aabb = aabb;
 
     if (params.line_draw_flags & PrimitiveDraw_Filled)
     {
@@ -688,17 +947,36 @@ static void DrawPrimitive(Renderer* renderer, size_t vertex_buffer_start, size_t
     PushDrawCommand(renderer, command);
 }
 
-void DrawLine(Renderer* ren, SimpleVertex* verts, size_t num_vertices, PrimitiveDrawParams params)
+void DrawLine(Renderer* ren, SimpleVertex* verts, uint32 num_vertices, PrimitiveDrawParams params)
 {
     size_t buffer_start = ren->vertex_buffer.used;
     SimpleVertex* v = PushArray(&ren->vertex_buffer, SimpleVertex, num_vertices);
     memcpy(v, verts, sizeof(SimpleVertex) * num_vertices);
-    DrawPrimitive(ren, buffer_start, num_vertices, params);
+
+    Vec2 min = { verts[0].position.x, verts[0].position.y };
+    Vec2 max = min;
+    foru_in(1, num_vertices)
+    {
+        SimpleVertex* vert = verts + i;
+        min.x = Minimum(min.x, vert->position.x);
+        min.y = Minimum(min.y, vert->position.y);
+        max.x = Maximum(max.x, vert->position.x);
+        max.y = Maximum(max.y, vert->position.y);
+    }
+
+    Rectf aabb;
+    aabb.x = min.x;
+    aabb.y = min.y;
+    aabb.w = max.x - min.x;
+    aabb.h = max.y - min.y;
+
+    DrawPrimitive(ren, buffer_start, num_vertices, params, aabb);
 }
 
-void DrawRect(Renderer* renderer, Rectf rect, Vec4 color, float rotation,  PrimitiveDrawParams params)
+void DrawRect(Renderer* renderer, Rectf rect, Vec4 color, float rotation, PrimitiveDrawParams params)
 {
-    Vec2_4 points = RotatedRect(rect, rotation);
+    Rectf aabb;
+    Vec2_4 points = RotatedRect(rect, rotation, &aabb);
 
     size_t start_offset = renderer->vertex_buffer.used;
     SimpleVertex* verts = PushArray(&renderer->vertex_buffer, SimpleVertex, 4);
@@ -739,5 +1017,5 @@ void DrawRect(Renderer* renderer, Rectf rect, Vec4 color, float rotation,  Primi
         params.line_draw_flags |= PrimitiveDraw_Looped;
     }
 
-    DrawPrimitive(renderer, start_offset, 4, params); 
+    DrawPrimitive(renderer, start_offset, 4, params, aabb);
 }

@@ -11,13 +11,12 @@ void RenderRandomParticles(GameState* game_state)
 {
 #if 1
 	static ParticleSystem ps1(game_state, 10000);
-	ps1.draw_layer = DrawLayer_PreTilemap;
-	//ps1.draw_layer = DrawLayer::POST_TILEMAP;
+	ps1.draw_layer.layer = DrawLayer_PreTilemap;
 	static ParticleEmissionData data[2];
 	static uint32 active_data = 0;
 
 	static ParticleSystem ps2(game_state, 7500);
-	ps2.draw_layer = DrawLayer_PreTilemap;
+	ps2.draw_layer.layer = DrawLayer_PreTilemap;
 	static bool setup = false;
 	if(!setup)
 	{
@@ -136,63 +135,21 @@ uint32 MoveEntity(GameState* game_state, Entity* entity, Vec2 velocity)
 {
     Scene* scene = game_state->active_scene;
 
-    entity->transform.position += velocity;
-
-    Rectf entity_bounds = GetEntityRect(entity);
-
-    Vec2 lb_corner = { entity_bounds.Left(), entity_bounds.Bot() };
-    Vec2 rb_corner = { entity_bounds.Right(), entity_bounds.Bot() };
-    Vec2 lt_corner = { entity_bounds.Left(), entity_bounds.Top() };
-    Vec2 rt_corner = { entity_bounds.Right(), entity_bounds.Top() };
-
-    // TODO: do a version where this gets passed in or is calculated based on the entity size
-    const uint32 points_per_side = 2;
-    const uint32 num_regions = points_per_side + 1;
-
-    Vec2 left[points_per_side];
-    Vec2 right[points_per_side];
-    Vec2 top[points_per_side];
-    Vec2 bottom[points_per_side];
-
-
-    for (int i = 0; i < points_per_side; ++i)
-    {
-        float side_lerp_value = (i + 1) / (float)num_regions;
-        left[i] = Lerp(lb_corner, lt_corner, side_lerp_value);
-
-    }
-
-    for (int i = 0; i < points_per_side; ++i)
-    {
-        float side_lerp_value = (i + 1) / (float)num_regions;
-        top[i] = Lerp(lt_corner, rt_corner, side_lerp_value);
-
-    }
-
-    for (int i = 0; i < points_per_side; ++i)
-    {
-        float side_lerp_value = (i + 1) / (float)num_regions;
-        right[i] = Lerp(rb_corner, rt_corner, side_lerp_value);
-    }
-
-    for (int i = 0; i < points_per_side; ++i)
-    {
-        float side_lerp_value = (i + 1) / (float)num_regions;
-        bottom[i] = Lerp(lb_corner, rb_corner, side_lerp_value);
-
-    }
+    const int num_steps = 5;
 
     TileMap* tilemap = scene->tilemap;
+
+    Rectf entity_bounds = GetEntityRect(entity);
 
     // Find the potentially colliding statics
     Rectf col_plus_velocity = entity_bounds;
     col_plus_velocity.w += abs(velocity.x);
     col_plus_velocity.h += abs(velocity.y);
-    if(velocity.x < 0)
+    if (velocity.x < 0)
     {
         col_plus_velocity.x += velocity.x;
     }
-    if(velocity.y < 0)
+    if (velocity.y < 0)
     {
         col_plus_velocity.y += velocity.y;
     }
@@ -210,47 +167,112 @@ uint32 MoveEntity(GameState* game_state, Entity* entity, Vec2 velocity)
 
     uint32 result = 0;
 
-    for (uint32 i = 0; i < num_tiles_found; ++i)
+    for (uint32 step = 0; step < num_steps; ++step)
     {
-        Tile* tile = possible_collision_list[i];
 
-        for (uint32 j = 0; j < points_per_side; ++j)
+        entity->transform.position += (velocity *  (1.f / (float)num_steps));
+
+        entity_bounds = GetEntityRect(entity);
+
+        Vec2 lb_corner = { entity_bounds.Left(), entity_bounds.Bot() };
+        Vec2 rb_corner = { entity_bounds.Right(), entity_bounds.Bot() };
+        Vec2 lt_corner = { entity_bounds.Left(), entity_bounds.Top() };
+        Vec2 rt_corner = { entity_bounds.Right(), entity_bounds.Top() };
+
+        // TODO: do a version where this gets passed in or is calculated based on the entity size
+        const uint32 points_per_side = 4;
+        const uint32 num_regions = points_per_side + 1;
+
+        Vec2 left[points_per_side];
+        Vec2 right[points_per_side];
+        Vec2 top[points_per_side];
+        Vec2 bottom[points_per_side];
+
+        float alpha = ((float)step + 1.f) / ((float)num_steps + 1.f);
+        Vec4 color = vec4(1 - alpha, 0.5f, 1.0f, alpha);
+
+        for (int i = 0; i < points_per_side; ++i)
         {
-            if (Contains(tile->aabb, left[j]))
-            {
-                collision_adjustment.x = tile->aabb.Right() - left[j].x;
-                collided_left = true;
-                result |= TileCollision_Left;
-            }
+            float side_lerp_value = (i + 1) / (float)num_regions;
+            left[i] = Lerp(lb_corner, lt_corner, side_lerp_value);
+
+            DrawRect(game_state->renderer, RectFromDimCenter(left[i], { 0.1f, 0.1f }), color);
         }
 
-        for (uint32 j = 0; j < points_per_side; ++j)
+        for (int i = 0; i < points_per_side; ++i)
         {
-            if (Contains(tile->aabb, right[j]))
-            {
-                collision_adjustment.x = tile->aabb.Left() - right[j].x;
-                collided_right = true;
-                result |= TileCollision_Right;
-            }
+            float side_lerp_value = (i + 1) / (float)num_regions;
+            top[i] = Lerp(lt_corner, rt_corner, side_lerp_value);
+
+            DrawRect(game_state->renderer, RectFromDimCenter(top[i], { 0.1f, 0.1f }), color);
         }
 
-        for (uint32 j = 0; j < points_per_side; ++j)
+        for (int i = 0; i < points_per_side; ++i)
         {
-            if (Contains(tile->aabb, top[j]))
-            {
-                collision_adjustment.y = tile->aabb.Bot() - top[j].y;
-                collided_top = true;
-                result |= TileCollision_Top;
-            }
+            float side_lerp_value = (i + 1) / (float)num_regions;
+            right[i] = Lerp(rb_corner, rt_corner, side_lerp_value);
+
+            DrawRect(game_state->renderer, RectFromDimCenter(right[i], { 0.1f, 0.1f }), color);
         }
 
-        for (uint32 j = 0; j < points_per_side; ++j)
+        for (int i = 0; i < points_per_side; ++i)
         {
-            if (Contains(tile->aabb, bottom[j]))
+            float side_lerp_value = (i + 1) / (float)num_regions;
+            bottom[i] = Lerp(lb_corner, rb_corner, side_lerp_value);
+
+            DrawRect(game_state->renderer, RectFromDimCenter(bottom[i], { 0.1f, 0.1f }), color);
+        }
+
+
+
+
+
+        for (uint32 i = 0; i < num_tiles_found; ++i)
+        {
+            Tile* tile = possible_collision_list[i];
+
+            for (uint32 j = 0; j < points_per_side; ++j)
             {
-                collision_adjustment.y = tile->aabb.Top() - bottom[j].y;
-                collided_bot = true;
-                result |= TileCollision_Bottom;
+                if (Contains(tile->aabb, left[j]))
+                {
+                    collision_adjustment.x = tile->aabb.Right() - left[j].x;
+                    collided_left = true;
+                    result |= TileCollision_Left;
+                    velocity.x = 0;
+                }
+            }
+
+            for (uint32 j = 0; j < points_per_side; ++j)
+            {
+                if (Contains(tile->aabb, right[j]))
+                {
+                    collision_adjustment.x = tile->aabb.Left() - right[j].x;
+                    collided_right = true;
+                    result |= TileCollision_Right;
+                    velocity.x = 0;
+                }
+            }
+
+            for (uint32 j = 0; j < points_per_side; ++j)
+            {
+                if (Contains(tile->aabb, top[j]))
+                {
+                    collision_adjustment.y = tile->aabb.Bot() - top[j].y;
+                    collided_top = true;
+                    result |= TileCollision_Top;
+                    velocity.y = 0;
+                }
+            }
+
+            for (uint32 j = 0; j < points_per_side; ++j)
+            {
+                if (Contains(tile->aabb, bottom[j]))
+                {
+                    collision_adjustment.y = tile->aabb.Top() - bottom[j].y;
+                    collided_bot = true;
+                    result |= TileCollision_Bottom;
+                    velocity.y = 0;
+                }
             }
         }
     }
@@ -455,15 +477,16 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
                 }
 #endif
 
+                const float max_vel = 20.f;
                 if(KeyIsDown(SDLK_d))
                 {
-                    player->velocity.x += 50.f * dt;
-                    player->velocity.x = min(player->velocity.x, 5.0f);
+                    player->velocity.x += 500.f * dt;
+                    player->velocity.x = Minimum(player->velocity.x, max_vel);
                 }
                 else if(KeyIsDown(SDLK_a))
                 {
-                    player->velocity.x -= 50.f * dt;
-                    player->velocity.x = max(player->velocity.x, -5.0f);
+                    player->velocity.x -= 5000.f * dt;
+                    player->velocity.x = Maximum(player->velocity.x, -max_vel);
                 }
                 else
                 {
@@ -477,15 +500,26 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
                 //entity->transform.position += player->velocity * dt;
                 uint32 collision_result = MoveEntity(game_state, entity, player->velocity * dt);
 
-                if (collision_result & TileCollision_Bottom && player->velocity.y < 0)
+
+                if (collision_result & TileCollision_Bottom)
                 {
                     player->grounded = true;
-                    player->velocity.y = 0;
+
+                    if (player->velocity.y < 0)
+                    {
+                        player->velocity.y = 0;
+                    }
                 }
                 else
                 {
                     player->grounded = false;
                 }
+
+                if (collision_result & TileCollision_Top)
+                {
+                    player->velocity.y = Minimum(0, player->velocity.y);
+                }
+
             }break;
             case EntityType_Enemy:
             {
@@ -573,7 +607,7 @@ void DrawSceneEntities(Scene* scene, Renderer* renderer)
                 draw_call.sprite.draw_angle = 0;
                 draw_call.sprite.world_position = entity->transform.position;
 
-                DrawSprite(renderer, draw_call, DrawLayer_Player);
+                DrawSprite(renderer, draw_call, SetLayer(DrawLayer_Player));
             }break;
             case EntityType_Enemy:
             {
@@ -587,7 +621,7 @@ void DrawSceneEntities(Scene* scene, Renderer* renderer)
                 draw_call.sprite.draw_angle = 0;
 
                 draw_call.sprite.world_position = entity->transform.position;
-                DrawSprite(renderer, draw_call, DrawLayer_Player);
+                DrawSprite(renderer, draw_call, SetLayer(DrawLayer_Player));
             }break;
             case EntityType_Spawner:
             {
@@ -601,7 +635,7 @@ void DrawSceneEntities(Scene* scene, Renderer* renderer)
                 draw_call.sprite.draw_angle = 0;
                 draw_call.sprite.world_position = entity->transform.position;
 
-                DrawSprite(renderer, draw_call, DrawLayer_Player);
+                DrawSprite(renderer, draw_call, SetLayer(DrawLayer_Player));
             }break;
             case EntityType_Camera:
             {

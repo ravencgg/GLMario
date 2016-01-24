@@ -95,29 +95,36 @@ void FreeMemoryArena(MemoryArena* arena)
     VirtualFree(arena->base, 0, MEM_RELEASE);
 }
 
-uint8* PushSize(MemoryArena* arena, size_t size, bool clear)
+uint8* PushSize(MemoryArena* arena, size_t size, bool clear, uint32 byte_alignment)
 {
     if(size == 0)
     {
         return nullptr;
     }
+    assert((byte_alignment == 0 || !(byte_alignment & (byte_alignment - 1))));
 
-    assert(arena->size - arena->used >= size);
+    uint8* result = arena->base + arena->used;
+    uint32 align = byte_alignment - 1;
+    uint32 result_offset = byte_alignment ? (byte_alignment - ((size_t)result & align) & align) : 0;
 
-    if(arena->size - arena->used >= size)
+    assert(arena->size - arena->used >= size + result_offset);
+    if (arena->size - arena->used >= size + result_offset)
     {
-        uint8* result = arena->base + arena->used;
-        arena->used += size;
-
-        if(clear)
-        {
-            memset(result, 0, size);
-        }
-
-        return result;
+        result += result_offset;
+        arena->used += size + result_offset;
+    }
+    else
+    {
+        result = nullptr;
     }
 
-    return nullptr;
+
+    if(clear)
+    {
+        memset(result, 0, size);
+    }
+
+    return result;
 }
 
 // NOTE: Could fill the memory with obvious garbage in these resetting functions
@@ -139,6 +146,118 @@ void ResetArena(MemoryArena* arena)
 {
     arena->used = 0;
 }
+
+
+/**********************************************
+ *
+ * String
+ *
+ ***************/
+
+size_t StrPrintf(char* dest, size_t len, char* format, ...)
+{
+    if(len == 0) return 0;
+
+    va_list args;
+    va_start(args, format);
+    // NOTE: return value does not count the terminating null
+    // NOTE: Windows only, linux OSes can use vsnprintf with a NULL buffer to find the required size
+    int32 input_size = _vscprintf(format, args) + 1; // Add 1 for the '\n'
+    va_end(args);
+
+    size_t buffer_size = Minimum(input_size, len);
+
+    va_start(args, format);
+    size_t written = _vsnprintf_s(dest, buffer_size, buffer_size, format, args);
+    va_end(args);
+
+    return written;
+}
+
+
+size_t StrSkipWhitespace(char** string, uint32 tab_size)
+{
+    assert(string);
+    char* c = *string;
+
+    uint32 skipped = 0;
+    while(*c)
+    {
+        if(*c == ' ')
+        {
+            ++skipped;
+            ++c;
+        }
+        else if(*c == '\t')
+        {
+            skipped += tab_size;
+            ++c;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    *string = c;
+    return skipped;
+}
+
+size_t StrCountTrailingWhitespace(char* string, uint32 max_check, uint32* num_tabs)
+{
+    assert(string);
+    char* c = string;
+
+    uint32 tab_counter = 0;
+    while(*c && --max_check)
+    {
+        if(*c == ' ')
+        {
+            --c;
+        }
+        else if(*c == '\t')
+        {
+            tab_counter++;
+            --c;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    OPTIONAL_ASSIGN(num_tabs, tab_counter);
+    return size_t(string - c);
+}
+
+
+
+// Points at the last character of a token
+char* StrGetToken(char* string, size_t* token_size, char* whitespace)
+{
+    if(!string) return nullptr;
+    char* token_end = string;
+
+    size_t num_whitespace_chars = strlen(whitespace);
+    if(!string || !num_whitespace_chars) return nullptr;
+
+    while(*token_end)
+    {
+        for(uint32 i = 0; i < num_whitespace_chars; ++i)
+        {
+            if(*token_end == whitespace[i])
+            {
+                goto done;
+            }
+        }
+        ++token_end;
+    }
+
+done:
+    OPTIONAL_ASSIGN(token_size, size_t(token_end - string));
+    return token_end;
+}
+
 
 /**********************************************
  *

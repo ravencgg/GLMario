@@ -326,21 +326,7 @@ void DebugDrawConsole(Renderer* ren)
 {
 	float draw_y = console.screen_start.y;
 	float draw_x = console.screen_start.x;
-	uint32 num_chars = 0;
 
-// TODO: replace with real system from the input
-//    const size_t array_size = 2;
-//    StringTextColor colors[array_size];
-//    colors[0].start = 0;
-//    colors[0].end   = console.used_chars / 2;
-//    colors[0].color = { 1.f, 0.f, 1.f, 1.f };
-//
-//    colors[1].start = colors[0].end;
-//    colors[1].end   = console.used_chars;
-//    colors[1].color = { 1.f, 0, 0, 1.f };
-
-// TODO: passing the raw array in here is dangerous
-//
     if(ren)
     {
         DrawString(ren, console.output_string, console.used_chars, draw_x, draw_y,

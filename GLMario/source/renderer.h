@@ -12,12 +12,59 @@ struct GameState;
 
 enum ImageFiles  : uint32 { MAIN_IMAGE, MARIO_IMAGE, TEXT_IMAGE, PARTICLE_IMAGE, IMAGE_COUNT };
 enum ShaderTypes : uint32 { Shader_Default, Shader_Text, Shader_Particle, Shader_Line, Shader_Count };
-enum DrawLayer   : uint32 { DrawLayer_Background, DrawLayer_PreTilemap, DrawLayer_Tilemap, DrawLayer_PostTilemap, DrawLayer_Player, DrawLayer_Foreground, DrawLayer_UI, DrawLayer_Debug, DrawLayer_Count };
+enum DrawLayers  : uint32 { DrawLayer_Background, DrawLayer_PreTilemap, DrawLayer_Tilemap, DrawLayer_PostTilemap, DrawLayer_Player, DrawLayer_Foreground, DrawLayer_UI, DrawLayer_Debug, DrawLayer_Count };
 
 struct Camera
 {
     Vec2 position;
     Vec2 viewport_size;
+};
+
+
+#define MAX_SUB_LAYER 0x00FFFFFF
+struct DrawLayer
+{
+    union
+    {
+        struct
+        {
+            uint32 sub_layer : 24;
+            DrawLayers layer : 8;
+        };
+        uint32 sort_key;
+    };
+};
+
+inline DrawLayer SetLayer(DrawLayers layer)
+{
+    DrawLayer result = {};
+    result.layer = layer;
+    return result;
+}
+
+inline DrawLayer SetLayer(DrawLayers layer, uint32 sub_layer)
+{
+    DrawLayer result;
+    result.layer = layer;
+    result.sub_layer = sub_layer;
+    return result;
+}
+
+enum StringOptions
+{
+    String_HorAlignLeft   = 0x1,
+    String_HorAlignRight  = 0x2,
+    String_HorAlignCenter = 0x3, // Both left and right flags!
+
+    String_VerAlignTop    = 0x10,
+    String_VerAlignBottom = 0x20,
+    String_VerAlignCenter = 0x30,// Both top and bottom flags!
+
+    String_AlignCenter    = String_HorAlignCenter | String_VerAlignCenter,
+
+//    String_NoClipping     = 0x100,
+// String_DrawPartial       = 0x200, // Compute the correct location for the full string, but only show part of it?
+//                                      Could be used for text boxes
 };
 
 enum DrawOptions
@@ -35,6 +82,7 @@ enum DrawOptions
     StringColorOptions_Solid     = 0x1000,
     StringColorOptions_Gradient  = 0x2000,
 };
+
 
 struct PrimitiveDrawParams
 {
@@ -156,11 +204,13 @@ struct TextData
 {
     uint32 chars_per_line;
     Vec2i char_size;
+    Vec2i texture_size;
 };
 
 struct Texture
 {
-    int32 w, h, bytes_per_color;
+    Vec2i size;
+    int32 bytes_per_color;
     GLuint texture_handle;
 };
 
@@ -186,7 +236,7 @@ struct DrawCommand
     DrawCall draw_call;
     DrawLayer layer;
     size_t vertex_buffer_offset;
-    size_t num_vertices;
+    uint32 num_vertices;
     Rectf draw_aabb;
 };
 
@@ -213,9 +263,10 @@ inline PrimitiveDrawParams DefaultPrimitiveDrawParams()
 {
     PrimitiveDrawParams result = {};
 
-    result.line_draw_flags  = 0;
-    result.draw_layer       = DrawLayer_UI;
-    result.line_width       = 1;
+    result.line_draw_flags      = 0;
+    result.draw_layer.layer     = DrawLayer_UI;
+    result.draw_layer.sub_layer = 0;
+    result.line_width           = 1;
     return result;
 }
 
@@ -234,14 +285,16 @@ Vec2i GetResolution(Renderer*);
 float ViewportWidth(Renderer*);
 void RenderDrawBuffer(Renderer*, Camera*);
 
+void DrawStringInRect(Renderer* ren, char* string, Rectf bounds, Vec2 text_size, Vec4 color, uint32 options, DrawLayer draw_layer);
+
 TextDrawResult DrawString(Renderer*, char* string, uint32 string_size, float start_x, float start_y, 
-                            StringTextColor* = 0, size_t = 0, DrawLayer draw_layer = DrawLayer_UI);
+                            StringTextColor* = 0, size_t = 0, DrawLayer draw_layer = SetLayer(DrawLayer_UI));
 
 void PushDrawCommand(Renderer*, DrawCommand);
 
 void DrawSprite(Renderer*, DrawCall, DrawLayer);
 
-void DrawLine(Renderer* ren, SimpleVertex* verts, size_t num_vertices, PrimitiveDrawParams params = DefaultPrimitiveDrawParams());
+void DrawLine(Renderer* ren, SimpleVertex* verts, uint32 num_vertices, PrimitiveDrawParams params = DefaultPrimitiveDrawParams());
 
 void DrawLine(Renderer*, Vec2, Vec2, Vec4, PrimitiveDrawParams params = DefaultPrimitiveDrawParams());
 

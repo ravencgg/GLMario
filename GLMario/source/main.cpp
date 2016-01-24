@@ -66,7 +66,7 @@ void DebugControlCamera(Camera* camera)
 
     if(KeyIsDown(SDLK_DOWN))
     {
-        if(KeyIsDown(SDLK_RCTRL) || KeyIsDown(SDLK_LCTRL))
+        if (KeyIsDown(SDLK_RCTRL) || KeyIsDown(SDLK_LCTRL))
         {
             camera->position.y -= 0.1f;
         }
@@ -79,7 +79,7 @@ void DebugControlCamera(Camera* camera)
 
 void StartupWindow(Window* window, char* title, int32 width, int32 height)
 {
-    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
     {
         printf("SDL init error\n");
     }
@@ -89,15 +89,16 @@ void StartupWindow(Window* window, char* title, int32 width, int32 height)
     window->current_mode = ScreenMode_Windowed;
 
     window->sdl_window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                  width, height,
-                                  SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-    if(window->sdl_window == nullptr)
+        width, height,
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+    if (window->sdl_window == nullptr)
     {
         printf("Window creation error\n");
     }
 
+
     window->sdl_gl_context = SDL_GL_CreateContext(window->sdl_window);
-    if(window->sdl_gl_context == nullptr)
+    if (window->sdl_gl_context == nullptr)
     {
         printf("GL Context creation error\n");
     }
@@ -107,8 +108,8 @@ void StartupWindow(Window* window, char* title, int32 width, int32 height)
 
 void ShutdownWindow(Window* window)
 {
-    if(window->sdl_gl_context) SDL_GL_DeleteContext(window->sdl_gl_context);
-    if(window->sdl_window)     SDL_DestroyWindow(window->sdl_window);
+    if (window->sdl_gl_context) SDL_GL_DeleteContext(window->sdl_gl_context);
+    if (window->sdl_window)     SDL_DestroyWindow(window->sdl_window);
 }
 
 void WindowSetResolution(Window* window, uint32 w, uint32 h)
@@ -139,7 +140,7 @@ static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
 
     result->renderer = CreateRenderer(&result->permanent_memory);
     InitializeTime(result, MS_PER_FRAME);
-    return result;
+    return result->renderer ? result : nullptr;
 }
 
 static Scene* PushScene(MemoryArena* arena, uint32 num_entities)
@@ -164,31 +165,33 @@ int main(int argc, char* argv[])
 {
     assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 
-    GameState* game_state = CreateNewGameState("EnGen", 1200, 700);
+    GameState* game_state = CreateNewGameState("EnGen", 1600, 900);
     Renderer* renderer = game_state->renderer;
     game_state->active_scene = PushScene(&game_state->permanent_memory, MAX_GAME_ENTITES);
 
     TileMap* tilemap = game_state->active_scene->tilemap;
 
-    for(int32 i = 0; i < 10; ++i)
+    for (int32 i = 0; i < 10; ++i)
     {
-        Vec2 pos = { (float) i, 2.f };
+        Vec2 pos = { (float)i, 2.f };
         AddTileToMap(tilemap, pos);
     }
 
-    for(int32 i = 0; i < 10; ++i)
+    for (int32 i = 0; i < 10; ++i)
     {
-        Vec2 pos = { 0, (float) i };
+        Vec2 pos = { 0, (float)i };
         AddTileToMap(tilemap, pos);
     }
 
-    for(int32 i = 0; i < 10; ++i)
+    for (int32 i = 0; i < 10; ++i)
     {
-        Vec2 pos = { 10.f, (float) i };
+        Vec2 pos = { 10.f, (float)i };
         AddTileToMap(tilemap, pos);
     }
 
-    EditorUI* ui = PushStruct(&game_state->permanent_memory, EditorUI);
+    UIWindow* ui = PushStruct(&game_state->permanent_memory, UIWindow);
+    SetTitle(ui, "Editor UI!");
+
     SetSize(ui, { 0.1f, 0.3f, 0.2f, 0.2f }, 0.05f);
 
     InitializeInput();
@@ -216,7 +219,7 @@ int main(int argc, char* argv[])
 
     bool running = true;
 
-    while(running)
+    while (running)
     {
         SDL_Event e;
         ProfileBeginFrame();
@@ -227,7 +230,7 @@ int main(int argc, char* argv[])
         InputBeginFrame();
         while (SDL_PollEvent(&e))
         {
-            switch(e.type)
+            switch (e.type)
             {
 
             case SDL_QUIT:
@@ -257,19 +260,19 @@ int main(int argc, char* argv[])
             }break;
 
 
-                case SDL_WINDOWEVENT:
+            case SDL_WINDOWEVENT:
+            {
+                switch (e.window.event)
                 {
-                    switch(e.window.event)
-                    {
-                    case SDL_WINDOWEVENT_RESIZED:
-                    case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    {
-                        game_state->window.resolution.x = e.window.data1;
-                        game_state->window.resolution.y = e.window.data2;
-                    }break;
+                case SDL_WINDOWEVENT_RESIZED:
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                {
+                    game_state->window.resolution.x = e.window.data1;
+                    game_state->window.resolution.y = e.window.data2;
+                }break;
 
-                    }
                 }
+            }
             }
         }
 
@@ -280,22 +283,22 @@ int main(int argc, char* argv[])
         ProfileEndSection(Profile_Input);
 
         Vec2 mouse_pos = MouseWorldPosition();
-        DebugPrintf("Mouse World Position: (%.2f, %.2f)",  mouse_pos.x, mouse_pos.y);
-        DebugPrintf("Main Camera Position: (%.2f, %.2f)",  default_camera.position.x, default_camera.position.y);
+        DebugPrintf("Mouse World Position: (%.2f, %.2f)", mouse_pos.x, mouse_pos.y);
+        DebugPrintf("Main Camera Position: (%.2f, %.2f)", default_camera.position.x, default_camera.position.y);
 
-        if(KeyFrameDown(SDLK_ESCAPE))
+        if (KeyFrameDown(SDLK_ESCAPE))
         {
             running = false;
             break;
         }
 
-        if(KeyFrameDown(SDLK_z))
+        if (KeyFrameDown(SDLK_z))
         {
             ForceColorClear();
             SwapBuffer(game_state);
             WindowSetScreenMode(&game_state->window, ScreenMode_Windowed);
         }
-        else if(KeyFrameDown(SDLK_c))
+        else if (KeyFrameDown(SDLK_c))
         {
             ForceColorClear();
             SwapBuffer(game_state);
@@ -303,7 +306,7 @@ int main(int argc, char* argv[])
         }
 
         static bool draw_debug = false;
-        if(KeyFrameDown(SDLK_BACKQUOTE))
+        if (KeyFrameDown(SDLK_BACKQUOTE))
         {
             draw_debug = !draw_debug;
         }
@@ -315,7 +318,7 @@ int main(int argc, char* argv[])
         // Update the scene first, pushing draw calls if necessary.
         // Then call begin_frame which builds matrices and clears buffers;
         float current_time = CurrentTime(game_state);
-        if(current_time - last_fps_time > 1.0f)
+        if (current_time - last_fps_time > 1.0f)
         {
             last_fps_time = current_time;
             fps = frame_count;
@@ -344,20 +347,20 @@ int main(int argc, char* argv[])
         const size_t num_verts = 200;
         static SimpleVertex v[num_verts];
         static bool initialized = false;
-        if(!initialized)
+        if (!initialized)
         {
             initialized = true;
-            for(uint32 i = 0; i < num_verts; ++i)
+            for (uint32 i = 0; i < num_verts; ++i)
             {
                 SimpleVertex verts = {};
-                verts.position = vec2((float) (i / 50.f) - 2.f, (float) i);
+                verts.position = vec2((float)(i / 50.f) - 2.f, (float)i);
                 verts.color = vec4(1, 1, 0, 1.f);
                 v[i] = verts;
             }
         }
         else
         {
-            for(uint32 i = 0; i < num_verts; ++i)
+            for (uint32 i = 0; i < num_verts; ++i)
             {
                 v[i].position.y = sin(CurrentTime(game_state) + i / (PI * 20));
             }
@@ -365,14 +368,14 @@ int main(int argc, char* argv[])
 
         PrimitiveDrawParams spaghetti_params = {};
         spaghetti_params.line_draw_flags |= PrimitiveDraw_Smooth;
-//      spaghetti_params.line_draw_flags |= Draw_ScreenSpace;
+        //      spaghetti_params.line_draw_flags |= Draw_ScreenSpace;
         spaghetti_params.line_width = 0;
         DrawLine(renderer, v, num_verts, spaghetti_params);
 #endif
 
         DrawTileMap(game_state, game_state->active_scene->tilemap);
 
-        UpdateEditorUI(ui, game_state->renderer);
+        UpdateUIWindow(ui, game_state->renderer);
 
         RenderDrawBuffer(renderer, draw_camera);
 

@@ -650,3 +650,32 @@ inline __m128 lerp(__m128& a, __m128& b, __m128& t)
 	return result;
 }
 
+/*************************************************
+*
+*  Colors
+*
+*************************************************/
+
+Vec4 MakeColor(Vec3 color, float alpha);
+
+extern Vec3 cg_white;
+extern Vec3 cg_black;
+
+extern Vec3 cg_gray1;
+extern Vec3 cg_gray2;
+extern Vec3 cg_gray3;
+extern Vec3 cg_gray4;
+
+extern Vec3 cg_yellow;
+extern Vec3 cg_blue;
+extern Vec3 cg_cyan;
+extern Vec3 cg_green;
+extern Vec3 cg_orange;
+extern Vec3 cg_purple;
+
+extern Vec3 cg_dark_purple;
+extern Vec3 cg_dark_green;
+
+extern Vec3 cg_light_green;
+extern Vec3 cg_light_blue;
+

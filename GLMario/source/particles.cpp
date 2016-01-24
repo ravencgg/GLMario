@@ -14,28 +14,28 @@ ParticleSystem::ParticleSystem()
     : max_particles(0),
       active_particles(0),
       burst_particles(0),
-      draw_layer((DrawLayer)0),
 	  initialized(false)
 {
+    draw_layer = {};
 
 }
 
-ParticleSystem::ParticleSystem(GameState* game_state, uint32 max, DrawLayer dl)
+ParticleSystem::ParticleSystem(GameState* game_state, uint32 max, DrawLayers dl)
     : max_particles(max),
       active_particles(0),
       burst_particles(0),
-      draw_layer(dl),
 	  initialized(false)
 {
+    draw_layer = {};
 	initialize(game_state, max, dl);
 }
 
-void ParticleSystem::initialize(GameState* game_state, uint32 max_particles, DrawLayer layer)
+void ParticleSystem::initialize(GameState* game_state, uint32 max_particles, DrawLayers layer)
 {
 	assert(!initialized);
 	if (initialized) return;
 	this->max_particles = max_particles;
-	draw_layer = layer;
+	draw_layer.layer = layer;
 
     ren = game_state->renderer;
 	particles.init(max_particles);
@@ -66,7 +66,6 @@ ParticleSystem::~ParticleSystem()
 	glDeleteBuffers(1, &vbo);
 	glDeleteVertexArrays(1, &vao);
 
-	int i = 0;
 	particles.destroy();
 }
 
@@ -192,11 +191,9 @@ void ParticleSystem::update(GameState* game_state, Vec2 new_position)
             j = i;
         }
 
-        // TODO(cgenova): update remaining particles here.
         assert((int32)particles.last_active_index - (int32)j < 4);
         while(j <= particles.last_active_index)
         {
-            bool valid_particle = true;
             if(!particles.pfd[j].is_active(current_time))
             {
                 if (j >= particles.last_active_index)

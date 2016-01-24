@@ -50,6 +50,8 @@ typedef int32_t b32;
 #define InvalidDefaultCase default:  \
                             assert(!"Invalid default case!");
 
+#define OPTIONAL_ASSIGN(var, value) if(var) *(var) = (value)
+
 struct FRange
 {
 	float min_range;

@@ -15,6 +15,13 @@ void InitializeInput()
 	s_input.mouse = {};
 }
 
+inline uint32 GetIndexFromMask(SDL_Keycode code)
+{
+    assert((code & (~SDLK_SCANCODE_MASK)) < SDL_NUM_SCANCODES);
+    int32 result = code & 0x2FF; // Strip off everything above
+    return result;
+}
+
 void InputBeginFrame()
 {
     // Update Keys
@@ -64,6 +71,7 @@ void InputBeginFrame()
 
 void ProcessKeyPress(int32 key)
 {
+    key = GetIndexFromMask(key);
 	if(s_input.key_states[key] == KeyState::FRAME_UP)
 		s_input.key_states[key] = KeyState::UP_DOWN;
 
@@ -76,6 +84,7 @@ void ProcessKeyPress(int32 key)
 
 void ProcessKeyRelease(int32 key)
 {
+    key = GetIndexFromMask(key);
 	if(s_input.key_states[key] == KeyState::FRAME_DOWN)
 		s_input.key_states[key] = KeyState::DOWN_UP;
 
@@ -94,6 +103,7 @@ void ProcessKeyRelease(int32 key)
 
 bool KeyFrameDown(int32 key)
 {
+    key = GetIndexFromMask(key);
 	bool result = (s_input.key_states[key] == KeyState::FRAME_DOWN
 				  || s_input.key_states[key] == KeyState::DOWN_UP
 				  || s_input.key_states[key] == KeyState::UP_DOWN);
@@ -103,6 +113,7 @@ bool KeyFrameDown(int32 key)
 
 bool KeyFrameUp(int32 key)
 {
+    key = GetIndexFromMask(key);
 	bool result = (s_input.key_states[key] == KeyState::FRAME_UP
 				  || s_input.key_states[key] == KeyState::DOWN_UP
 				  || s_input.key_states[key] == KeyState::UP_DOWN);
@@ -112,6 +123,7 @@ bool KeyFrameUp(int32 key)
 
 bool KeyIsDown(int32 key)
 {
+    key = GetIndexFromMask(key);
 	bool result = (s_input.key_states[key] == KeyState::FRAME_DOWN
 				  || s_input.key_states[key] == KeyState::DOWN
 				  || s_input.key_states[key] == KeyState::UP_DOWN
@@ -122,6 +134,7 @@ bool KeyIsDown(int32 key)
 
 bool KeyIsUp(int32 key)
 {
+    key = GetIndexFromMask(key);
 	bool result = (s_input.key_states[key] == KeyState::FRAME_UP
 				  || s_input.key_states[key] == KeyState::UP
 				  || s_input.key_states[key] == KeyState::DOWN_UP
@@ -143,7 +156,7 @@ void UpdateMousePosition()
 void UpdateMouseWorldPosition(Vec2i screen_resolution, Vec2 viewport_size, Vec2 camera_pos)
 {
     int x, y;
-	uint32 m = SDL_GetMouseState(&x, &y);
+	SDL_GetMouseState(&x, &y);
 
     Vec2 relative = vec2( (float) x / (float)screen_resolution.x, 1.f - (float) y / (float)screen_resolution.y);
 

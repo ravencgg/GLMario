@@ -90,6 +90,7 @@ Vec2_4 RotatedRect(Rectf rect, float theta, Rectf* out_aabb)
         {
             *out_aabb = rect;
         }
+        OPTIONAL_ASSIGN(out_aabb, rect);
         return result;
     }
 
@@ -210,7 +211,6 @@ Rectf MinkowskiSum(Rectf base, Rectf expand_amount)
 Vec2_8 MinkowskiSum(Rectf a_in, float theta_a, Rectf b_in, float theta_b, Rectf* aabb)
 {
     Vec2_8 result = { };
-    const uint32 rect_sides = 4;
     Vec2_4 a = RotatedRect(a_in, theta_a);
     Vec2_4 b = RotatedRect(b_in, theta_b);
 
@@ -305,4 +305,42 @@ Vec2_8 MinkowskiSum(Rectf a_in, float theta_a, Rectf b_in, float theta_b, Rectf*
 
     return result;
 }
+
+
+/*************************************************
+*
+*  Colors
+*
+*************************************************/
+
+Vec4 MakeColor(Vec3 color, float alpha)
+{
+    Vec4 result;
+    result.r = color.r;
+    result.g = color.g;
+    result.b = color.b;
+    result.a = alpha;
+    return result;
+}
+
+Vec3 cg_white       = { 1.0f, 1.0f , 1.0f };
+Vec3 cg_black       = { 0.0f, 0.0f , 0.0f };
+
+Vec3 cg_gray1       = { 0.2f, 0.2f, 0.2f };
+Vec3 cg_gray2       = { 0.4f, 0.4f, 0.4f };
+Vec3 cg_gray3       = { 0.5f, 0.5f, 0.5f };
+Vec3 cg_gray4       = { 0.7f, 0.7f, 0.7f };
+
+Vec3 cg_yellow      = { 1.0f, 1.0f , 0.0f };
+Vec3 cg_blue        = { 1.0f, 0.1f , 0.0f };
+Vec3 cg_cyan        = { 0.0f, 1.0f , 1.0f };
+Vec3 cg_green       = { 0.0f, 1.0f , 0.0f };
+Vec3 cg_orange      = { 1.0f, 0.42f, 0.0f };
+Vec3 cg_purple      = { 0.7f, 0.0f , 1.0f };
+
+Vec3 cg_dark_purple = { 0.25f, 0.0f, 0.5f };
+Vec3 cg_dark_green  = { 0.08f, 0.4f, 0.0f };
+
+Vec3 cg_light_green = { 0.0f, 1.0f, 0.6f };
+Vec3 cg_light_blue  = { 0.4f, 0.6f, 1.0f };
 
