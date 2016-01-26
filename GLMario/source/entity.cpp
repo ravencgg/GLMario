@@ -416,7 +416,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
             game_state->active_camera = &new_cam->camera.camera;
         }
 
-        if (MouseFrameDown(MouseButton::LEFT))
+        if (MouseFrameDown(MouseButtons::LEFT))
         {
             Vec2 mouse_pos = MouseWorldPosition();
             AddTileToMap(scene->tilemap, mouse_pos);

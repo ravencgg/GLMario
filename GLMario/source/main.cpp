@@ -28,6 +28,7 @@
 
 #include "audio.h"
 
+#include "platform/platform.h"
 
 // Should be like 16.66666
 #define MS_PER_FRAME 16
@@ -88,6 +89,7 @@ void StartupWindow(Window* window, char* title, int32 width, int32 height)
     window->resolution.y = height;
     window->current_mode = ScreenMode_Windowed;
 
+#ifdef SDL_PLATFORM
     window->sdl_window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         width, height,
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
@@ -95,34 +97,43 @@ void StartupWindow(Window* window, char* title, int32 width, int32 height)
     {
         printf("Window creation error\n");
     }
-
-
     window->sdl_gl_context = SDL_GL_CreateContext(window->sdl_window);
     if (window->sdl_gl_context == nullptr)
     {
         printf("GL Context creation error\n");
     }
+#endif
 
+#ifdef SDL_PLATFORM
     SDL_GL_MakeCurrent(window->sdl_window, window->sdl_gl_context);
+#endif
 }
 
 void ShutdownWindow(Window* window)
 {
+#ifdef SDL_PLATFORM
     if (window->sdl_gl_context) SDL_GL_DeleteContext(window->sdl_gl_context);
     if (window->sdl_window)     SDL_DestroyWindow(window->sdl_window);
+#endif
 }
 
 void WindowSetResolution(Window* window, uint32 w, uint32 h)
 {
     window->resolution.x = w;
     window->resolution.y = h;
+
+#ifdef SDL_PLATFORM
     SDL_SetWindowSize(window->sdl_window, w, h);
+#endif
 }
 
 void WindowSetScreenMode(Window* window, ScreenMode mode)
 {
     window->current_mode = mode;
+
+#ifdef SDL_PLATFORM
     SDL_SetWindowFullscreen(window->sdl_window, (uint32)mode);
+#endif
 }
 
 static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
@@ -136,8 +147,11 @@ static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
     result->permanent_memory = CreateSubArena(&arena, GAME_PERMANENT_MEMORY_SIZE);
     assert(arena.used == arena.size);
 
+#ifdef SDL_PLATFORM
     StartupWindow(&result->window, window_title, res_x, res_y);
+#endif
 
+    result->input = PushStruct(&result->permanent_memory, NewInput);
     result->renderer = CreateRenderer(&result->permanent_memory);
     InitializeTime(result, MS_PER_FRAME);
     return result->renderer ? result : nullptr;
@@ -161,9 +175,10 @@ static Scene* PushScene(MemoryArena* arena, uint32 num_entities)
     return result;
 }
 
-int main(int argc, char* argv[])
+// int main(int argc, char* argv[])
+int GameMain()
 {
-    assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
+//    assert(argc || argv[0]); // Fixes the compiler complaining about unused values;
 
     GameState* game_state = CreateNewGameState("EnGen", 1600, 900);
     Renderer* renderer = game_state->renderer;
@@ -226,12 +241,13 @@ int main(int argc, char* argv[])
 
     while (running)
     {
-        SDL_Event e;
         ProfileBeginFrame();
 
         ProfileBeginSection(Profile_Frame);
         ProfileBeginSection(Profile_Input);
 
+#ifdef SDL_PLATFORM
+        SDL_Event e;
         InputBeginFrame();
         while (SDL_PollEvent(&e))
         {
@@ -280,6 +296,8 @@ int main(int argc, char* argv[])
             }
             }
         }
+#endif
+        running = Platform_RunMessageLoop(game_state->input);
 
         Camera* draw_camera = game_state->active_camera ? game_state->active_camera : &default_camera;
 
@@ -287,9 +305,13 @@ int main(int argc, char* argv[])
 
         ProfileEndSection(Profile_Input);
 
-        Vec2 mouse_pos = MouseWorldPosition();
-        DebugPrintf("Mouse World Position: (%.2f, %.2f)", mouse_pos.x, mouse_pos.y);
+        Vec2i mouse_pos = MousePosition(game_state->input);
+        //DebugPrintf("Mouse World Position: (%.2f, %.2f)", mouse_pos.x, mouse_pos.y);
+        DebugPrintf("Mouse World Position: (%d, %d)", mouse_pos.x, mouse_pos.y);
         DebugPrintf("Main Camera Position: (%.2f, %.2f)", default_camera.position.x, default_camera.position.y);
+
+
+        DebugPrintf("Key Pressed: %s", IsDown(game_state->input, KeyCode_a) ? "TRUE" : "FALSE");
 
         if (KeyFrameDown(SDLK_ESCAPE))
         {
@@ -310,7 +332,7 @@ int main(int argc, char* argv[])
             WindowSetScreenMode(&game_state->window, ScreenMode_Borderless);
         }
 
-        static bool draw_debug = false;
+        static bool draw_debug = true;
         if (KeyFrameDown(SDLK_BACKQUOTE))
         {
             draw_debug = !draw_debug;

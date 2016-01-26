@@ -6,11 +6,12 @@
 #include "mathops.h"
 
 #define OLD_INPUT
+#define NEW_INPUT
 
 #ifdef OLD_INPUT
 #define NUM_KEYS SDL_NUM_SCANCODES
 
-enum class MouseButton { LEFT, MIDDLE, RIGHT, COUNT };
+enum class MouseButtons { LEFT, MIDDLE, RIGHT, COUNT };
 enum class KeyState { UP, FRAME_UP, DOWN, FRAME_DOWN, DOWN_UP, UP_DOWN };
 
 struct Mouse
@@ -18,7 +19,7 @@ struct Mouse
 	Vec2i p;
 	Vec2i delta;
     Vec2 world_position;
-	KeyState buttons[(int32)MouseButton::COUNT];
+	KeyState buttons[(int32)MouseButtons::COUNT];
 };
 
 struct Input
@@ -50,35 +51,45 @@ Vec2i MouseFrameDelta();
 Vec2i MouseScreenPoint();
 Vec2 MouseWorldPosition();
 
-bool MouseFrameDown(MouseButton);
-bool MouseFrameUp(MouseButton);
-bool MouseIsDown(MouseButton);
-bool MouseIsUp(MouseButton);
+bool MouseFrameDown(MouseButtons);
+bool MouseFrameUp(MouseButtons);
+bool MouseIsDown(MouseButtons);
+bool MouseIsUp(MouseButtons);
 
-#else
+#endif
+#if defined(NEW_INPUT)
 
 enum KeyCode
 {
     KeyCode_UNKNOWN = 0,
 
-// TODO: Verify all these codes are what we are expecting
 //  KeyCode                   Character         Hex         Decimal
+    KeyCode_LEFT            = 0x01,             // 0x01     // 1
+    KeyCode_UP              = 0x02,             // 0x02     // 2
+    KeyCode_DOWN            = 0x03,             // 0x03     // 3
+    KeyCode_RIGHT           = 0x04,             // 0x04     // 4
+    KeyCode_CONTROL         = 0x05,             // 0x05     // 5
+    KeyCode_ALT             = 0x06,             // 0x06     // 6
+    KeyCode_SHIFT           = 0x07,             // 0x07     // 7
+
+// TODO: Verify all these codes are what we are expecting
     KeyCode_BACKSPACE       = '\b',             // 0x08     // 8
     KeyCode_TAB             = '\t',             // 0x09     // 9
+    KeyCode_CAPSLOCK        = 0x0A,             // 0x0A     // 10
     KeyCode_ENTER           = '\r',             // 0x0D     // 13
     KeyCode_ESCAPE          = '\033',           // 0x1B     // 27
     KeyCode_SPACE           = ' ',              // 0x20     // 32
-    KeyCode_EXCLAIM         = '!',              // 0x21     // 33
-    KeyCode_QUOTEDBL        = '"',              // 0x22     // 34
-    KeyCode_HASH            = '#',              // 0x23     // 35
-    KeyCode_DOLLAR          = '$',              // 0x24     // 36
-    KeyCode_PERCENT         = '%',              // 0x25     // 37
-    KeyCode_AMPERSAND       = '&',              // 0x26     // 38
+    //KeyCode_EXCLAIM         = '!',              // 0x21     // 33
+    //KeyCode_QUOTEDBL        = '"',              // 0x22     // 34
+    //KeyCode_HASH            = '#',              // 0x23     // 35
+    //KeyCode_DOLLAR          = '$',              // 0x24     // 36
+    //KeyCode_PERCENT         = '%',              // 0x25     // 37
+    //KeyCode_AMPERSAND       = '&',              // 0x26     // 38
     KeyCode_QUOTE           = '\'',             // 0x27     // 39
-    KeyCode_LEFTPAREN       = '(',              // 0x28     // 40
-    KeyCode_RIGHTPAREN      = ')',              // 0x29     // 41
-    KeyCode_ASTERISK        = '*',              // 0x2A     // 42
-    KeyCode_PLUS            = '+',              // 0x2B     // 43
+    //KeyCode_LEFTPAREN       = '(',              // 0x28     // 40
+    //KeyCode_RIGHTPAREN      = ')',              // 0x29     // 41
+    //KeyCode_ASTERISK        = '*',              // 0x2A     // 42
+    //KeyCode_PLUS            = '+',              // 0x2B     // 43
     KeyCode_COMMA           = ',',              // 0x2C     // 44
     KeyCode_MINUS           = '-',              // 0x2D     // 45
     KeyCode_PERIOD          = '.',              // 0x2E     // 46
@@ -93,13 +104,13 @@ enum KeyCode
     KeyCode_7               = '7',              // 0x37     // 55
     KeyCode_8               = '8',              // 0x38     // 56
     KeyCode_9               = '9',              // 0x39     // 57
-    KeyCode_COLON           = ':',              // 0x3A     // 58
+//    KeyCode_COLON           = ':',              // 0x3A     // 58
     KeyCode_SEMICOLON       = ';',              // 0x3B     // 59
-    KeyCode_LESS            = '<',              // 0x3C     // 60
+//    KeyCode_LESS            = '<',              // 0x3C     // 60
     KeyCode_EQUALS          = '=',              // 0x3D     // 61
-    KeyCode_GREATER         = '>',              // 0x3E     // 62
-    KeyCode_QUESTION        = '?',              // 0x3F     // 63
-    KeyCode_AT              = '@',              // 0x40     // 64
+//    KeyCode_GREATER         = '>',              // 0x3E     // 62
+//    KeyCode_QUESTION        = '?',              // 0x3F     // 63
+//    KeyCode_AT              = '@',              // 0x40     // 64
 
 // Uppercase
 
@@ -147,13 +158,11 @@ enum KeyCode
     KeyCode_F9              = 0x88,             // 0x88     // 131
     KeyCode_F10             = 0x89,             // 0x89     // 132
     KeyCode_F11             = 0x90,             // 0x8A     // 133
-    KeyCode_F12             = 0x91,             // 0x8A     // 134
 
     KeyCode_MaxKeyCodes
 };
 
-#define NUM_KEYS KeyCode_MaxKeyCodes
-
+#if 0
 enum KeyState
 {
     KeyState_Up             = 0,
@@ -161,18 +170,21 @@ enum KeyState
     KeyState_Down           = 0x10,
     KeyState_FrameDown      = KeyState_Down | 0x20,
 };
+#endif
 
-enum class MouseButton
+enum MouseButton
 {
-    LEFT,
-    MIDDLE,
-    RIGHT,
-    COUNT,
-    UNKNOWN = 0xFF
+    MouseButton_LEFT,
+    MouseButton_MIDDLE,
+    MouseButton_RIGHT,
+    MouseButton_FOUR,
+    MouseButton_FIVE,
+    MouseButton_COUNT,
+
+    MouseButton_UNKNOWN = 0xFF
 };
 
-#if 0
-struct KeyState
+struct NewKeyState
 {
     bool started_down = false;
     bool ended_down = false;
@@ -183,24 +195,38 @@ struct KeyState
     bool IsUp() const { return !ended_down; }
     bool OnUp() const { return (started_down && IsUp()); }
 };
-#endif
 
 struct MouseState
 {
     Vec2i last_position;
     Vec2i new_position;
-    KeyState buttons[(uint32)MouseButton::COUNT];
+    NewKeyState buttons[MouseButton_COUNT];
 
     Vec2i ScreenPosition() { return new_position; }
     Vec2i Delta() { return new_position - last_position; }
 };
 
-Vec2 MouseWorldPosition();
-void UpdateMouseWorldPosition(Vec2i, Vec2, Vec2);
-
-struct Input
+struct NewInput
 {
-    KeyState key_states[KeyCode_MaxKeyCodes];
+    NewKeyState key_states[KeyCode_MaxKeyCodes];
     MouseState mouse_state;
 };
+
+void BeginMessageLoop(NewInput* input);
+
+void _ProcessKeyboardMessage(NewInput*, KeyCode, bool);
+void _ProcessMouseButtonMessage(NewInput*, MouseButton, bool);
+
+Vec2i MousePosition(NewInput*);
+Vec2i MouseDelta(NewInput*);
+
+bool IsDown(NewInput*, KeyCode);
+bool OnDown(NewInput*, KeyCode);
+bool IsUp(NewInput*, KeyCode);
+bool OnUp(NewInput*, KeyCode);
+bool IsDown(NewInput*, MouseButton);
+bool OnDown(NewInput*, MouseButton);
+bool IsUp(NewInput*, MouseButton);
+bool OnUp(NewInput*, MouseButton);
+
 #endif

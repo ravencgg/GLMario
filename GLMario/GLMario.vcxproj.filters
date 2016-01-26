@@ -10,9 +10,9 @@
     <ClCompile Include="source\particles.cpp" />
     <ClCompile Include="source\renderer.cpp" />
     <ClCompile Include="source\tilemap.cpp" />
-    <ClCompile Include="source\time.cpp" />
     <ClCompile Include="source\utility.cpp" />
     <ClCompile Include="source\editor.cpp" />
+    <ClCompile Include="source\platform\win32_platform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\audio.h" />
@@ -26,7 +26,7 @@
     <ClInclude Include="source\tilemap.h" />
     <ClInclude Include="source\types.h" />
     <ClInclude Include="source\utility.h" />
-    <ClInclude Include="source\win32_gl.h" />
     <ClInclude Include="source\editor.h" />
+    <ClInclude Include="source\platform\platform.h" />
   </ItemGroup>
 </Project>

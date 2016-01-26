@@ -5,9 +5,6 @@
 #ifdef OLD_INPUT
 static Input s_input;
 
-static void UpdateKeys()
-{
-}
 
 void InitializeInput()
 {
@@ -38,31 +35,31 @@ void InputBeginFrame()
 	}
 
     // Mouse
-    if (s_input.mouse.buttons[(int32)MouseButton::LEFT] == KeyState::FRAME_UP) 
+    if (s_input.mouse.buttons[(int32)MouseButtons::LEFT] == KeyState::FRAME_UP)
     {
-        s_input.mouse.buttons[(int32)MouseButton::LEFT] = KeyState::UP;
-    } 
-    else if (s_input.mouse.buttons[(int32)MouseButton::LEFT] == KeyState::FRAME_DOWN) 
+        s_input.mouse.buttons[(int32)MouseButtons::LEFT] = KeyState::UP;
+    }
+    else if (s_input.mouse.buttons[(int32)MouseButtons::LEFT] == KeyState::FRAME_DOWN)
     {
-        s_input.mouse.buttons[(int32)MouseButton::LEFT] = KeyState::DOWN;
+        s_input.mouse.buttons[(int32)MouseButtons::LEFT] = KeyState::DOWN;
     }
 
-    if (s_input.mouse.buttons[(int32)MouseButton::MIDDLE] == KeyState::FRAME_UP) 
+    if (s_input.mouse.buttons[(int32)MouseButtons::MIDDLE] == KeyState::FRAME_UP)
     {
-        s_input.mouse.buttons[(int32)MouseButton::MIDDLE] = KeyState::UP;
-    } 
-    else if (s_input.mouse.buttons[(int32)MouseButton::MIDDLE] == KeyState::FRAME_DOWN) 
+        s_input.mouse.buttons[(int32)MouseButtons::MIDDLE] = KeyState::UP;
+    }
+    else if (s_input.mouse.buttons[(int32)MouseButtons::MIDDLE] == KeyState::FRAME_DOWN)
     {
-        s_input.mouse.buttons[(int32)MouseButton::MIDDLE] = KeyState::DOWN;
+        s_input.mouse.buttons[(int32)MouseButtons::MIDDLE] = KeyState::DOWN;
     }
 
-    if (s_input.mouse.buttons[(int32)MouseButton::RIGHT] == KeyState::FRAME_UP) 
+    if (s_input.mouse.buttons[(int32)MouseButtons::RIGHT] == KeyState::FRAME_UP)
     {
-        s_input.mouse.buttons[(int32)MouseButton::RIGHT] = KeyState::UP;
-    } 
-    else if (s_input.mouse.buttons[(int32)MouseButton::RIGHT] == KeyState::FRAME_DOWN) 
+        s_input.mouse.buttons[(int32)MouseButtons::RIGHT] = KeyState::UP;
+    }
+    else if (s_input.mouse.buttons[(int32)MouseButtons::RIGHT] == KeyState::FRAME_DOWN)
     {
-        s_input.mouse.buttons[(int32)MouseButton::RIGHT] = KeyState::DOWN;
+        s_input.mouse.buttons[(int32)MouseButtons::RIGHT] = KeyState::DOWN;
     }
 
     s_input.mouse.delta.x = 0;
@@ -176,46 +173,46 @@ void MouseButtonEvent()
 
 	if (m & SDL_BUTTON(SDL_BUTTON_LEFT)) // Button down happened
 	{
-		if (s_input.mouse.buttons[(int32)MouseButton::LEFT] != KeyState::DOWN)
+		if (s_input.mouse.buttons[(int32)MouseButtons::LEFT] != KeyState::DOWN)
 		{
-			s_input.mouse.buttons[(int32)MouseButton::LEFT] = KeyState::FRAME_DOWN;
+			s_input.mouse.buttons[(int32)MouseButtons::LEFT] = KeyState::FRAME_DOWN;
 		}
 	}
 	else // Button up happened
 	{
-		if (s_input.mouse.buttons[(int32)MouseButton::LEFT] != KeyState::UP)
+		if (s_input.mouse.buttons[(int32)MouseButtons::LEFT] != KeyState::UP)
 		{
-			s_input.mouse.buttons[(int32)MouseButton::LEFT] = KeyState::FRAME_UP;
+			s_input.mouse.buttons[(int32)MouseButtons::LEFT] = KeyState::FRAME_UP;
 		}
 	}
 
 	if (m & SDL_BUTTON(SDL_BUTTON_MIDDLE)) // Button down happened
 	{
-		if (s_input.mouse.buttons[(int32)MouseButton::MIDDLE] != KeyState::DOWN)
+		if (s_input.mouse.buttons[(int32)MouseButtons::MIDDLE] != KeyState::DOWN)
 		{
-			s_input.mouse.buttons[(int32)MouseButton::MIDDLE] = KeyState::FRAME_DOWN;
+			s_input.mouse.buttons[(int32)MouseButtons::MIDDLE] = KeyState::FRAME_DOWN;
 		}
 	}
 	else // Button up happened
 	{
-		if (s_input.mouse.buttons[(int32)MouseButton::MIDDLE] != KeyState::UP)
+		if (s_input.mouse.buttons[(int32)MouseButtons::MIDDLE] != KeyState::UP)
 		{
-			s_input.mouse.buttons[(int32)MouseButton::MIDDLE] = KeyState::FRAME_UP;
+			s_input.mouse.buttons[(int32)MouseButtons::MIDDLE] = KeyState::FRAME_UP;
 		}
 	}
 
 	if (m & SDL_BUTTON(SDL_BUTTON_RIGHT)) // Button down happened
 	{
-		if (s_input.mouse.buttons[(int32)MouseButton::RIGHT] != KeyState::DOWN)
+		if (s_input.mouse.buttons[(int32)MouseButtons::RIGHT] != KeyState::DOWN)
 		{
-			s_input.mouse.buttons[(int32)MouseButton::RIGHT] = KeyState::FRAME_DOWN;
+			s_input.mouse.buttons[(int32)MouseButtons::RIGHT] = KeyState::FRAME_DOWN;
 		}
 	}
 	else // Button up happened
 	{
-		if (s_input.mouse.buttons[(int32)MouseButton::RIGHT] != KeyState::UP)
+		if (s_input.mouse.buttons[(int32)MouseButtons::RIGHT] != KeyState::UP)
 		{
-			s_input.mouse.buttons[(int32)MouseButton::RIGHT] = KeyState::FRAME_UP;
+			s_input.mouse.buttons[(int32)MouseButtons::RIGHT] = KeyState::FRAME_UP;
 		}
 	}
 }
@@ -235,19 +232,19 @@ Vec2 MouseWorldPosition()
 	return s_input.mouse.world_position;
 }
 
-bool MouseFrameDown(MouseButton button)
+bool MouseFrameDown(MouseButtons button)
 {
 	bool result = (s_input.mouse.buttons[(int32)button] == KeyState::FRAME_DOWN);
 	return result;
 }
 
-bool MouseFrameUp(MouseButton button)
+bool MouseFrameUp(MouseButtons button)
 {
 	bool result = s_input.mouse.buttons[(int32)button] == KeyState::FRAME_UP;
 	return result;
 }
 
-bool MouseIsDown(MouseButton button)
+bool MouseIsDown(MouseButtons button)
 {
 	bool result = (s_input.mouse.buttons[(int32)button] == KeyState::FRAME_DOWN || s_input.mouse.buttons[(int32)button] == KeyState::DOWN);
 	return result;
@@ -259,218 +256,139 @@ bool MouseIsUp(MouseButton button)
 	return result;
 }
 
-
-#else
-
-void Input::BeginMessageLoop ()
-{
-    for (uint32 i = 0; i < KeyCode_Count; ++i)
-    {
-        m_key_states[i].started_down = m_key_states[i].ended_down;
-        m_key_states[i].half_presses = 0;
-    }
-    for (uint32 i = 0; i < (uint32) MouseButton::COUNT; ++i)
-    {
-        m_key_states[i].started_down = m_key_states[i].ended_down;
-        m_mouse_state.buttons[i].half_presses = 0;
-    }
-
-    m_mouse_state.last_position = m_mouse_state.new_position;
-}
-
-inline MouseButton GetMouseButton(uint8 button)
-{
-#if 0
-    switch (button)
-    {
-    case SDL_BUTTON_LEFT:
-        return MouseButton::LEFT;
-    case SDL_BUTTON_MIDDLE:
-        return MouseButton::MIDDLE;
-    case SDL_BUTTON_RIGHT:
-        return MouseButton::RIGHT;
-    default:
-        return MouseButton::UNKNOWN;
-        assert(!"Unhandled mouse button");
-    }
 #endif
-}
+#if defined(NEW_INPUT)
 
-#if 0
-inline uint32 GetIndexFromMask(SDL_Keycode code)
+void BeginMessageLoop(NewInput* input)
 {
-    assert((code & (~SDLK_SCANCODE_MASK)) < SDL_NUM_SCANCODES);
-    int32 result = code & 0x2FF; // Strip off everything above
-    return result;
-}
-#endif
-
-Vec2 MouseWorldPosition()
-{
-    return { 0, -1 };
-
-}
-
-void UpdateMouseWorldPosition(Vec2i, Vec2, Vec2)
-{
-}
-
-void Input::HandleInputMessage(const InputEvent& event)
-{
-    switch (event.input_type)
+    for (uint32 i = 0; i < KeyCode_MaxKeyCodes; ++i)
     {
-    case INPUTTYPE_Keyboard:
+        input->key_states[i].started_down = input->key_states[i].ended_down;
+        input->key_states[i].half_presses = 0;
+    }
+    for (uint32 i = 0; i < MouseButton_COUNT; ++i)
     {
-        switch (event.key_press.key_press_flags)
-        {
-        case INPUTFLAG_Press:
-        {
-//            uint32 index = GetIndexFromMask(event.key_press.key_code);
-            m_key_states[event.key_press.key_code].ended_down = true;
-            m_key_states[event.key_press.key_code].half_presses += 1;
-        }break;
-        case INPUTFLAG_Release:
-        {
-            m_key_states[event.key_press.key_code].ended_down = false;
-            m_key_states[event.key_press.key_code].half_presses += 1;
-        }break;
-        }
-
-    }break;
-    case INPUTTYPE_MouseButton:
-    {
-    }break;
-    case INPUTTYPE_MouseMotion:
-    {
-    }break;
-
-    InvalidDefaultCase;
+        input->key_states[i].started_down = input->key_states[i].ended_down;
+        input->mouse_state.buttons[i].half_presses = 0;
     }
 
-#if 0
-    switch (event.type)
-    {
-    case SDL_KEYDOWN:
-    {
-        uint32 index = GetIndexFromMask(event.key.keysym.sym);
-        m_key_states[index].ended_down = true;
-        m_key_states[index].half_presses += 1;
+    input->mouse_state.last_position = input->mouse_state.new_position;
+}
 
-    }break;
-    case SDL_KEYUP:
+void _ProcessKeyboardMessage(NewInput* input, KeyCode key, bool pressed)
+{
+    if(pressed)
     {
-        uint32 index = GetIndexFromMask(event.key.keysym.sym);
-        m_key_states[index].ended_down = false;
-        m_key_states[index].half_presses += 1;
-
-    }break;
-    case SDL_MOUSEBUTTONDOWN:
-    {
-        MouseButton mouse_button = GetMouseButton(event.button.button);
-        if (mouse_button < MouseButton::COUNT)
-        {
-            m_mouse_state.buttons[(uint32)mouse_button].ended_down = true;
-            m_mouse_state.buttons[(uint32)mouse_button].half_presses += 1;
-        }
-        m_mouse_state.new_position.x = event.button.x;
-        m_mouse_state.new_position.y = event.button.y;
-
-    }break;
-    case SDL_MOUSEBUTTONUP:
-    {
-        MouseButton mouse_button = GetMouseButton(event.button.button);
-        if (mouse_button < MouseButton::COUNT)
-        {
-            m_mouse_state.buttons[(uint32)mouse_button].ended_down = false;
-            m_mouse_state.buttons[(uint32)mouse_button].half_presses -= 1;
-        }
-        m_mouse_state.new_position.x = event.button.x;
-        m_mouse_state.new_position.y = event.button.y;
-
-    }break;
-    case SDL_MOUSEMOTION:
-    {
-        m_mouse_state.new_position.x = event.motion.x;
-        m_mouse_state.new_position.y = event.motion.y;
-    }break;
-
-    default:
-        assert(!"Unhandled input event!");
+        input->key_states[key].ended_down = true;
+        input->key_states[key].half_presses += 1;
     }
-#endif
+    else
+    {
+        input->key_states[key].ended_down = false;
+        input->key_states[key].half_presses += 1;
+    }
 }
 
-bool Input::IsDown(KeyCode key_code) const
+void _ProcessMouseButtonMessage(NewInput*, MouseButton, bool)
 {
-//    uint32 index = GetIndexFromMask(key_code);
-    bool result = m_key_states[key_code].IsDown();
+    assert(0);
+}
+
+Vec2i MousePosition(NewInput* input)
+{
+    Vec2i result = input->mouse_state.new_position;
     return result;
 }
 
-bool Input::OnDown(KeyCode key_code) const
+Vec2i MouseDelta(NewInput* input)
 {
- //   uint32 index = GetIndexFromMask(key_code);
-    bool result = m_key_states[key_code].OnDown();
+    Vec2i result = input->mouse_state.last_position - input->mouse_state.new_position;
     return result;
 }
 
-bool Input::IsUp(KeyCode key_code) const
-{
-//    uint32 index = GetIndexFromMask(key_code);
-    bool result = m_key_states[key_code].IsUp();
-    return result;
-}
-
-bool Input::OnUp(KeyCode key_code) const
-{
-    //uint32 index = GetIndexFromMask(key_code);
-    bool result = m_key_states[key_code].OnUp();
-    return result;
-}
-
-bool Input::IsDown(MouseButton mouse_button) const
+bool IsDown(NewInput* input, KeyCode key_code)
 {
     bool result = false;
-    uint32 index = static_cast<uint32>(mouse_button);
-    if (index < static_cast<uint32>(MouseButton::COUNT))
+    if(key_code < KeyCode_MaxKeyCodes)
     {
-        result = m_mouse_state.buttons[index].IsDown();
+        result = input->key_states[key_code].IsDown();
     }
 
     return result;
 }
 
-bool Input::OnDown(MouseButton mouse_button) const
+bool OnDown(NewInput* input, KeyCode key_code)
 {
     bool result = false;
-    uint32 index = static_cast<uint32>(mouse_button);
-    if (index < static_cast<uint32>(MouseButton::COUNT))
+    if(key_code < KeyCode_MaxKeyCodes)
     {
-        result = m_mouse_state.buttons[index].OnDown();
+        result = input->key_states[key_code].OnDown();
     }
 
     return result;
 }
 
-bool Input::IsUp(MouseButton mouse_button) const
+bool IsUp(NewInput* input, KeyCode key_code)
 {
     bool result = false;
-    uint32 index = static_cast<uint32>(mouse_button);
-    if (index < static_cast<uint32>(MouseButton::COUNT))
+    if(key_code < KeyCode_MaxKeyCodes)
     {
-        result = m_mouse_state.buttons[index].IsUp();
+        result = input->key_states[key_code].IsUp();
     }
 
     return result;
 }
 
-bool Input::OnUp(MouseButton mouse_button) const
+bool OnUp(NewInput* input, KeyCode key_code)
 {
     bool result = false;
-    uint32 index = static_cast<uint32>(mouse_button);
-    if (index < static_cast<uint32>(MouseButton::COUNT))
+    if(key_code < KeyCode_MaxKeyCodes)
     {
-        result = m_mouse_state.buttons[index].OnUp();
+        result = input->key_states[key_code].OnUp();
+    }
+
+    return result;
+}
+
+bool IsDown(NewInput* input, MouseButton mouse_button)
+{
+    bool result = false;
+    if (mouse_button < MouseButton_COUNT)
+    {
+        result = input->mouse_state.buttons[mouse_button].IsDown();
+    }
+
+    return result;
+}
+
+bool OnDown(NewInput* input, MouseButton mouse_button)
+{
+    bool result = false;
+    if (mouse_button < MouseButton_COUNT)
+    {
+        result = input->mouse_state.buttons[mouse_button].OnDown();
+    }
+
+    return result;
+}
+
+bool IsUp(NewInput* input, MouseButton mouse_button)
+{
+    bool result = false;
+    if (mouse_button < MouseButton_COUNT)
+    {
+        result = input->mouse_state.buttons[mouse_button].IsUp();
+    }
+
+    return result;
+}
+
+bool OnUp(NewInput* input, MouseButton mouse_button)
+{
+    bool result = false;
+    if (mouse_button < MouseButton_COUNT)
+    {
+        result = input->mouse_state.buttons[mouse_button].OnUp();
     }
 
     return result;

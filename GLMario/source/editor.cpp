@@ -71,7 +71,7 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
     if (Contains(ui->title_bar, mouse_pos))
     {
         title_bar_contains = true;
-        if (MouseFrameDown(MouseButton::LEFT))
+        if (MouseFrameDown(MouseButtons::LEFT))
         {
             mouse_down = true;
             ui->is_dragged = true;
@@ -80,7 +80,7 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
 
     if (ui->is_dragged)
     {
-        if (MouseIsDown(MouseButton::LEFT))
+        if (MouseIsDown(MouseButtons::LEFT))
         {
             ui->window.x += mouse_delta.x;
             ui->window.y += mouse_delta.y;
@@ -160,11 +160,11 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
         char button_text[64] = "Change Vertical";
         DrawStringInRect(ren, button_text, scaled_rect, text_size, MakeColor(cg_black, 1.0f), alignment, ui_params.draw_layer);
 
-        if (MouseFrameDown(MouseButton::LEFT))
+        if (MouseFrameDown(MouseButtons::LEFT))
         {
             ui->hot_item = 1;
         }
-        else if (ui->hot_item == 1 && MouseFrameUp(MouseButton::LEFT))
+        else if (ui->hot_item == 1 && MouseFrameUp(MouseButtons::LEFT))
         {
             ++ver_index;
             ver_index %= ArrayCount(ver_alignments);
@@ -182,11 +182,11 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
         char button_text[64] = "Horizontal";
         DrawStringInRect(ren, button_text, scaled_rect, text_size, MakeColor(cg_black, 1.0f), alignment, ui_params.draw_layer);
 
-        if (MouseFrameDown(MouseButton::LEFT))
+        if (MouseFrameDown(MouseButtons::LEFT))
         {
             ui->hot_item = 2;
         }
-        else if (ui->hot_item == 2 && MouseFrameUp(MouseButton::LEFT))
+        else if (ui->hot_item == 2 && MouseFrameUp(MouseButtons::LEFT))
         {
             ++hor_index;
             hor_index %= ArrayCount(hor_alignments);

@@ -52,6 +52,11 @@ typedef int32_t b32;
 
 #define OPTIONAL_ASSIGN(var, value) if(var) *(var) = (value)
 
+#define DeclareOpaqueHandle(type)  \
+struct type;                       \
+typedef struct type* type##Handle
+
+
 struct FRange
 {
 	float min_range;
@@ -125,7 +130,7 @@ inline Rectf rectf(float x, float y, float w, float h)
 
 struct Vec2i
 {
-    int x, y;
+    int32 x, y;
 };
 
 inline Vec2i operator- (const Vec2i& lhs, const Vec2i& rhs)

@@ -3,6 +3,7 @@
 #include "SDL.h"
 #include "entity.h"
 #include "types.h"
+#include "platform\platform.h"
 
 struct TileMap;
 struct Renderer;
@@ -16,8 +17,12 @@ enum ScreenMode
 
 struct Window
 {
+#ifdef SDL_PLATFORM
+
 	SDL_Window* sdl_window;
 	SDL_GLContext sdl_gl_context;
+#else
+#endif
 
     ScreenMode current_mode;
     Vec2i resolution;
@@ -66,6 +71,8 @@ struct GameState
 {
     MemoryArena temporary_memory;
     MemoryArena permanent_memory;
+
+    NewInput* input;
 
     Scene* active_scene;
     Camera* active_camera;
