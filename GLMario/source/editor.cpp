@@ -54,16 +54,18 @@ void SetTitle(UIWindow* ui, char* title)
     StrPrintf(ui->title, sizeof(ui->title), "%s", title);
 }
 
-void UpdateUIWindow(UIWindow* ui, Renderer* ren)
+void UpdateUIWindow(GameState* game_state, UIWindow* ui)
 {
+    Renderer* ren = game_state->renderer;
+
     Vec2i screen_res = ren->frame_resolution;
-    Vec2i mouse_raw_pos = MouseScreenPoint();
+    Vec2i mouse_raw_pos = MousePosition(game_state->input);
 
     Vec2 mouse_pos = ScalePoint(mouse_raw_pos, screen_res);
-    Vec2 mouse_delta = ScalePoint(MouseFrameDelta(), screen_res);
+    Vec2 mouse_delta = ScalePoint(MouseDelta(game_state->input), screen_res);
 
-    mouse_pos.y = 1.f - mouse_pos.y;
-    mouse_delta.y = -mouse_delta.y;
+    mouse_pos.y = mouse_pos.y;
+    mouse_delta.y = mouse_delta.y;
 
     bool title_bar_contains = false;
     bool mouse_down = false;
@@ -71,7 +73,7 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
     if (Contains(ui->title_bar, mouse_pos))
     {
         title_bar_contains = true;
-        if (MouseFrameDown(MouseButtons::LEFT))
+        if (OnDown(game_state->input, MouseButton_LEFT))
         {
             mouse_down = true;
             ui->is_dragged = true;
@@ -80,7 +82,7 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
 
     if (ui->is_dragged)
     {
-        if (MouseIsDown(MouseButtons::LEFT))
+        if (IsDown(game_state->input, MouseButton_LEFT))
         {
             ui->window.x += mouse_delta.x;
             ui->window.y += mouse_delta.y;
@@ -137,7 +139,7 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
     float y_pad = 0.05f;
     float x_pad = 0.1f;
     float button_height = 0.25f;
-    
+
     // Buttons
     Rectf tilemap_erase_button = { x_pad, 1.0f - y_pad - button_height, 1.0f - x_pad * 2.f, button_height };
     Rectf element_rect = tilemap_erase_button;
@@ -150,7 +152,7 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
     DrawStringInRect(ren, silly_string, ui->window, text_size, text_color, alignment, ui_params.draw_layer);
 
 
-    
+
     ui_params.draw_layer.sub_layer++;
     Rectf scaled_rect = ScaleRectToParent(tilemap_erase_button, ui->window);
     DrawRect(ren, scaled_rect, MakeColor(cg_dark_green, alpha), 0, ui_params);
@@ -160,11 +162,11 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
         char button_text[64] = "Change Vertical";
         DrawStringInRect(ren, button_text, scaled_rect, text_size, MakeColor(cg_black, 1.0f), alignment, ui_params.draw_layer);
 
-        if (MouseFrameDown(MouseButtons::LEFT))
+        if (OnDown(game_state->input, MouseButton_LEFT))
         {
             ui->hot_item = 1;
         }
-        else if (ui->hot_item == 1 && MouseFrameUp(MouseButtons::LEFT))
+        else if (ui->hot_item == 1 && OnUp(game_state->input, MouseButton_LEFT))
         {
             ++ver_index;
             ver_index %= ArrayCount(ver_alignments);
@@ -182,11 +184,11 @@ void UpdateUIWindow(UIWindow* ui, Renderer* ren)
         char button_text[64] = "Horizontal";
         DrawStringInRect(ren, button_text, scaled_rect, text_size, MakeColor(cg_black, 1.0f), alignment, ui_params.draw_layer);
 
-        if (MouseFrameDown(MouseButtons::LEFT))
+        if (OnDown(game_state->input, MouseButton_LEFT))
         {
             ui->hot_item = 2;
         }
-        else if (ui->hot_item == 2 && MouseFrameUp(MouseButtons::LEFT))
+        else if (ui->hot_item == 2 && OnUp(game_state->input, MouseButton_LEFT))
         {
             ++hor_index;
             hor_index %= ArrayCount(hor_alignments);

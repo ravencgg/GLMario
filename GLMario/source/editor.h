@@ -2,6 +2,7 @@
 
 #include "mathops.h"
 #include "types.h"
+#include "game_types.h"
 
 struct Renderer;
 
@@ -39,7 +40,7 @@ struct UIWindow
 
 void CreateEditorUI(UIWindow* ui);
 
-void UpdateUIWindow(UIWindow* ui, Renderer* ren);
+void UpdateUIWindow(GameState*, UIWindow* ui);
 void SetSize(UIWindow*, Rectf, float);
 
 void SetTitle(UIWindow*, char*);

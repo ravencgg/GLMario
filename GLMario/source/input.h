@@ -174,14 +174,14 @@ enum KeyState
 
 enum MouseButton
 {
+    MouseButton_UNKNOWN,
     MouseButton_LEFT,
     MouseButton_MIDDLE,
     MouseButton_RIGHT,
     MouseButton_FOUR,
     MouseButton_FIVE,
-    MouseButton_COUNT,
 
-    MouseButton_UNKNOWN = 0xFF
+    MouseButton_COUNT
 };
 
 struct NewKeyState
@@ -191,7 +191,7 @@ struct NewKeyState
     uint16 half_presses = 0;
 
     bool IsDown() const { return ended_down || half_presses > 1; }
-    bool OnDown() const { return !started_down && ended_down || half_presses > 1; }
+    bool OnDown() const { return !started_down && (ended_down || half_presses > 1); }
     bool IsUp() const { return !ended_down; }
     bool OnUp() const { return (started_down && IsUp()); }
 };
@@ -200,10 +200,8 @@ struct MouseState
 {
     Vec2i last_position;
     Vec2i new_position;
+    Vec2  world_position;
     NewKeyState buttons[MouseButton_COUNT];
-
-    Vec2i ScreenPosition() { return new_position; }
-    Vec2i Delta() { return new_position - last_position; }
 };
 
 struct NewInput
@@ -217,13 +215,18 @@ void BeginMessageLoop(NewInput* input);
 void _ProcessKeyboardMessage(NewInput*, KeyCode, bool);
 void _ProcessMouseButtonMessage(NewInput*, MouseButton, bool);
 
+void UpdateMouseWorldPosition(NewInput*, Vec2i screen_resolution, Vec2 viewport_size, Vec2 camera_pos);
+
 Vec2i MousePosition(NewInput*);
 Vec2i MouseDelta(NewInput*);
+
+Vec2  MouseWorldPosition(NewInput*);
 
 bool IsDown(NewInput*, KeyCode);
 bool OnDown(NewInput*, KeyCode);
 bool IsUp(NewInput*, KeyCode);
 bool OnUp(NewInput*, KeyCode);
+
 bool IsDown(NewInput*, MouseButton);
 bool OnDown(NewInput*, MouseButton);
 bool IsUp(NewInput*, MouseButton);

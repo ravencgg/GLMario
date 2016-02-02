@@ -302,6 +302,7 @@ int GameMain()
         Camera* draw_camera = game_state->active_camera ? game_state->active_camera : &default_camera;
 
         UpdateMouseWorldPosition(game_state->window.resolution, draw_camera->viewport_size, draw_camera->position);
+        UpdateMouseWorldPosition(game_state->input, game_state->window.resolution, draw_camera->viewport_size, draw_camera->position);
 
         ProfileEndSection(Profile_Input);
 
@@ -402,8 +403,8 @@ int GameMain()
 
         DrawTileMap(game_state, game_state->active_scene->tilemap);
 
-        UpdateUIWindow(ui, game_state->renderer);
-        UpdateUIWindow(ui2, game_state->renderer);
+        UpdateUIWindow(game_state, ui);
+        UpdateUIWindow(game_state, ui2);
 
         RenderDrawBuffer(renderer, draw_camera);
 
