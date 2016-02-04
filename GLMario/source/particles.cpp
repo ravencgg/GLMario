@@ -105,7 +105,7 @@ void ParticleSystem::update(GameState* game_state, Vec2 new_position)
 {
     ProfileBeginSection(Profile_ParticleUpdate);
 
-	uint64 cycle_start = GetCycleCount();
+	uint64 cycle_start = Platform_GetCycleCount();
 	static uint64 avg_cycles = 0;
 
 	float current_time = CurrentTime(game_state);
@@ -124,7 +124,7 @@ void ParticleSystem::update(GameState* game_state, Vec2 new_position)
 	Vec2 delta_p = ptd.world_position - ptd.last_world_position;
 	ptd.last_world_position = ptd.world_position;
 
-    if(!KeyIsDown(SDLK_l)) // Hold l to disable SIMD
+    if(!IsDown(game_state->input, KeyCode_l)) // Hold l to disable SIMD
                                 // SIMD is currently ~2x as fast as normal path
     {
 

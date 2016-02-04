@@ -1,63 +1,7 @@
 #pragma once
 
-#include "SDL.h"
-
 #include "types.h"
 #include "mathops.h"
-
-#define OLD_INPUT
-#define NEW_INPUT
-
-#ifdef OLD_INPUT
-#define NUM_KEYS SDL_NUM_SCANCODES
-
-enum class MouseButtons { LEFT, MIDDLE, RIGHT, COUNT };
-enum class KeyState { UP, FRAME_UP, DOWN, FRAME_DOWN, DOWN_UP, UP_DOWN };
-
-struct Mouse
-{
-	Vec2i p;
-	Vec2i delta;
-    Vec2 world_position;
-	KeyState buttons[(int32)MouseButtons::COUNT];
-};
-
-struct Input
-{
-	KeyState key_states[NUM_KEYS];
-	Mouse mouse;
-};
-
-void InitializeInput();
-
-void InputBeginFrame();
-
-// Keyboard handling
-void ProcessKeyPress(int32 key);
-void ProcessKeyRelease(int32 key);
-
-bool KeyFrameDown(int32 key);
-bool KeyFrameUp(int32 key);
-bool KeyIsDown(int32 key);
-bool KeyIsUp(int32 key);
-
-// Mouse handling
-void UpdateMousePosition();
-void UpdateMouseWorldPosition(Vec2i screen_resolution, Vec2 viewport_size, Vec2 camera_pos);
-void UpdateMouseWorldPosition();
-void MouseButtonEvent();
-
-Vec2i MouseFrameDelta();
-Vec2i MouseScreenPoint();
-Vec2 MouseWorldPosition();
-
-bool MouseFrameDown(MouseButtons);
-bool MouseFrameUp(MouseButtons);
-bool MouseIsDown(MouseButtons);
-bool MouseIsUp(MouseButtons);
-
-#endif
-#if defined(NEW_INPUT)
 
 enum KeyCode
 {
@@ -232,4 +176,3 @@ bool OnDown(NewInput*, MouseButton);
 bool IsUp(NewInput*, MouseButton);
 bool OnUp(NewInput*, MouseButton);
 
-#endif

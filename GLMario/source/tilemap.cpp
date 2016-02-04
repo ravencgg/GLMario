@@ -189,10 +189,10 @@ static Tile** GetPotentialCollidingTiles(TileGroup* node, Rectf aabb, Tile** col
     return index;
 }
 
-static void DrawBoundingBoxes(TileGroup* tile_group, Renderer* ren)
+static void DrawBoundingBoxes(GameState* game_state, TileGroup* tile_group)
 {
     const float blue  = (float)tile_group->depth / 10.f;
-    const float green = Contains(tile_group, MouseWorldPosition()) ? 0.8f : 0.1f;
+    const float green = Contains(tile_group, MouseWorldPosition(game_state->input)) ? 0.8f : 0.1f;
 
     Vec4 color = { 0, green, blue, 0.5f };
 
@@ -201,13 +201,13 @@ static void DrawBoundingBoxes(TileGroup* tile_group, Renderer* ren)
         TileGroup* node = tile_group->child_nodes;
         for(uint32 i = 0; i < QUADTREE_CHILDREN; ++i, ++node)
         {
-            DrawBoundingBoxes(node, ren);
+            DrawBoundingBoxes(game_state, node);
         }
     }
 
     PrimitiveDrawParams params = {};
     params.line_width = 2;
-    DrawRect(ren, tile_group->aabb, color, 0, params);
+    DrawRect(game_state->renderer, tile_group->aabb, color, 0, params);
 }
 
 
@@ -258,13 +258,13 @@ void DrawTileMap(GameState* game_state, TileMap* tilemap)
         ++index)
     {
         Tile* tile = tilemap->tiles + index;
-        float green = Contains(tile->aabb, MouseWorldPosition()) ? 0.8f : 0.1f;
+        float green = Contains(tile->aabb, MouseWorldPosition(game_state->input)) ? 0.8f : 0.1f;
         const Vec4 tile_color = { 1.f, green, 0, 0.5f };
 
         DrawRect(game_state->renderer, tile->aabb, tile_color);
     }
 
-    Vec2 mouse_pos = MouseWorldPosition();
+    Vec2 mouse_pos = MouseWorldPosition(game_state->input);
     Rectf mouse_rect = {mouse_pos.x, mouse_pos.y, 0.01f, 0.01f};
     Tile** active_tiles;
     PushArrayScoped(active_tiles, &game_state->temporary_memory, Tile*, tilemap->num_tiles);
@@ -280,7 +280,7 @@ void DrawTileMap(GameState* game_state, TileMap* tilemap)
         DrawRect(game_state->renderer, tile->aabb, tile_color);
     }
 
-    DrawBoundingBoxes(tilemap->tile_quadtree, game_state->renderer);
+    DrawBoundingBoxes(game_state, tilemap->tile_quadtree);
 }
 
 Tile** GetPotentialCollidingTiles(MemoryArena* arena, TileMap* tilemap, Rectf rect_plus_velocity, uint32* num_tiles_found)

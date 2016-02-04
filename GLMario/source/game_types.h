@@ -1,6 +1,5 @@
 #pragma once
 
-#include "SDL.h"
 #include "entity.h"
 #include "types.h"
 #include "platform\platform.h"
@@ -8,22 +7,16 @@
 struct TileMap;
 struct Renderer;
 
+// TODO: Move to platform layer
 enum ScreenMode
 {
     ScreenMode_Windowed = 0,
-    ScreenMode_FullScreen = 1, // SDL_WINDOW_FULLSCREEN,
-    ScreenMode_Borderless = 2, //SDL_WINDOW_FULLSCREEN_DESKTOP
+    ScreenMode_FullScreen = 1,
+    ScreenMode_Borderless = 2,
 };
 
 struct Window
 {
-#ifdef SDL_PLATFORM
-
-	SDL_Window* sdl_window;
-	SDL_GLContext sdl_gl_context;
-#else
-#endif
-
     ScreenMode current_mode;
     Vec2i resolution;
 };
@@ -82,21 +75,6 @@ struct GameState
     GameTime time;
 };
 
-
-/****************************
- *
- * Window functions
- *
- ******/
-
-void InitializeWindow(Window* window, char* title, int32 width, int32 height);
-
-void ShutdownWindow(Window* window);
-
-void WindowSetResolution(Window* window, uint32 w, uint32 h);
-
-void WindowSetScreenMode(Window* window, ScreenMode mode);
-
 /****************************
  *
  * Time functions
@@ -154,16 +132,16 @@ inline void InitializeTime(GameState* game_state, uint32 ms_per_frame)
     // TODO: convert this to high precision
     memset(&game_state->time, 0, sizeof(game_state->time));
 	game_state->time.ticks_per_frame = 16;
-	game_state->time.current_frame_ticks = SDL_GetTicks();
+	game_state->time.current_frame_ticks = Platform_GetTickCount();
 }
 
 inline void TimeBeginFrame(GameState* game_state)
 {
 	game_state->time.last_frame_ticks = game_state->time.current_frame_ticks;
-	game_state->time.current_frame_ticks = SDL_GetTicks();
+	game_state->time.current_frame_ticks = Platform_GetTickCount();
 
-	game_state->time.current_time = (double)game_state->time.current_frame_ticks / 1000.0;
-	game_state->time.delta_time = (double)(game_state->time.current_frame_ticks - game_state->time.last_frame_ticks) / 1000.0;
+    game_state->time.current_time = (double)game_state->time.current_frame_ticks / 1000.0;
+    game_state->time.delta_time = (double)(game_state->time.current_frame_ticks - game_state->time.last_frame_ticks) / 1000.0;
 
 	++game_state->time.frame_count;
 }
@@ -171,7 +149,7 @@ inline void TimeBeginFrame(GameState* game_state)
 inline uint32 RemainingTicksInFrame(GameState* game_state)
 {
     // TODO: Needs to be all high precision
-	uint32 cur_time = SDL_GetTicks();
+	uint32 cur_time = Platform_GetTickCount();
 	uint32 next_frame_start = game_state->time.current_frame_ticks + game_state->time.ticks_per_frame;
 
 	uint32 result = 0;
@@ -187,7 +165,7 @@ inline uint32 RemainingTicksInFrame(GameState* game_state)
 inline uint32 RealTimeSinceStartup()
 {
     // TODO: High precision
-    uint32 result = SDL_GetTicks();
+    uint32 result = Platform_GetTickCount();
     return result;
 }
 

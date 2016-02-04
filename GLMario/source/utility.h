@@ -183,17 +183,6 @@ size_t StrCountTrailingWhitespace(char* string, uint32 max_check, uint32* = null
 
 char* StrGetToken(char* string, size_t* token_size = nullptr, char* whitespace = DEFAULT_WHITESPACE);
 
-/**********************************************
- *
- * High Performance Clock
- *
- ***************/
-
-
-uint64 GetCycleCount();
-
-uint64 GetCyclesPerSecond();
-
 
 /**********************************************
  *

@@ -261,27 +261,6 @@ done:
 
 /**********************************************
  *
- * Clock Functions
- *
- ***************/
-
-uint64 GetCycleCount()
-{
-    LARGE_INTEGER result;
-    QueryPerformanceCounter(&result);
-    return (uint64)result.QuadPart;
-}
-
-uint64 GetCyclesPerSecond()
-{
-    LARGE_INTEGER result;
-    QueryPerformanceFrequency(&result);
-    return (uint64)result.QuadPart;
-}
-
-
-/**********************************************
- *
  * Random Number Generation
  *
  ***************/

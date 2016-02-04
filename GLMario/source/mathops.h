@@ -50,28 +50,6 @@ inline float sign(float x)
    return (float)result;
 }
 
-union Vec2
-{
-	struct { float x, y; };
-	struct { float r, g; };
-	float e[2];
-};
-
-union Vec3
-{
-	struct { float x, y, z; };
-	struct { float r, g, b; };
-	struct { Vec2 xy; float _ignoredv3; };
-	float e[3];
-};
-
-union Vec4
-{
-	struct { float x, y, z, w; };
-	struct { float r, g, b, a; };
-	struct { Vec3 xyz; float _ignoredv4; };
-	float e[4];
-};
 
 struct Vec2_4
 {

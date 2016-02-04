@@ -11,8 +11,6 @@
 #include "console.h"
 #include "game_types.h"
 
-#include "SDL.h"
-
 #include "platform/platform.h"
 
 char* default_vert_shader = "..\\res\\default_vert.glsl";
@@ -26,13 +24,7 @@ char* particle_image = "..\\res\\particle.png";
 
 void SwapBuffer(GameState* game_state)
 {
-    Sleep(1);
-
-#ifdef SDL_PLATFORM
-	SDL_GL_SwapWindow(game_state->window.sdl_window);
-#else
     Platform_SwapBuffers();
-#endif
 }
 
 #define VERTEX_BUFFER_SIZE MEGABYTES(64)
@@ -83,16 +75,12 @@ static void ActivateShader(Renderer* ren, ShaderTypes s)
 
 void BeginFrame(Renderer* renderer, Window* window)
 {
-#ifdef SDL_PLATFORM
-    SDL_GL_GetDrawableSize(window->sdl_window, &renderer->frame_resolution.x, &renderer->frame_resolution.y);
-#else
     renderer->frame_resolution = Platform_GetResolution();
-#endif
 
 	glViewport(0, 0, renderer->frame_resolution.x, renderer->frame_resolution.y);
 
     GLuint result = glGetError();
-    
+
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 

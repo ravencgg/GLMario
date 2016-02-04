@@ -378,12 +378,12 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
     RenderRandomParticles(game_state);
     // NOTE: random scene test code
     {
-        if (KeyFrameDown(SDLK_t))
+        if (OnDown(game_state->input, KeyCode_t))
         {
             SpawnEntity(game_state, scene, EntityType_Spawner, { 5.f, -1.0f });
         }
 
-        if (KeyFrameDown(SDLK_m))
+        if (OnDown(game_state->input, KeyCode_m))
         {
             for(int i = 0; i < 1; ++i)
             {
@@ -392,7 +392,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
             }
         }
 
-        if (KeyFrameDown(SDLK_n))
+        if (OnDown(game_state->input, KeyCode_n))
         {
             uint32 random_spawn = (uint32)random_float(1.0f, 1000.f);
 
@@ -405,7 +405,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
             }
         }
 
-        if(KeyFrameDown(SDLK_r))
+        if(OnDown(game_state->input, KeyCode_r))
         {
             Entity* new_cam = SpawnEntity(game_state, scene, EntityType_Camera, { 1.f, 1.f });
             if(GetEntityWithID(scene, scene->player_id, 0))
@@ -416,9 +416,9 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
             game_state->active_camera = &new_cam->camera.camera;
         }
 
-        if (MouseFrameDown(MouseButtons::LEFT))
+        if (OnDown(game_state->input, MouseButton_LEFT))
         {
-            Vec2 mouse_pos = MouseWorldPosition();
+            Vec2 mouse_pos = MouseWorldPosition(game_state->input);
             AddTileToMap(scene->tilemap, mouse_pos);
         }
     }
@@ -450,7 +450,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
 
                 const float gravity = -20.f;
                 static uint32 count = 0;
-                if(KeyIsDown(SDLK_SPACE) && player->grounded)
+                if(IsDown(game_state->input, KeyCode_SPACE) && player->grounded)
                 {
                     player->velocity.y = 10.f;
                 }
@@ -460,30 +460,13 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
                     player->velocity.y = max(player->velocity.y, -100.0f);
                 }
 
-#if 0
-                if(KeyIsDown(SDLK_w))
-                {
-                    player->velocity.y += 50.f * dt;
-                    player->velocity.y = min(player->velocity.y, 5.0f);
-                }
-                else if(KeyIsDown(SDLK_s))
-                {
-                    player->velocity.y -= 50.f * dt;
-                    player->velocity.y = min(player->velocity.y, 5.0f);
-                }
-                else
-                {
-                    player->velocity.y = 0;
-                }
-#endif
-
                 const float max_vel = 20.f;
-                if(KeyIsDown(SDLK_d))
+                if(IsDown(game_state->input, KeyCode_d))
                 {
                     player->velocity.x += 500.f * dt;
                     player->velocity.x = Minimum(player->velocity.x, max_vel);
                 }
-                else if(KeyIsDown(SDLK_a))
+                else if(IsDown(game_state->input, KeyCode_a))
                 {
                     player->velocity.x -= 5000.f * dt;
                     player->velocity.x = Maximum(player->velocity.x, -max_vel);
@@ -493,7 +476,7 @@ void UpdateSceneEntities(GameState* game_state, Scene* scene)
                     player->velocity.x = 0;
                 }
 
-                if(KeyIsDown(SDLK_1))
+                if(IsDown(game_state->input, KeyCode_1))
                 {
                     entity->delete_this_frame = true;
                 }

@@ -2,7 +2,6 @@
 // TODO: REMOVE
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "SDL.h"
 #include <string>
 #include "types.h"
 #include "mathops.h"
@@ -41,21 +40,21 @@
 
 #define MAX_GAME_ENTITES 4096 * 2
 
-void DebugControlCamera(Camera* camera)
+void DebugControlCamera(GameState* game_state, Camera* camera)
 {
-    if(KeyIsDown(SDLK_LEFT))
+    if(IsDown(game_state->input, KeyCode_LEFT))
     {
         camera->position.x -= 0.1f;
     }
 
-    if(KeyIsDown(SDLK_RIGHT))
+    if(IsDown(game_state->input, KeyCode_RIGHT))
     {
         camera->position.x += 0.1f;
     }
 
-    if(KeyIsDown(SDLK_UP))
+    if(IsDown(game_state->input, KeyCode_UP))
     {
-        if(KeyIsDown(SDLK_RCTRL) || KeyIsDown(SDLK_LCTRL))
+        if (IsDown(game_state->input, KeyCode_CONTROL))
         {
             camera->position.y += 0.1f;
         }
@@ -65,9 +64,9 @@ void DebugControlCamera(Camera* camera)
         }
     }
 
-    if(KeyIsDown(SDLK_DOWN))
+    if(IsDown(game_state->input, KeyCode_DOWN))
     {
-        if (KeyIsDown(SDLK_RCTRL) || KeyIsDown(SDLK_LCTRL))
+        if (IsDown(game_state->input, KeyCode_CONTROL))
         {
             camera->position.y -= 0.1f;
         }
@@ -78,63 +77,6 @@ void DebugControlCamera(Camera* camera)
     }
 }
 
-void StartupWindow(Window* window, char* title, int32 width, int32 height)
-{
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
-    {
-        printf("SDL init error\n");
-    }
-
-    window->resolution.x = width;
-    window->resolution.y = height;
-    window->current_mode = ScreenMode_Windowed;
-
-#ifdef SDL_PLATFORM
-    window->sdl_window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        width, height,
-        SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-    if (window->sdl_window == nullptr)
-    {
-        printf("Window creation error\n");
-    }
-    window->sdl_gl_context = SDL_GL_CreateContext(window->sdl_window);
-    if (window->sdl_gl_context == nullptr)
-    {
-        printf("GL Context creation error\n");
-    }
-#endif
-
-#ifdef SDL_PLATFORM
-    SDL_GL_MakeCurrent(window->sdl_window, window->sdl_gl_context);
-#endif
-}
-
-void ShutdownWindow(Window* window)
-{
-#ifdef SDL_PLATFORM
-    if (window->sdl_gl_context) SDL_GL_DeleteContext(window->sdl_gl_context);
-    if (window->sdl_window)     SDL_DestroyWindow(window->sdl_window);
-#endif
-}
-
-void WindowSetResolution(Window* window, uint32 w, uint32 h)
-{
-    window->resolution.x = w;
-    window->resolution.y = h;
-
-#ifdef SDL_PLATFORM
-    SDL_SetWindowSize(window->sdl_window, w, h);
-#endif
-}
-
-void WindowSetScreenMode(Window* window, ScreenMode mode)
-{
-    window->current_mode = mode;
-
-#ifdef SDL_PLATFORM
-    SDL_SetWindowFullscreen(window->sdl_window, (uint32)mode);
-#endif
-}
 
 static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
 {
@@ -146,10 +88,6 @@ static GameState* CreateNewGameState(char* window_title, int res_x, int res_y)
     result->temporary_memory = CreateSubArena(&arena, FRAME_TEMPORARY_MEMORY_SIZE);
     result->permanent_memory = CreateSubArena(&arena, GAME_PERMANENT_MEMORY_SIZE);
     assert(arena.used == arena.size);
-
-#ifdef SDL_PLATFORM
-    StartupWindow(&result->window, window_title, res_x, res_y);
-#endif
 
     result->input = PushStruct(&result->permanent_memory, NewInput);
     result->renderer = CreateRenderer(&result->permanent_memory);
@@ -214,7 +152,6 @@ int GameMain()
 
     SetSize(ui2, { 0.2f, 0.3f, 0.2f, 0.2f }, 0.05f);
 
-    InitializeInput();
     InitializeDebugConsole();
 
 #if 0
@@ -242,66 +179,14 @@ int GameMain()
     while (running)
     {
         ProfileBeginFrame();
-
         ProfileBeginSection(Profile_Frame);
         ProfileBeginSection(Profile_Input);
 
-#ifdef SDL_PLATFORM
-        SDL_Event e;
-        InputBeginFrame();
-        while (SDL_PollEvent(&e))
-        {
-            switch (e.type)
-            {
-
-            case SDL_QUIT:
-            {
-                running = false;
-            }break;
-
-            case SDL_KEYDOWN:
-            {
-                ProcessKeyPress(e.key.keysym.sym);
-            }break;
-
-            case SDL_KEYUP:
-            {
-                ProcessKeyRelease(e.key.keysym.sym);
-            }break;
-
-            case SDL_MOUSEBUTTONDOWN:
-            case SDL_MOUSEBUTTONUP:
-            {
-                MouseButtonEvent();
-            }break;
-
-            case SDL_MOUSEMOTION:
-            {
-                UpdateMousePosition();
-            }break;
-
-
-            case SDL_WINDOWEVENT:
-            {
-                switch (e.window.event)
-                {
-                case SDL_WINDOWEVENT_RESIZED:
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
-                {
-                    game_state->window.resolution.x = e.window.data1;
-                    game_state->window.resolution.y = e.window.data2;
-                }break;
-
-                }
-            }
-            }
-        }
-#endif
-        running = Platform_RunMessageLoop(game_state->input);
+        Platform_RunMessageLoop(game_state->input);
 
         Camera* draw_camera = game_state->active_camera ? game_state->active_camera : &default_camera;
 
-        UpdateMouseWorldPosition(game_state->window.resolution, draw_camera->viewport_size, draw_camera->position);
+        game_state->window.resolution = Platform_GetResolution();
         UpdateMouseWorldPosition(game_state->input, game_state->window.resolution, draw_camera->viewport_size, draw_camera->position);
 
         ProfileEndSection(Profile_Input);
@@ -314,27 +199,29 @@ int GameMain()
 
         DebugPrintf("Key Pressed: %s", IsDown(game_state->input, KeyCode_a) ? "TRUE" : "FALSE");
 
-        if (KeyFrameDown(SDLK_ESCAPE))
+        if (OnDown(game_state->input, KeyCode_ESCAPE))
         {
             running = false;
             break;
         }
 
-        if (KeyFrameDown(SDLK_z))
+#if 0 // TODO: Platform layer
+        if (OnDown(game_state->input, KeyCode_z))
         {
             ForceColorClear();
             SwapBuffer(game_state);
-            WindowSetScreenMode(&game_state->window, ScreenMode_Windowed);
+            //WindowSetScreenMode(&game_state->window, ScreenMode_Windowed);
         }
-        else if (KeyFrameDown(SDLK_c))
+        else if (OnDown(game_state->input, KeyCode_c))
         {
             ForceColorClear();
             SwapBuffer(game_state);
-            WindowSetScreenMode(&game_state->window, ScreenMode_Borderless);
+            //WindowSetScreenMode(&game_state->window, ScreenMode_Borderless);
         }
+#endif
 
         static bool draw_debug = true;
-        if (KeyFrameDown(SDLK_BACKQUOTE))
+        if (OnDown(game_state->input, KeyCode_BACKQUOTE))
         {
             draw_debug = !draw_debug;
         }
@@ -355,7 +242,7 @@ int GameMain()
         frame_count++;
         DebugPrintf("FPS: \t\t%d \tFrames: \t%d", fps, FrameCount(game_state));
 
-        DebugControlCamera(&default_camera);
+        DebugControlCamera(game_state, &default_camera);
 
         // TODO(cgenova): separate update and render calls so that things can be set up when rendering begins;
         BeginFrame(renderer, &game_state->window);
@@ -424,8 +311,6 @@ int GameMain()
         ResetArena(&game_state->temporary_memory);
 
     }// End main loop
-
-    SDL_Quit();
 
     return 1;
 }

@@ -4,6 +4,8 @@
 #include "types.h"
 #include "mathops.h"
 
+#include "platform\platform.h"
+
 #include "console.h"
 #include "time.h"
 
@@ -75,7 +77,7 @@ char* GetProfileSectionName(ProfileSectionName name)
 
 void ProfileBeginFrame()
 {
-    profile_frame_clock_start = GetCycleCount();
+    profile_frame_clock_start = Platform_GetCycleCount();
     for(int i = 0; i < Profile_Count; ++i)
     {
         ProfileSection* ps = profile_sections + i;
@@ -91,8 +93,8 @@ void ProfileEndFrame(Renderer* ren, uint32 target_fps)
 {
     ProfileBeginSection(Profile_Console);
 
-    profile_frame_clock_end = GetCycleCount();
-    cycles_per_second       = GetCyclesPerSecond();
+    profile_frame_clock_end = Platform_GetCycleCount();
+    cycles_per_second       = Platform_GetCyclesPerSecond();
     uint64 frame_cycles     = profile_frame_clock_end - profile_frame_clock_start;
     uint64 target_cycles    = cycles_per_second / target_fps;
 
@@ -203,13 +205,13 @@ void _ProfileBeginSection(ProfileSectionName name, char* file, int line)
     // summation will be wrong if this is not true
     // this means that recursive functions can't be calculated though
     assert(section->cycle_count_start == 0);
-    section->cycle_count_start = GetCycleCount();
+    section->cycle_count_start = Platform_GetCycleCount();
 }
 
 void _ProfileEndSection(ProfileSectionName name, char* file, int line)
 {
     ProfileSection* section = &profile_sections[name];
-    u64 cycle_count = GetCycleCount() - section->cycle_count_start;;
+    u64 cycle_count = Platform_GetCycleCount() - section->cycle_count_start;;
     section->min_cycles = MIN(section->min_cycles, cycle_count);
     section->max_cycles = MAX(section->max_cycles, cycle_count);
     section->sum += cycle_count;
