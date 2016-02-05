@@ -12,7 +12,9 @@
     <ClCompile Include="source\tilemap.cpp" />
     <ClCompile Include="source\utility.cpp" />
     <ClCompile Include="source\editor.cpp" />
-    <ClCompile Include="source\platform\win32_platform.cpp" />
+    <ClCompile Include="source\platform\win32_platform.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\audio.h" />
@@ -27,6 +29,13 @@
     <ClInclude Include="source\types.h" />
     <ClInclude Include="source\utility.h" />
     <ClInclude Include="source\editor.h" />
-    <ClInclude Include="source\platform\platform.h" />
+    <ClInclude Include="source\platform\platform.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Platform">
+      <UniqueIdentifier>{b70ae499-9096-4b84-b10c-4f87dfa4db6f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
